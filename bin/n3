@@ -23,8 +23,7 @@ bookmark R "${XDG_RUNTIME_DIR}"
 bookmark M /run/media/"$USER"
 
 # arguments passed to nnn
-N3_ARGS=( -AdHT v -Ux )
-# -A    disable auto-select in type-to-nav mode
+N3_ARGS=( -dHT v -Ux )
 # -d    show details
 # -H    show hidden files
 # -T v  use version sort (ie. put dotfiles first)
@@ -35,7 +34,7 @@ export NNN_COLORS="${NNN_COLORS:-111}"
 
 # source local configuration
 confdir="${XDG_CONFIG_HOME:-$HOME/.config}/corecon"
-[ -f "$confdir/n3rc" ] && . "$confdir/n3rc"
+[ -s "$confdir/n3rc" ] && . "$confdir/n3rc"
 
 # generate $NNN_BMS
 NNN_BMS=

@@ -9,10 +9,12 @@ usage() {
 usage:
   config <key>[=<value>]...
     modify configuration
-  config -g|--get <key>...
-    get first occurrence of any of <key>
-  config -t|--test <key>...
-    test for any of <key>
+  config -t|--test <keys>...
+    test for any of <keys>
+  config -g|--get <keys>...
+    get first occurrence of any of <keys>
+  config -u|--unset <keys>...
+    unset all <keys>
   config -l|--list
     dump configuration
 options:
@@ -41,11 +43,14 @@ while [ "$#" -gt 0 ]; do
       usage
       exit 0
       ;;
+    -t|--test)
+      mode=test
+      ;;
     -g|--get)
       mode=get
       ;;
-    -t|--test)
-      mode=test
+    -u|--unset)
+      mode=unset
       ;;
     -l|--list)
       mode=list
@@ -71,8 +76,22 @@ while [ "$#" -gt 0 ]; do
   shift
 done
 
+test_mode() {
+  [ "$#" -gt 0 ] && [ -s "$config_file" ] || exit 1
+
+  # a `grep -Ex` pattern for finding a match
+  pattern="$(printf '%s\n' "$@" | sed -E '
+s/=.*//
+s/[\.\^\$\?\*\+\[\{\(\)\|\\]/\\&/g
+s/$/(=.*)?/')"
+
+  [ "$debug" ] && printf 'pattern:\n%s\n' "$pattern"
+
+  grep -Exq "$pattern" "$config_file"
+}
+
 get_mode() {
-  [ "$#" -gt 0 ] && [ -f "$config_file" ] || exit 1
+  [ "$#" -gt 0 ] && [ -s "$config_file" ] || exit 1
 
   # a `grep -Ex` pattern for finding a match
   pattern="$(printf '%s\n' "$@" | sed -E '
@@ -85,18 +104,26 @@ s/$/=.*/')"
     printf '%s\n' "${match#*=}"
 }
 
-test_mode() {
-  [ "$#" -gt 0 ] && [ -f "$config_file" ] || exit 1
+unset_mode() {
+  [ "$#" -gt 0 ] && [ -s "$config_file" ] || exit 0
 
-  # a `grep -Ex` pattern for finding a match
+  # a `grep -Ex` pattern for entries to remove
   pattern="$(printf '%s\n' "$@" | sed -E '
-s/=.*//
 s/[\.\^\$\?\*\+\[\{\(\)\|\\]/\\&/g
 s/$/(=.*)?/')"
 
   [ "$debug" ] && printf 'pattern:\n%s\n' "$pattern"
 
-  grep -Exq "$pattern" "$config_file"
+  # backup config file
+  if [ -e "$config_file" ]; then
+    mv "$config_file" "$config_file_old"
+  fi
+
+  mkdir -p "$config_dir"
+
+  grep -Exv "$pattern" "$config_file_old" > "$config_file"
+
+  exit 0
 }
 
 list_mode() {
@@ -137,8 +164,15 @@ s/$/(=.*)?/')"
 }
 
 case "$mode" in
-  get) get_mode "$@" ;;
   test) test_mode "$@" ;;
+  get) get_mode "$@" ;;
+  unset) unset_mode "$@" ;;
   list) list_mode "$@" ;;
-  *) modify_mode "$@" ;;
+  *)
+    if [ "$#" -gt 0 ]; then
+      modify_mode "$@"
+    else
+      list_mode
+    fi
+    ;;
 esac

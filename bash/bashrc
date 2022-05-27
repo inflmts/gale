@@ -1,3 +1,5 @@
+# ~/.bashrc - bash(1) shell initialization
+
 # quit unless interactive
 # apparently needed for rcp or scp or something
 case "$-" in *i*) ;; *) return ;; esac
@@ -36,7 +38,12 @@ alias userctl='systemctl --user'
 
 # list file systems
 lsfs() {
-  lsblk -o NAME,FSTYPE,LABEL,FSUSED,FSSIZE,FSUSE%,UUID
+  lsblk -o NAME,FSTYPE,LABEL,FSUSED,FSSIZE,FSUSE%
+}
+
+# list file systems (+UUID)
+lsfsu() {
+  lsblk -o NAME,FSTYPE,LABEL,UUID,FSUSED,FSSIZE,FSUSE%
 }
 
 # list gpt partitions
@@ -44,8 +51,9 @@ lsgpt() {
   lsblk -o NAME,PARTLABEL,PARTUUID
 }
 
+# list gpt file systems
 lsgfs() {
-  lsblk -o NAME,FSTYPE,LABEL,PARTLABEL,FSUSED,FSSIZE,FSUSE%,UUID,PARTUUID
+  lsblk -o NAME,FSTYPE,LABEL,PARTLABEL,FSUSED,FSSIZE,FSUSE%
 }
 
 # change to new directory
@@ -53,7 +61,8 @@ cdnew() {
   if [ "$#" -eq 1 ]; then
     mkdir -p -- "$1" && cd -- "$1"
   else
-    echo >&2 "usage: cdnew <dir>"
+    echo >&2 'usage: cdnew <dir>'
+    return 1
   fi
 }
 
@@ -78,12 +87,34 @@ cdfzf() {
   eval "$shopt"
 }
 
-udisks-mount() {
-  udisksctl mount -b "$1"
+udmount() {
+  if [ "$#" -eq 1 ]; then
+    udisksctl mount -b "$1"
+  else
+    echo >&2 'usage: udmount <dev>'
+    return 1
+  fi
 }
 
-udisks-eject() {
-  udisksctl unmount -b "$1" && udisksctl power-off -b "$1"
+udeject() {
+  if [ "$#" -eq 1 ]; then
+    udisksctl unmount -b "$1" && udisksctl power-off -b "$1"
+  else
+    echo >&2 'usage: udeject <dev>'
+    return 1
+  fi
+}
+
+nvminit() {
+  if [ -d ~/.nvm ]; then
+    export NVM_DIR=~/.nvm
+    \. "$NVM_DIR/nvm.sh"
+    \. "$NVM_DIR/bash_completion"
+    unset -f nvminit
+  else
+    echo >&2 'error: nvm is not installed'
+    return 1
+  fi
 }
 
 # use tput to clear scrollback buffer on (u)rxvt

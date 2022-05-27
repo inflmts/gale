@@ -1,3 +1,5 @@
+" ~/.vimrc - config for vim(1)
+
 " detect if vim-plug is installed
 silent! if plug#begin()
   " install plugins
@@ -51,6 +53,10 @@ set go-=m go-=M go-=t go-=T go-=l go-=L go-=r go-=R
 " KEYBINDINGS
 "
 
+nnoremap gis :!git status -sb<CR>
+nnoremap gil :!git log<CR>
+nnoremap gia :!git add<Space>
+
 " pseudovim bindings in command line
 " use <C-C> to cancel instead of <Esc>
 cnoremap <Esc>i <Home>
@@ -65,7 +71,6 @@ cnoremap <Esc>x <Del>
 
 nnoremap < <<
 nnoremap > >>
-nnoremap <C-S> :w<CR>
 nnoremap <C-T> :NERDTreeToggle<CR>
 
 vnoremap < <gv
@@ -90,7 +95,9 @@ if $TERM == "linux"
   hi Visual cterm=reverse
 endif
 
-au BufRead README* setl tw=80
-au BufRead Makefile setl noet
+au FileType sh setlocal tw=80 fo-=t
+au FileType markdown setlocal tw=80
+au FileType make setlocal noet
+au BufRead README* setlocal tw=80
 
 " vim:ft=vim

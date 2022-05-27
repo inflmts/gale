@@ -1,4 +1,6 @@
-# Core Console Configuration (corecon)
+# corecon
+
+InfiniteLimits Core Console Config
 
 ## Overview
 
@@ -10,18 +12,41 @@ My plan is for `~/.local/corecon` to be symlinked to somewhere else where
 editing happens. Most code in corecon should only refer to files through this
 symlink.
 
-The `corecon config` command queries and modifies local configuration stored in
-`$XDG_CONFIG_HOME/corecon/config`. The format of this file is one entry per
-line, with no support for comments. The format of each entry is `<key>=<value>`,
-where `<key>` contains any character except '=' and `<text>` is any text. See
+The `corecon config` command is the official interface to corecon's local
+configuration. This utility queries and modifies the configuration file
+`$XDG_CONFIG_HOME/corecon/config`. The format of this file is extremely simple:
+one entry is allowed per line, consisting of a key (containing any character
+except '=') and optionally a '=' followed by a value (containing any text). See
 `corecon config --help` for usage.
 
 The `corecon apply` command generates and installs files. It currently uses
-Ninja coupled with shell scripts as its build system. It should be run every
+Ninja coupled with shell scripts as the build system. It should be run every
 time something changes in the respository that requires generation/installation.
 
 ## Installation
 
-TODO: create bootstrapping method
+Symlink `~/.local/corecon`:
+
+```
+lib/sym $(realpath .) ~/.local/corecon
+```
+
+Source the environment setup script from the shell:
+
+```
+. ./bootstrap.sh
+```
+
+You probably want to:
+
+```
+corecon config systemd
+```
+
+Finally, run `corecon apply` to install corecon.
+
+## Configuration
+
+`systemd` - enable systemd support
 
   vim:tw=80

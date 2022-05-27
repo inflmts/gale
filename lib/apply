@@ -2,34 +2,39 @@
 # apply changes
 
 set -e
-cd ~/.local/corecon
+cd
 
-sym() { ~/.local/corecon/lib/sym "$@"; }
+sym() { ~/.local/corecon/lib/sym "$1" "$2"; }
+sym_corecon() { ~/.local/corecon/lib/sym "$HOME/.local/corecon/$1" "$2"; }
 
 datadir="${XDG_DATA_HOME:-$HOME/.local/share}/corecon"
 
 # symlink dotfiles
-for df in bash_profile bashrc dialogrc inputrc screenrc vimrc; do
-  sym ~/.local/corecon/"$df" ~/."$df"
-done
+sym_corecon bash/login ~/.bash_profile
+sym_corecon bash/bashrc ~/.bashrc
+sym_corecon bash/inputrc ~/.inputrc
+sym_corecon vim/vimrc ~/.vimrc
+sym_corecon lib/dialogrc ~/.dialogrc
+sym_corecon lib/screenrc ~/.screenrc
 
 # symlink executables
-for bin in bin/*; do
-  name="$(basename "$bin")"
-  sym ~/.local/corecon/"$bin" ~/.local/bin/"$name"
+cd ~/.local/corecon/bin
+for bin in *; do
+  sym_corecon bin/"$bin" ~/.local/bin/"$bin"
 done
+cd
 
-# SYSTEMD
-if corecon config --test systemd; then
-  # We don't use $XDG_CONFIG_HOME because when systemd looks for environment.d(5)
-  # $XDG_CONFIG_HOME won't be set up yet. So we put it in ~/.config where systemd
-  # can find it.
-  sym ~/.local/corecon/environment ~/.config/environment.d/corecon.conf
-fi
+# run apply hooks
+for hook in "$datadir"/apply/*.hook; do
+  if [ -f "$hook" ] && [ -x "$hook" ]; then
+    "$hook"
+  fi
+done
 
 # bootstrap ninja if necessary
 if [ ! -e "$datadir/apply.ninja" ]; then
-  lib/gen-ninja | install -DTm 644 /dev/stdin "$datadir/apply.ninja"
+  mkdir -p "$datadir"
+  ~/.local/corecon/lib/gen-ninja "$datadir/apply.ninja"
 fi
 
 # summon ninja

@@ -16,8 +16,8 @@ if real_target="$(readlink -- "$path")"; then
   # if the target is a symlink, make it point to the right place
   if [ "$real_target" != "$target" ]; then
     printf >&2 'creating symlink: %s -> %s\n' "$path" "$target"
-    rm -f "$path" && \
-      ln -s "$target" "$path"
+    rm -f -- "$path" && \
+      ln -s -- "$target" "$path"
   fi
 elif [ -e "$path" ]; then
   # if the target exists, a conflict has occurred
@@ -26,6 +26,6 @@ elif [ -e "$path" ]; then
 else
   # if the target doesn't exist, create the symlink
   printf >&2 'creating symlink: %s -> %s\n' "$path" "$target"
-  mkdir -p "$(dirname -- "$path")" && \
-    ln -s "$target" "$path"
+  mkdir -p -- "$(dirname -- "$path")" && \
+    ln -s -- "$target" "$path"
 fi

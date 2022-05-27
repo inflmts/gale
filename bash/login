@@ -1,3 +1,5 @@
+# ~/.bash_profile - bash(1) login shell initialization
+
 # use vim as editor
 export EDITOR=vim
 
@@ -37,11 +39,6 @@ case "$-" in *i*) ;; *) return ;; esac
 #   A login menu using dialog(1).
 #
 dialogmenu() {
-  if ! command -v dialog >/dev/null 2>&1; then
-    echo >&2 "dialog not installed"
-    return 1
-  fi
-
   local resp
 
   while resp="$(dialog --menu Menu 0 0 0 \

@@ -1,3 +1,5 @@
+# config for readline(3)
+
 # behavior
 set editing-mode vi
 set show-all-if-unmodified on
