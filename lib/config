@@ -1,14 +1,12 @@
 #!/bin/sh
-# configure corecon
+# host-specific configurator
 #
-# This script generates the meta-configuration and Ninja build file used by
-# apply, and thus must be run first.
+# This script generates the meta-configuration read by apply.
 #
-# Options provided will be saved in the meta-configuration file and picked up
-# by future invokations of configure. Thus invoking configure with no arguments
-# implies whatever options were configured by a previous invocation of
-# configure. Use --reset to suppress reading this file, and reset all options
-# to their defaults.
+# Options specified persist across invocations of config. Thus invoking config
+# with no arguments effectively does nothing unless new configuration options
+# were added. Use --reset to suppress reading the configuration file and reset
+# all options to their defaults.
 #
 
 datadir="${XDG_DATA_HOME:-$HOME/.local/share}/corecon"
@@ -18,9 +16,9 @@ warn() { printf >&2 'warning: %s\n' "$1"; }
 
 usage() {
   cat <<EOF
-usage: configure --help
-       configure [--reset] [<option>...]
+usage: config [--reset] [<option>...]
 options:
+  --apply     Automatically apply changes.
   --[no-]systemd
 EOF
 }
@@ -51,8 +49,9 @@ O_SYSTEMD=0
 case "$1" in
   --help) usage; exit 0 ;;
   # use --reset to avoid sourcing $XDG_DATA_HOME/corecon/config
-  # if you feel it may do something unwanted
+  # if you want to reset all options or the file is corrupted
   --reset) shift ;;
+  # recall persistent configuration
   *) [ -f "$datadir/config" ] && . "$datadir/config" ;;
 esac
 
@@ -82,21 +81,7 @@ cat > "$datadir/config" <<EOF
 O_SYSTEMD=$O_SYSTEMD
 EOF
 
-# redirect output to build.ninja
-rm -f "$datadir/build.ninja"
-
-cat > "$datadir/build.ninja" <<EOF
-builddir = $(ninjaquote "$datadir")
-
-rule configure
-  description = Configure
-  command = ~/.local/corecon/lib/configure
-  generator = true
-
-build \$builddir/build.ninja: configure | lib/configure
-EOF
-
-# run apply if --apply is given
+# apply changes if --apply is given
 if [ "$apply" = 1 ]; then
   exec ~/.local/corecon/lib/apply
 fi

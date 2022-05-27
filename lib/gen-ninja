@@ -1,0 +1,41 @@
+#!/bin/sh
+# ninja configurator
+
+shellquote() {
+  if [ "$#" -gt 0 ]; then
+    # each argument is fed as a line into sed
+    # escape inner quotes
+    # prepend and append quotes to each line
+    # join arguments with spaces
+    printf '%s\n' "$@" | sed "s/'/'\\\\''/g; s/^/'/; s/$/'/" | tr '\n' ' '
+  fi
+}
+
+ninjaquote() {
+  # replace '$' with '$$'
+  # replace leading space with '$ '
+  printf '%s\n' "$1" | sed 's/\$/$$/g; s/^ /$ /'
+}
+
+ninjaquote_path() {
+  # escape all '$', ':', and space
+  printf '%s\n' "$1" | sed 's/[\$: ]/$\&/g'
+}
+
+datadir="${XDG_DATA_HOME:-$HOME/.local/share}/corecon"
+
+rm -f "$datadir/apply.ninja"
+cat > "$datadir/apply.ninja" <<EOF
+builddir = $(ninjaquote "$datadir")
+
+rule script
+  command = \$in
+
+build \$builddir/config: script lib/config
+  description = Configure Corecon
+  generator = true
+
+build \$builddir/apply.ninja: script lib/gen-ninja
+  description = Configure Ninja
+  generator = true
+EOF

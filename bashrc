@@ -2,24 +2,21 @@
 # apparently needed for rcp or scp or something
 case "$-" in *i*) ;; *) return ;; esac
 
-# if the last exit code N is nonzero, print ' ?N'
 __ps1_exit_status() {
   local n="$?"
-  [ "$n" -gt 0 ] && printf " ?%s" "$n"
+  [ "$n" -gt 0 ] && printf ' ?%s' "$n"
 }
 
 # build a custom prompt
 printf -v PS1 %s \
-  '\[\e[0m\]' \
-  '[' \
-  '\[\e[1;31m\]' \
-  '\u@\h:' \
+  '\[\e[0;1;31m\]' \
+  '\u@\h ' \
   '\[\e[34m\]' \
   '\w' \
   '\[\e[33m\]' \
   '$(__ps1_exit_status)' \
   '\[\e[0m\]' \
-  ']\$ '
+  ' \$ '
 
 #
 # ALIASES & FUNCTIONS

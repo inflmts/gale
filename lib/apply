@@ -1,6 +1,5 @@
 #!/bin/sh
 # apply changes
-#
 
 set -e
 cd ~/.local/corecon
@@ -25,4 +24,10 @@ if [ "$O_SYSTEMD" = 1 ]; then
   sym ~/.local/corecon/environment ~/.config/environment.d/corecon.conf
 fi
 
-exec ninja -f "$datadir/build.ninja" "$@"
+# bootstrap ninja if necessary
+if [ ! -e "$datadir/apply.ninja" ]; then
+  lib/gen-ninja
+fi
+
+# summon ninja
+exec ninja -f "$datadir/apply.ninja"
