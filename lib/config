@@ -135,7 +135,7 @@ modify_mode() {
   # or requesting a --reset
   [ "$#" -gt 0 ] || [ "$reset" ] || exit 0
 
-  # backup config file
+  # backup config file if necessary
   if [ -e "$config_file" ]; then
     mv "$config_file" "$config_file_old"
   fi
@@ -143,8 +143,8 @@ modify_mode() {
   mkdir -p "$config_dir"
 
   { # unless requesting a --reset,
-    # edit existing configuration
-    if [ -z "$reset" ]; then
+    # edit existing configuration if applicable
+    if [ -z "$reset" ] && [ -e "$config_file_old" ]; then
       # a `grep -Ex` pattern for finding a match
       remove_pattern="$(printf '%s\n' "$@" | sed -E '
 s/=.*//
