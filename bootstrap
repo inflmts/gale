@@ -1,0 +1,23 @@
+#!/bin/bash
+# bootstrap corecon
+#
+# This script sets up the environment, symlinks ~/.local/corecon, then runs
+# configure with the provided arguments.
+#
+# Though this is only intended to be run once, it may be safely run again after
+# bootstrapping. This might be useful for testing the script itself or changing
+# the source tree root. This must be run from the root of the source tree (in
+# other words, if you're not calling it as ./bootstrap, you're doing it wrong).
+#
+
+set -e
+
+# setup the environment
+. ./bash_profile
+
+link_target=$(realpath .)
+
+# symlink ~/.local/corecon
+lib/sym "$link_target" ~/.local/corecon
+
+exec lib/configure "$@"

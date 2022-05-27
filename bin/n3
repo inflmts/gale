@@ -1,0 +1,54 @@
+#!/bin/bash
+# nnn wrapper
+
+declare -A bookmarks plugins
+
+# bookmark <key> <path>
+bookmark() {
+  bookmarks["$1"]="$2"
+}
+
+# plugin <key> <path>
+plugin() {
+  plugins["$1"]="$2"
+}
+
+# add bookmarks
+bookmark T /tmp
+bookmark C "${XDG_CONFIG_HOME:-$HOME/.config}"
+bookmark D "${XDG_DATA_HOME:-$HOME/.local/share}"
+bookmark S "${XDG_STATE_HOME:-$HOME/.local/state}"
+bookmark X "${XDG_CACHE_HOME:-$HOME/.cache}"
+bookmark R "${XDG_RUNTIME_DIR}"
+bookmark M /run/media/"$USER"
+
+# arguments passed to nnn
+N3_ARGS=( -AdHT v -Ux )
+# -A    disable auto-select in type-to-nav mode
+# -d    show details
+# -H    show hidden files
+# -T v  use version sort (ie. put dotfiles first)
+# -U    show user/group names in status bar
+# -x    show xterm title
+
+export NNN_COLORS="${NNN_COLORS:-111}"
+
+# source local configuration
+confdir="${XDG_CONFIG_HOME:-$HOME/.config}/corecon"
+[ -f "$confdir/n3rc" ] && . "$confdir/n3rc"
+
+# generate $NNN_BMS
+NNN_BMS=
+for key in "${!bookmarks[@]}"; do
+  NNN_BMS="${NNN_BMS}${key}:${bookmarks[$key]};"
+done
+export NNN_BMS="${NNN_BMS%;}"
+
+# generate $NNN_PLUG
+NNN_PLUG=
+for key in "${!plugins[@]}"; do
+  NNN_PLUG="${NNN_PLUG}${key}:${plugins[$key]};"
+done
+export NNN_PLUG="${NNN_PLUG%;}"
+
+exec nnn "${N3_ARGS[@]}" "$@"

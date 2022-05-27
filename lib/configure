@@ -1,0 +1,102 @@
+#!/bin/sh
+# configure corecon
+#
+# This script generates the meta-configuration and Ninja build file used by
+# apply, and thus must be run first.
+#
+# Options provided will be saved in the meta-configuration file and picked up
+# by future invokations of configure. Thus invoking configure with no arguments
+# implies whatever options were configured by a previous invocation of
+# configure. Use --reset to suppress reading this file, and reset all options
+# to their defaults.
+#
+
+datadir="${XDG_DATA_HOME:-$HOME/.local/share}/corecon"
+
+err() { printf >&2 'error: %s\n' "$1"; }
+warn() { printf >&2 'warning: %s\n' "$1"; }
+
+usage() {
+  cat <<EOF
+usage: configure --help
+       configure [--reset] [<option>...]
+options:
+  --[no-]systemd
+EOF
+}
+
+shellquote() {
+  if [ "$#" -gt 0 ]; then
+    # each argument is fed as a line into sed
+    # escape inner quotes
+    # prepend and append quotes to each line
+    # join arguments with spaces
+    printf '%s\n' "$@" | sed "s/'/'\\\\''/g; s/^/'/; s/$/'/" | tr '\n' ' '
+  fi
+}
+
+ninjaquote() {
+  # replace '$' with '$$'
+  # replace leading space with '$ '
+  printf '%s\n' "$1" | sed 's/\$/$$/g; s/^ /$ /'
+}
+
+ninjaquote_path() {
+  # escape all '$', ':', and space
+  printf '%s\n' "$1" | sed 's/[\$: ]/$\&/g'
+}
+
+O_SYSTEMD=0
+
+case "$1" in
+  --help) usage; exit 0 ;;
+  # use --reset to avoid sourcing $XDG_DATA_HOME/corecon/config
+  # if you feel it may do something unwanted
+  --reset) shift ;;
+  *) [ -f "$datadir/config" ] && . "$datadir/config" ;;
+esac
+
+apply=0
+
+for opt; do
+  case "$opt" in
+    --reset)
+      err "--reset is only recognized as the first argument"
+      exit 1
+      ;;
+    --apply) apply=1 ;;
+    --no-systemd) O_SYSTEMD=0 ;;
+       --systemd) O_SYSTEMD=1 ;;
+    *)
+      err "invalid option: $opt"
+      exit 1
+      ;;
+  esac
+done
+
+mkdir -p "$datadir"
+
+# update config
+rm -f "$datadir/config"
+cat > "$datadir/config" <<EOF
+O_SYSTEMD=$O_SYSTEMD
+EOF
+
+# redirect output to build.ninja
+rm -f "$datadir/build.ninja"
+
+cat > "$datadir/build.ninja" <<EOF
+builddir = $(ninjaquote "$datadir")
+
+rule configure
+  description = Configure
+  command = ~/.local/corecon/lib/configure
+  generator = true
+
+build \$builddir/build.ninja: configure | lib/configure
+EOF
+
+# run apply if --apply is given
+if [ "$apply" = 1 ]; then
+  exec ~/.local/corecon/lib/apply
+fi

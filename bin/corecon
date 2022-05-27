@@ -1,0 +1,26 @@
+#!/bin/bash
+# corecon subcommand runner
+
+usage() {
+  printf 'usage: corecon configure|apply [<arguments>...]\n'
+}
+
+if [ "$#" -eq 0 ]; then
+  usage >&2
+  exit 1
+fi
+
+cmd=$1
+shift
+
+case "$cmd" in
+  configure)
+    exec ~/.local/corecon/lib/configure "$@" ;;
+  apply)
+    exec ~/.local/corecon/lib/apply "$@" ;;
+  *)
+    printf >&2 'error: unrecognized command: %s\n' "$cmd"
+    usage >&2
+    exit 1
+    ;;
+esac

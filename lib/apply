@@ -1,0 +1,28 @@
+#!/bin/sh
+# apply changes
+#
+
+set -e
+cd ~/.local/corecon
+
+sym() { ~/.local/corecon/lib/sym "$@"; }
+
+datadir="${XDG_DATA_HOME:-$HOME/.local/share}/corecon"
+
+# read configuration
+. "$datadir/config"
+
+# symlink dotfiles
+for df in bash_profile bashrc dialogrc inputrc screenrc vimrc; do
+  sym ~/.local/corecon/"$df" ~/."$df"
+done
+
+# SYSTEMD
+if [ "$O_SYSTEMD" = 1 ]; then
+  # We don't use $XDG_CONFIG_HOME because when systemd looks for environment.d(5)
+  # $XDG_CONFIG_HOME won't be set up yet. So we put it in ~/.config where systemd
+  # can find it.
+  sym ~/.local/corecon/environment ~/.config/environment.d/corecon.conf
+fi
+
+exec ninja -f "$datadir/build.ninja" "$@"
