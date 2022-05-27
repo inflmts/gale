@@ -13,6 +13,12 @@ for df in bash_profile bashrc dialogrc inputrc screenrc vimrc; do
   sym ~/.local/corecon/"$df" ~/."$df"
 done
 
+# symlink executables
+for bin in bin/*; do
+  name="$(basename "$bin")"
+  sym ~/.local/corecon/"$bin" ~/.local/bin/"$name"
+done
+
 # SYSTEMD
 if corecon config --test systemd; then
   # We don't use $XDG_CONFIG_HOME because when systemd looks for environment.d(5)

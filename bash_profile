@@ -24,8 +24,6 @@ prepend_path() {
 prepend_path ~/.local/bin
 # add omega executable directory (compatability)
 prepend_path ~/.local/omega/bin
-# add corecon executable directory
-prepend_path ~/.local/corecon/bin
 
 unset -f prepend_path
 
