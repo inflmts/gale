@@ -22,20 +22,21 @@ ninjaquote_path() {
   printf '%s\n' "$1" | sed 's/[\$: ]/$\&/g'
 }
 
+confdir="${XDG_CONFIG_HOME:-$HOME/.config}/corecon"
 datadir="${XDG_DATA_HOME:-$HOME/.local/share}/corecon"
 
-rm -f "$datadir/apply.ninja"
-cat > "$datadir/apply.ninja" <<EOF
+cat <<EOF
 builddir = $(ninjaquote "$datadir")
+
+install_mode = 644
 
 rule script
   command = \$in
 
-build \$builddir/config: script lib/config
-  description = Configure Corecon
-  generator = true
+rule script_output
+  command = \$in | install -DTm \$install_mode /dev/stdin \$out
 
-build \$builddir/apply.ninja: script lib/gen-ninja
+build \$builddir/apply.ninja: script_output lib/gen-ninja
   description = Configure Ninja
   generator = true
 EOF

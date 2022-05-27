@@ -1,9 +1,5 @@
 #!/bin/sh
 # corecon command runner
-#
-# Scripts should call ~/.local/corecon/lib/* directly, rather than through this
-# command. This command exists solely as a convenience to users.
-#
 
 usage() {
   printf 'usage: corecon config|apply <args>...\n'
@@ -19,9 +15,9 @@ shift
 
 case "$cmd" in
   config)
-    exec ~/.local/corecon/lib/config "$@" ;;
+    . ~/.local/corecon/lib/config ;;
   apply)
-    exec ~/.local/corecon/lib/apply "$@" ;;
+    . ~/.local/corecon/lib/apply ;;
   help|--help)
     usage
     exit 0

@@ -1,7 +1,7 @@
 # systemd environment configuration for corecon
 # see environment.d(5)
 
-PATH=${HOME}/.local/corecon/bin:${HOME}/.omega/bin:${HOME}/.local/bin:${PATH}
+PATH=${HOME}/.local/corecon/bin:${HOME}/.local/bin:${PATH}
 EDITOR=vim
 XDG_CONFIG_HOME=${HOME}/.config
 XDG_DATA_HOME=${HOME}/.data

@@ -1,17 +1,18 @@
-# setup environment
+# use vim as editor
 export EDITOR=vim
+
+# explicitly specify xdg dirs
 export XDG_CONFIG_HOME="$HOME/.config"
 export XDG_DATA_HOME="$HOME/.data"
 export XDG_STATE_HOME="$HOME/.state"
 export XDG_CACHE_HOME="$HOME/.cache"
+
+# don't justify man pages
 export MANOPT='--nj'
 
 export PATH
 
-# prepend_path <path>
-#
-#   Add the passed path to $PATH if it isn't in there already.
-#
+# prepend an entry to $PATH
 prepend_path() {
   case :"$PATH": in
     *:"$1":*) ;;
@@ -21,16 +22,17 @@ prepend_path() {
 
 # add standard executable directory
 prepend_path ~/.local/bin
-# add omega executable directory
-prepend_path ~/.omega/bin
+# add omega executable directory (compatability)
+prepend_path ~/.local/omega/bin
 # add corecon executable directory
 prepend_path ~/.local/corecon/bin
 
 unset -f prepend_path
 
-# At this point quit if not interactive. The bootstrap script sources this to
-# set up the environment so we don't want to disturb it.
+# quit unless interactive
 case "$-" in *i*) ;; *) return ;; esac
+
+## INTERACTIVE
 
 # dialogmenu
 #

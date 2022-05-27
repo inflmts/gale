@@ -22,19 +22,31 @@ printf -v PS1 %s \
 # ALIASES & FUNCTIONS
 #
 
+alias ccon='corecon'
+
 alias ls='ls -hv --color=auto --group-directories-first'
 alias lsa='ls -A'
 alias ll='ls -l'
 alias lla='ls -lA'
-alias lt='tree -vC --dirsfirst'
-alias lta='lt -a'
 
-alias ex='exec'
 alias grep='grep --color=auto'
 alias pacman='pacman --color=auto'
 alias date='date +"%a %Y-%m-%d %I:%M %p"'
-alias lsblk='lsblk -o name,mountpoint,fstype,label,partlabel,fsused,fssize,fsuse%'
 alias userctl='systemctl --user'
+
+# list file systems
+lsfs() {
+  lsblk -o NAME,FSTYPE,LABEL,FSUSED,FSSIZE,FSUSE%,UUID
+}
+
+# list gpt partitions
+lsgpt() {
+  lsblk -o NAME,PARTLABEL,PARTUUID
+}
+
+lsgfs() {
+  lsblk -o NAME,FSTYPE,LABEL,PARTLABEL,FSUSED,FSSIZE,FSUSE%,UUID,PARTUUID
+}
 
 # change to new directory
 cdnew() {

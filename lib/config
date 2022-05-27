@@ -1,87 +1,138 @@
 #!/bin/sh
 # host-specific configurator
-#
-# This script generates the meta-configuration read by apply.
-#
-# Options specified persist across invocations of config. Thus invoking config
-# with no arguments effectively does nothing unless new configuration options
-# were added. Use --reset to suppress reading the configuration file and reset
-# all options to their defaults.
-#
-
-datadir="${XDG_DATA_HOME:-$HOME/.local/share}/corecon"
 
 err() { printf >&2 'error: %s\n' "$1"; }
 warn() { printf >&2 'warning: %s\n' "$1"; }
 
 usage() {
   cat <<EOF
-usage: config [--reset] [<option>...]
+usage:
+  config <key>[=<value>]...
+    modify configuration
+  config -g|--get <key>...
+    get first occurrence of any of <key>
+  config -t|--test <key>...
+    test for any of <key>
+  config -l|--list
+    dump configuration
 options:
-  --apply     Automatically apply changes.
-  --[no-]systemd
+  --reset     wipe the config file
+  --debug     show debugging output
 EOF
 }
 
-shellquote() {
-  if [ "$#" -gt 0 ]; then
-    # each argument is fed as a line into sed
-    # escape inner quotes
-    # prepend and append quotes to each line
-    # join arguments with spaces
-    printf '%s\n' "$@" | sed "s/'/'\\\\''/g; s/^/'/; s/$/'/" | tr '\n' ' '
-  fi
-}
+config_dir="${XDG_CONFIG_HOME:-$HOME/.config}/corecon"
+config_file="$config_dir/config"
+config_file_old="$config_file.old"
 
-ninjaquote() {
-  # replace '$' with '$$'
-  # replace leading space with '$ '
-  printf '%s\n' "$1" | sed 's/\$/$$/g; s/^ /$ /'
-}
+mode=
+reset=
+debug=
 
-ninjaquote_path() {
-  # escape all '$', ':', and space
-  printf '%s\n' "$1" | sed 's/[\$: ]/$\&/g'
-}
-
-O_SYSTEMD=0
-
-case "$1" in
-  --help) usage; exit 0 ;;
-  # use --reset to avoid sourcing $XDG_DATA_HOME/corecon/config
-  # if you want to reset all options or the file is corrupted
-  --reset) shift ;;
-  # recall persistent configuration
-  *) [ -f "$datadir/config" ] && . "$datadir/config" ;;
-esac
-
-apply=0
-
-for opt; do
-  case "$opt" in
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    --help)
+      usage
+      exit 0
+      ;;
+    -g|--get)
+      mode=get
+      ;;
+    -t|--test)
+      mode=test
+      ;;
+    -l|--list)
+      mode=list
+      ;;
     --reset)
-      err "--reset is only recognized as the first argument"
+      reset=1
+      ;;
+    --debug)
+      debug=1
+      ;;
+    --)
+      shift
+      break
+      ;;
+    -*)
+      err "invalid option: $1"
       exit 1
       ;;
-    --apply) apply=1 ;;
-    --no-systemd) O_SYSTEMD=0 ;;
-       --systemd) O_SYSTEMD=1 ;;
     *)
-      err "invalid option: $opt"
-      exit 1
+      break
       ;;
   esac
+  shift
 done
 
-mkdir -p "$datadir"
+get_mode() {
+  [ "$#" -gt 0 ] && [ -f "$config_file" ] || exit 1
 
-# update config
-rm -f "$datadir/config"
-cat > "$datadir/config" <<EOF
-O_SYSTEMD=$O_SYSTEMD
-EOF
+  # a `grep -Ex` pattern for finding a match
+  pattern="$(printf '%s\n' "$@" | sed -E '
+s/[\.\^\$\?\*\+\[\{\(\)\|\\]/\\&/g
+s/$/=.*/')"
 
-# apply changes if --apply is given
-if [ "$apply" = 1 ]; then
-  exec ~/.local/corecon/lib/apply
-fi
+  [ "$debug" ] && printf 'pattern:\n%s\n' "$pattern"
+
+  match="$(grep -Exm 1 "$pattern" "$config_file")" && \
+    printf '%s\n' "${match#*=}"
+}
+
+test_mode() {
+  [ "$#" -gt 0 ] && [ -f "$config_file" ] || exit 1
+
+  # a `grep -Ex` pattern for finding a match
+  pattern="$(printf '%s\n' "$@" | sed -E '
+s/=.*//
+s/[\.\^\$\?\*\+\[\{\(\)\|\\]/\\&/g
+s/$/(=.*)?/')"
+
+  [ "$debug" ] && printf 'pattern:\n%s\n' "$pattern"
+
+  grep -Exq "$pattern" "$config_file"
+}
+
+list_mode() {
+  cat "$config_file"
+}
+
+modify_mode() {
+  # only proceed if arguments are present
+  # or requesting a --reset
+  [ "$#" -gt 0 ] || [ "$reset" ] || exit 0
+
+  # backup config file
+  if [ -e "$config_file" ]; then
+    mv "$config_file" "$config_file_old"
+  fi
+
+  mkdir -p "$config_dir"
+
+  { # unless requesting a --reset,
+    # edit existing configuration
+    if [ -z "$reset" ]; then
+      # a `grep -Ex` pattern for finding a match
+      remove_pattern="$(printf '%s\n' "$@" | sed -E '
+s/=.*//
+s/[\.\^\$\?\*\+\[\{\(\)\|\\]/\\&/g
+s/$/(=.*)?/')"
+
+      if [ "$debug" ]; then
+        printf >&2 'remove_pattern:\n%s\n' "$remove_pattern"
+      fi
+
+      grep -Exv "$remove_pattern" "$config_file_old"
+    fi
+
+    # add new entries
+    [ "$#" -gt 0 ] && printf '%s\n' "$@"
+  } > "$config_file"
+}
+
+case "$mode" in
+  get) get_mode "$@" ;;
+  test) test_mode "$@" ;;
+  list) list_mode "$@" ;;
+  *) modify_mode "$@" ;;
+esac
