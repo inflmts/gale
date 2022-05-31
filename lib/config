@@ -1,5 +1,5 @@
 #!/bin/sh
-# host-specific configurator
+# corecon configurator
 
 err() { printf >&2 'error: %s\n' "$1"; }
 warn() { printf >&2 'warning: %s\n' "$1"; }
@@ -7,24 +7,27 @@ warn() { printf >&2 'warning: %s\n' "$1"; }
 usage() {
   cat <<EOF
 usage:
-  config <key>[=<value>]...
-    modify configuration
-  config -t|--test <keys>...
+  corecon config [-l|--list]
+    dump corecon configuration
+  corecon config <key>[=<value>]...
+    modify corecon configuration
+  corecon config -t|--test <keys>...
     test for any of <keys>
-  config -g|--get <keys>...
+  corecon config -g|--get <keys>...
     get first occurrence of any of <keys>
-  config -u|--unset <keys>...
+  corecon config -u|--unset <keys>...
     unset all <keys>
-  config -l|--list
-    dump configuration
 options:
   --reset     wipe the config file
   --debug     show debugging output
 EOF
 }
 
+# config directory
 config_dir="${XDG_CONFIG_HOME:-$HOME/.config}/corecon"
+# config file
 config_file="$config_dir/config"
+# temporary config file
 config_file_old="$config_file.old"
 
 mode=
@@ -80,10 +83,10 @@ test_mode() {
   [ "$#" -gt 0 ] && [ -s "$config_file" ] || exit 1
 
   # a `grep -Ex` pattern for finding a match
-  pattern="$(printf '%s\n' "$@" | sed -E '
-s/=.*//
-s/[\.\^\$\?\*\+\[\{\(\)\|\\]/\\&/g
-s/$/(=.*)?/')"
+  pattern="$(printf '%s\n' "$@" | sed -E \
+    -e 's/=.*//' \
+    -e 's/[\.\^\$\?\*\+\[\{\(\)\|\\]/\\&/g' \
+    -e 's/$/(=.*)?/')"
 
   [ "$debug" ] && printf 'pattern:\n%s\n' "$pattern"
 
@@ -94,9 +97,9 @@ get_mode() {
   [ "$#" -gt 0 ] && [ -s "$config_file" ] || exit 1
 
   # a `grep -Ex` pattern for finding a match
-  pattern="$(printf '%s\n' "$@" | sed -E '
-s/[\.\^\$\?\*\+\[\{\(\)\|\\]/\\&/g
-s/$/=.*/')"
+  pattern="$(printf '%s\n' "$@" | sed -E \
+    -e 's/[\.\^\$\?\*\+\[\{\(\)\|\\]/\\&/g' \
+    -e 's/$/=.*/')"
 
   [ "$debug" ] && printf 'pattern:\n%s\n' "$pattern"
 
@@ -108,9 +111,9 @@ unset_mode() {
   [ "$#" -gt 0 ] && [ -s "$config_file" ] || exit 0
 
   # a `grep -Ex` pattern for entries to remove
-  pattern="$(printf '%s\n' "$@" | sed -E '
-s/[\.\^\$\?\*\+\[\{\(\)\|\\]/\\&/g
-s/$/(=.*)?/')"
+  pattern="$(printf '%s\n' "$@" | sed -E \
+    -e 's/[\.\^\$\?\*\+\[\{\(\)\|\\]/\\&/g' \
+    -e 's/$/(=.*)?/')"
 
   [ "$debug" ] && printf 'pattern:\n%s\n' "$pattern"
 
@@ -121,13 +124,17 @@ s/$/(=.*)?/')"
 
   mkdir -p "$config_dir"
 
+  # pick existing entries that don't match keys provided in the command line
   grep -Exv "$pattern" "$config_file_old" > "$config_file"
 
   exit 0
 }
 
 list_mode() {
-  cat "$config_file"
+  # very primitive interface
+  if [ -e "$config_file" ]; then
+    column --table -s '=' -l 2 --table-columns KEY,VALUE "$config_file"
+  fi
 }
 
 modify_mode() {
@@ -145,17 +152,16 @@ modify_mode() {
   { # unless requesting a --reset,
     # edit existing configuration if applicable
     if [ -z "$reset" ] && [ -e "$config_file_old" ]; then
-      # a `grep -Ex` pattern for finding a match
-      remove_pattern="$(printf '%s\n' "$@" | sed -E '
-s/=.*//
-s/[\.\^\$\?\*\+\[\{\(\)\|\\]/\\&/g
-s/$/(=.*)?/')"
+      # a `grep -Ex` pattern
+      pattern="$(printf '%s\n' "$@" | sed -E \
+        -e 's/=.*//' \
+        -e 's/[\.\^\$\?\*\+\[\{\(\)\|\\]/\\&/g' \
+        -e 's/$/(=.*)?/')"
 
-      if [ "$debug" ]; then
-        printf >&2 'remove_pattern:\n%s\n' "$remove_pattern"
-      fi
+      [ "$debug" ] && printf >&2 'pattern:\n%s\n' "$pattern"
 
-      grep -Exv "$remove_pattern" "$config_file_old"
+      # pick existing entries that DON'T match the keys to be modified
+      grep -Exv "$pattern" "$config_file_old"
     fi
 
     # add new entries
@@ -164,15 +170,12 @@ s/$/(=.*)?/')"
 }
 
 case "$mode" in
-  test) test_mode "$@" ;;
-  get) get_mode "$@" ;;
-  unset) unset_mode "$@" ;;
-  list) list_mode "$@" ;;
-  *)
-    if [ "$#" -gt 0 ]; then
-      modify_mode "$@"
-    else
-      list_mode
-    fi
-    ;;
+  test)   test_mode "$@" ;;
+  get)    get_mode "$@" ;;
+  unset)  unset_mode "$@" ;;
+  list)   list_mode "$@" ;;
+  *)      if [ "$#" -gt 0 ]
+          then modify_mode "$@"
+          else list_mode
+          fi ;;
 esac

@@ -5,8 +5,11 @@ silent! if plug#begin()
   " install plugins
   Plug 'sainnhe/sonokai'
   Plug 'preservim/nerdtree'
-  Plug 'fcpg/vim-altscreen'
+  "Plug 'fcpg/vim-altscreen'
   call plug#end()
+
+  let g:sonokai_disable_italic_comment = 1
+  let g:sonokai_better_performance = 1
 
   " apply custom colorscheme
   silent! colorscheme sonokai
@@ -53,41 +56,57 @@ set go-=m go-=M go-=t go-=T go-=l go-=L go-=r go-=R
 " KEYBINDINGS
 "
 
+" git shortcuts
 nnoremap gis :!git status -sb<CR>
 nnoremap gil :!git log<CR>
 nnoremap gia :!git add<Space>
 
-" pseudovim bindings in command line
-" use <C-C> to cancel instead of <Esc>
+" valt bindings in command line
+"
+"   These mappings are based on vim keybindings with the Alt key pressed.
+"   <Esc>-prefix and <M-> mappings are both provided for both the terminal and
+"   GUI. To avoid the delay and/or potential conflicts, use <C-C> instead of
+"   <Esc> to abort command-line mode.
+"
 cnoremap <Esc>i <Home>
+cnoremap <M-i>  <Home>
 cnoremap <Esc>a <End>
+cnoremap <M-a>  <End>
 cnoremap <Esc>h <Left>
+cnoremap <M-h>  <Left>
 cnoremap <Esc>l <Right>
+cnoremap <M-l>  <Right>
 cnoremap <Esc>b <S-Left>
+cnoremap <M-b>  <S-Left>
 cnoremap <Esc>w <S-Right>
+cnoremap <M-w>  <S-Right>
 cnoremap <Esc>j <PageDown>
+cnoremap <M-j>  <PageDown>
 cnoremap <Esc>k <PageUp>
+cnoremap <M-k>  <PageUp>
 cnoremap <Esc>x <Del>
+cnoremap <M-x>  <Del>
 
+" indent faster
 nnoremap < <<
 nnoremap > >>
-nnoremap <C-T> :NERDTreeToggle<CR>
-
 vnoremap < <gv
 vnoremap > >gv
+
+nnoremap <C-T> :NERDTreeToggle<CR>
 
 "
 " MISCELLANEOUS
 "
 
+" offer transparent background on terminal emulators
 hi Normal       ctermbg=NONE
 hi EndOfBuffer  ctermbg=NONE
-hi Terminal     ctermfg=NONE ctermbg=NONE
-hi Comment      cterm=NONE
-hi LineNr       ctermbg=233
+hi Terminal     ctermbg=NONE ctermfg=NONE
+hi LineNr       ctermbg=233 guibg=#222226
 
-" color trailing whitespace red
-hi TrailSpace   ctermbg=1
+" color trailing whitespace red, since trailing space is death
+hi TrailSpace ctermbg=1 guibg=#ff0000
 match TrailSpace /\s\+$/
 au WinNew * match TrailSpace /\s\+$/
 

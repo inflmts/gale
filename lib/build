@@ -1,0 +1,16 @@
+#!/bin/sh
+# summon ninja on corecon
+
+set -e
+
+datadir="${XDG_DATA_HOME:-$HOME/.local/share}/corecon"
+
+# generate apply.ninja if necessary
+if [ ! -e "$datadir/apply.ninja" ]; then
+  echo >&2 'Bootstrapping build.ninja...'
+  mkdir -p "$datadir"
+  ~/.local/corecon/lib/gen-ninja "$datadir/apply.ninja"
+fi
+
+cd
+exec ninja -f "$datadir/apply.ninja" "$@"

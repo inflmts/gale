@@ -1,7 +1,0 @@
-PATH=${HOME}/.local/bin:${PATH}
-XDG_CONFIG_HOME=${HOME}/.config
-XDG_DATA_HOME=${HOME}/.data
-XDG_STATE_HOME=${HOME}/.state
-XDG_CACHE_HOME=${HOME}/.cache
-EDITOR=vim
-MANOPT=--nj

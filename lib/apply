@@ -2,10 +2,9 @@
 # apply changes
 
 set -e
-cd
 
 sym() { ~/.local/corecon/lib/sym "$1" "$2"; }
-sym_corecon() { ~/.local/corecon/lib/sym "$HOME/.local/corecon/$1" "$2"; }
+sym_corecon() { ~/.local/corecon/lib/sym ~/.local/corecon/"$1" "$2"; }
 
 datadir="${XDG_DATA_HOME:-$HOME/.local/share}/corecon"
 
@@ -22,20 +21,5 @@ cd ~/.local/corecon/bin
 for bin in *; do
   sym_corecon bin/"$bin" ~/.local/bin/"$bin"
 done
-cd
 
-# run apply hooks
-for hook in "$datadir"/apply/*.hook; do
-  if [ -f "$hook" ] && [ -x "$hook" ]; then
-    "$hook"
-  fi
-done
-
-# bootstrap ninja if necessary
-if [ ! -e "$datadir/apply.ninja" ]; then
-  mkdir -p "$datadir"
-  ~/.local/corecon/lib/gen-ninja "$datadir/apply.ninja"
-fi
-
-# summon ninja
-exec ninja -f "$datadir/apply.ninja"
+exec corecon build

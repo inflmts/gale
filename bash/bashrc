@@ -1,8 +1,13 @@
-# ~/.bashrc - bash(1) shell initialization
+#
+# ~/.bashrc
+#
+# Distributed with corecon
+# Author: Daniel Achelon
+#
 
 # quit unless interactive
 # apparently needed for rcp or scp or something
-case "$-" in *i*) ;; *) return ;; esac
+[[ $- != *i* ]] && return
 
 __ps1_exit_status() {
   local n="$?"
@@ -56,7 +61,10 @@ lsgfs() {
   lsblk -o NAME,FSTYPE,LABEL,PARTLABEL,FSUSED,FSSIZE,FSUSE%
 }
 
-# change to new directory
+# cdnew <dir>
+#
+#   Create (recursively) and change to new directory <dir>.
+#
 cdnew() {
   if [ "$#" -eq 1 ]; then
     mkdir -p -- "$1" && cd -- "$1"
@@ -66,7 +74,10 @@ cdnew() {
   fi
 }
 
-# change to directory with fzf
+# cdfzf
+#
+#   Change directory with fzf.
+#
 cdfzf() {
   if ! command -v fzf &>/dev/null; then
     echo >&2 "fzf not installed"
@@ -75,6 +86,8 @@ cdfzf() {
 
   local shopt="$(shopt -p)"
   shopt -s nullglob
+  # We don't use dotglob here because we want the dotfiles to appear *after* the
+  # regular files. Except for .. , which should appear first.
   shopt -u dotglob
   while dir="$(
     for dir in .. * .[!.]* ..?*; do
@@ -87,6 +100,10 @@ cdfzf() {
   eval "$shopt"
 }
 
+# udmount <device>
+#
+#   Mount <device> with udisksctl.
+#
 udmount() {
   if [ "$#" -eq 1 ]; then
     udisksctl mount -b "$1"
@@ -96,6 +113,10 @@ udmount() {
   fi
 }
 
+# udeject <device>
+#
+#   Unmount and power off <device> with udisksctl.
+#
 udeject() {
   if [ "$#" -eq 1 ]; then
     udisksctl unmount -b "$1" && udisksctl power-off -b "$1"
@@ -107,19 +128,18 @@ udeject() {
 
 nvminit() {
   if [ -d ~/.nvm ]; then
-    export NVM_DIR=~/.nvm
+    unset -f nvm nvminit
+    export NVM_DIR="$HOME/.nvm"
     \. "$NVM_DIR/nvm.sh"
     \. "$NVM_DIR/bash_completion"
-    unset -f nvminit
   else
     echo >&2 'error: nvm is not installed'
     return 1
   fi
 }
 
-# use tput to clear scrollback buffer on (u)rxvt
-bind -m emacs -x '"\C-l": tput rs1 rs2 rs3 rf'
-bind -m vi-command -x '"\C-l": tput rs1 rs2 rs3 rf'
-bind -m vi-insert -x '"\C-l": tput rs1 rs2 rs3 rf'
+nvm() {
+  nvminit && nvm "$@"
+}
 
 # vim:ft=bash
