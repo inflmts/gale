@@ -1,35 +1,35 @@
-# corecon
+# Gale
 
-InfiniteLimits Core Console Configuration
+InfiniteLimits Core Console Configuration (previously known as _corecon_, _psi_,
+or _coreterm_)
 
 ## Overview
 
-This is my personal terminal-only configuration consolidated into a Git
-repository, a rite of passage for any Linux user seeking something more from
-their computing environment. This is my imprint, my personality in the form of
-configuration files tailored only to me, on the software universe I willingly
-and gratefully accept from the many millions of open source developers worldwide
-contributing to the betterment of computers and software. It will change -- my
-skills will improve, my needs will adapt, and my personality will fluctuate --
-but it will always remain, at its core, a distinct reflection of myself.
+This is my personal terminal configuration consolidated into a Git repository, a
+rite of passage for any Linux user seeking something more from their computing
+environment. This is my imprint, my personality in the form of files and
+utilities tailored only to me, on the software universe I willingly and
+gratefully accept from the many millions of open source developers worldwide
+contributing to the betterment of the programs we use every day. This repository
+may change drastically -- my skills will improve, my needs will adapt, and my
+whims will fluctuate -- but it will always remain, at its core, a distinct
+reflection of me.
 
-The way this repository works is simple: Make `~/.local/corecon` a symlink to
-this directory. Do host-specific configuration with `corecon config`. Run
-`corecon apply` to make things happen.
+The way this repository works is simple: Symlink `~/.local/gale` to this
+directory. Do host-specific configuration with `windconf`. Run `gale-apply` to
+make things happen.
 
-The `corecon config` command is the official interface to corecon's local
-configuration. This utility queries and modifies the configuration file
-`$XDG_CONFIG_HOME/corecon/config`. The format of this file is extremely simple:
-one entry is allowed per line, consisting of a key (containing any character
-except '=') and optionally a '=' followed by a value (containing any text). See
-`corecon config --help` for usage. A list of variables corecon itself recognizes
-it provided below, though corecon will accept and ignore other variables set in
-the configuration file (for use by Omega, for example).
+Windconf is Gale's local configuration system. The `windconf` command queries
+and modifies the configuration file `$XDG_CONFIG_HOME/gale/config`, which is a
+text file with an extremely simple format. Each line corresponds to exactly one
+entry, consisting of a key (containing any character except '=') and optionally
+a '=' followed by a value (containing any text). See `windconf --help` for
+usage. A list of variables Gale itself recognizes it provided below, though Gale
+will quietly ignore other variables set in the configuration file (for use by
+Storm, for example).
 
-The `corecon apply` command generates and installs files. Corecon currently uses
-Ninja coupled with simple shell scripts as its build system. This command should
-be run every time something changes in the respository that needs to be
-installed or is the dependency of a generator.
+The `gale-apply` command generates and installs files. As the build system, Gale
+currently uses Ninja coupled with simple shell scripts for speed and simplicity.
 
 ## Installation
 
@@ -37,12 +37,12 @@ Run the bootstrap script from the source directory:
 
     ./bootstrap
 
-This will set up the environment for you, symlink `~/.local/corecon`, and spawn
-a shell. (It'll tell you this because it should be that obvious.) Here you can
-use the usual corecon commands:
+This will set up the environment for you, symlink `~/.local/gale`, and spawn a
+shell. (It'll tell you this, of course.) Here you can use the usual Gale
+commands:
 
-    corecon config systemd
-    corecon apply
+    windconf set systemd
+    gale-apply
 
 ## Changing the Source Root
 
@@ -54,7 +54,7 @@ To correct the symlink.
 
 ## Configuration
 
-The following configuration variables are understood by corecon:
+The following configuration variables are understood by Gale:
 
     systemd
       Enable systemd support (eg. user environment configuration, units).
@@ -62,5 +62,6 @@ The following configuration variables are understood by corecon:
     autologin=<action>
       Automatically do something on login. Supported values for <action> are:
 
-      bspwm
-        Start bspwm. This only occurs once per boot.
+      storm:<action>
+        Forward to Storm.
+
