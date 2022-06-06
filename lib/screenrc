@@ -1,5 +1,8 @@
 #
 # ~/.screenrc
 #
+# Distributed with Gale
+#
+
 startup_message off
 vbell off

@@ -1,0 +1,32 @@
+#!/bin/sh
+# update vim-plug
+
+err() { printf >&2 'error: %s\n' "$1"; }
+warn() { printf >&2 'warning: %s\n' "$1"; }
+echo() { printf >&2 '%s\n' "$1"; }
+
+usage() {
+  cat <<END
+usage: update-vim-plug [<option>...]
+options:
+  --needed  only download if not installed already
+END
+}
+
+needed=
+
+for opt; do
+  case "$opt" in
+    --needed) needed=1 ;;
+    *) err "invalid option: $opt"; exit 1 ;;
+  esac
+done
+
+# do nothing if --needed is provided
+# and vim-plug is installed
+[ "$needed" ] && [ -f ~/.vim/autoload/plug.vim ] && exit 0
+
+printf 'Updating Vim-plug...\n'
+mkdir -p ~/.vim/autoload && \
+curl -Lfo ~/.vim/autoload/plug.vim \
+  https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim

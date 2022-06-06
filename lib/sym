@@ -9,6 +9,11 @@
 #   automatically created.
 #
 
+if [ "$#" -ne 2 ]; then
+  printf >&2 'usage: sym <target> <path>\n'
+  exit 1
+fi
+
 target="$1"
 path="$2"
 

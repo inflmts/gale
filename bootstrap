@@ -1,9 +1,9 @@
 #!/bin/sh
 # bootstrap Gale
 #
-# This should be run without arguments for interactive first-time installation
-# only. If you change the source root, supply the --symlink option, which
-# instructs the script to only create the symlink.
+# This should be run without arguments only for interactive first-time
+# installation If you change the source root, supply the --symlink option, which
+# instructs the script to quit after only creating the symlink.
 #
 
 err() { printf >&2 'error: %s\n' "$1"; }

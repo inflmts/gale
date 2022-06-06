@@ -1,4 +1,8 @@
-# config for readline(3)
+#
+# ~/.inputrc for readline(3)
+#
+# Distributed with Gale
+#
 
 # behavior
 set editing-mode vi

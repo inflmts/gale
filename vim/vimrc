@@ -1,4 +1,8 @@
-" ~/.vimrc - config for vim(1)
+"
+" ~/.vimrc
+"
+" Distributed with Gale
+"
 
 " detect if vim-plug is installed
 silent! if plug#begin()

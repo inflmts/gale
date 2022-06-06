@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # nnn wrapper
 
 declare -A bookmarks plugins
@@ -33,7 +33,7 @@ N3_ARGS=( -dHT v -Ux )
 export NNN_COLORS="${NNN_COLORS:-111}"
 
 # source local configuration
-confdir="${XDG_CONFIG_HOME:-$HOME/.config}/corecon"
+confdir="${XDG_CONFIG_HOME:-$HOME/.config}/gale"
 [ -s "$confdir/n3rc" ] && . "$confdir/n3rc"
 
 # generate $NNN_BMS

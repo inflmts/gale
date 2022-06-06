@@ -1,8 +1,7 @@
 #
 # ~/.bash_profile
 #
-# Distributed with corecon
-# Author: Daniel Achelon
+# Distributed with Gale
 #
 
 # use vim as editor
@@ -38,31 +37,35 @@ unset -f prepend_path
 ## INTERACTIVE
 
 # automatically run on login
-if autologin=$(corecon config --get autologin); then
+if autologin=$(windconf --get autologin); then
   case "$autologin" in
 
-    bspwm)
-      # Certain conditions must be met for bspwm autostart to commence:
-      #
-      # - $XDG_RUNTIME_DIR must be set
-      # - $XDG_RUNTIME_DIR/did-auto-bspwm (which, if it exists, indicates a
-      #     previous execution) must not exist
-      # - the `launchx` command must exist
-      # - $DISPLAY must not be set
-      # - the user must be on a virtual console
-      #
-      if [[ "$XDG_RUNTIME_DIR" ]] && \
-         [[ ! -e "$XDG_RUNTIME_DIR/did-auto-bspwm" ]] && \
-         command -v launchx >/dev/null 2>&1 && \
-         [[ -z "$DISPLAY" ]] && \
-         [[ $(tty) = /dev/tty* ]]
-      then
-        # create $XDG_RUNTIME_DIR/did-auto-bspwm to prevent future
-        # auto-starting
-        touch "$XDG_RUNTIME_DIR/did-auto-bspwm"
-        exec launchx bspwm
-      fi
+    storm:*)
+      ~/.local/storm/lib/autologin-handler "${autologin#storm:}"
       ;;
+
+#   bspwm)
+#     # Certain conditions must be met for bspwm autostart to commence:
+#     #
+#     # - $XDG_RUNTIME_DIR must be set
+#     # - $XDG_RUNTIME_DIR/did-auto-bspwm (which, if it exists, indicates a
+#     #     previous execution) must not exist
+#     # - the `launchx` command must exist
+#     # - $DISPLAY must not be set
+#     # - the user must be on a virtual console
+#     #
+#     if [[ "$XDG_RUNTIME_DIR" ]] && \
+#        [[ ! -e "$XDG_RUNTIME_DIR/did-auto-bspwm" ]] && \
+#        command -v launchx >/dev/null 2>&1 && \
+#        [[ -z "$DISPLAY" ]] && \
+#        [[ $(tty) = /dev/tty* ]]
+#     then
+#       # create $XDG_RUNTIME_DIR/did-auto-bspwm to prevent future
+#       # auto-starting
+#       touch "$XDG_RUNTIME_DIR/did-auto-bspwm"
+#       exec launchx bspwm
+#     fi
+#     ;;
 
   esac
 fi

@@ -1,0 +1,57 @@
+#!/bin/sh
+# apply changes
+
+set -e
+
+err() { printf >&2 'error: %s\n' "$1"; }
+warn() { printf >&2 'warning: %s\n' "$1"; }
+echo() { printf '%s\n' "$1"; }
+
+usage() {
+  cat <<END
+usage: gale-apply [<option>...]
+options:
+  --reconfigure   regenerate ninja build file
+END
+}
+
+reconfigure=
+
+for opt; do
+  case "$opt" in
+    --reconfigure) reconfigure=1 ;;
+    *) err "invalid option: $opt"; exit 1 ;;
+  esac
+done
+
+cd # change to home directory
+
+sym() { ~/.local/gale/lib/sym "$1" "$2"; }
+sym_gale() { ~/.local/gale/lib/sym ~/.local/gale/"$1" "$2"; }
+
+datadir="${XDG_DATA_HOME:-$HOME/.local/share}/gale"
+
+# symlink dotfiles
+sym_gale bash/login ~/.bash_profile
+sym_gale bash/bashrc ~/.bashrc
+sym_gale bash/inputrc ~/.inputrc
+sym_gale vim/vimrc ~/.vimrc
+sym_gale lib/dialogrc ~/.dialogrc
+sym_gale lib/screenrc ~/.screenrc
+
+# symlink executables
+cd ~/.local/gale/bin
+for bin in *; do
+  sym_gale bin/"$bin" ~/.local/bin/"$bin"
+done
+
+# bootstrap ninja if the build file doesn't exist yet
+# or if forced with --reconfigure
+if [ "$reconfigure" ] || [ ! -e "$datadir/build.ninja" ]; then
+  echo >&2 'Bootstrapping build.ninja...'
+  mkdir -p "$datadir"
+  ~/.local/gale/lib/gen-ninja "$datadir/build.ninja"
+fi
+
+# summon the ninja
+exec ninja -f "$datadir/build.ninja" "$@"
