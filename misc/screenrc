@@ -1,7 +1,8 @@
 #
 # ~/.screenrc
 #
-# Distributed with Gale
+# This file is part of Gale.
+# See screen(1).
 #
 
 startup_message off

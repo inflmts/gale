@@ -4,11 +4,17 @@
 declare -A bookmarks plugins
 
 # bookmark <key> <path>
+#
+#   Bind a bookmark key.
+#
 bookmark() {
   bookmarks["$1"]="$2"
 }
 
 # plugin <key> <path>
+#
+#   Bind a plugin key.
+#
 plugin() {
   plugins["$1"]="$2"
 }
@@ -30,11 +36,10 @@ N3_ARGS=( -dHT v -Ux )
 # -U    show user/group names in status bar
 # -x    show xterm title
 
-export NNN_COLORS="${NNN_COLORS:-111}"
-
-# source local configuration
-confdir="${XDG_CONFIG_HOME:-$HOME/.config}/gale"
-[ -s "$confdir/n3rc" ] && . "$confdir/n3rc"
+# source local configuration from the bash script $XDG_CONFIG_HOME/gale/n3rc
+# (defaults to ~/.config/gale/n3rc)
+config_file="${XDG_CONFIG_HOME:-$HOME/.config}/gale/n3rc"
+[ -s "$config_file" ] && . "$config_file"
 
 # generate $NNN_BMS
 NNN_BMS=

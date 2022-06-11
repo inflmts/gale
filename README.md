@@ -3,65 +3,57 @@
 InfiniteLimits Core Console Configuration (previously known as _corecon_, _psi_,
 or _coreterm_)
 
-## Overview
+## Preface
 
-This is my personal terminal configuration consolidated into a Git repository, a
-rite of passage for any Linux user seeking something more from their computing
-environment. This is my imprint, my personality in the form of files and
+This is my personal terminal-only configuration consolidated into a Git
+repository. This is my imprint, my personality in the form of files and
 utilities tailored only to me, on the software universe I willingly and
 gratefully accept from the many millions of open source developers worldwide
 contributing to the betterment of the programs we use every day. This repository
-may change drastically -- my skills will improve, my needs will adapt, and my
-whims will fluctuate -- but it will always remain, at its core, a distinct
-reflection of me.
+will most likely change dramatically -- my skills will improve, my needs will
+adapt, and my whims will fluctuate -- but it will always remain, at its core, a
+distinct reflection of me and my will to do things differently.
 
-The way this repository works is simple: Symlink `~/.local/gale` to this
-directory. Do host-specific configuration with `windconf`. Run `gale-apply` to
-make things happen.
+My speech is finished. Let's get down to business.
 
-Windconf is Gale's local configuration system. The `windconf` command queries
-and modifies the configuration file `$XDG_CONFIG_HOME/gale/config`, which is a
-text file with an extremely simple format. Each line corresponds to exactly one
-entry, consisting of a key (containing any character except '=') and optionally
-a '=' followed by a value (containing any text). See `windconf --help` for
-usage. A list of variables Gale itself recognizes it provided below, though Gale
-will quietly ignore other variables set in the configuration file (for use by
-Storm, for example).
+## Overview
 
-The `gale-apply` command generates and installs files. As the build system, Gale
-currently uses Ninja coupled with simple shell scripts for speed and simplicity.
+Gale exclusively deals with files. A _build_ in Gale consists of generating and
+installing files to the home directory. Gale uses Ninja to perform builds. This
+has several benefits compared to an approach involving symlinks:
 
-## Installation
+- Host-specific configuration is easy. All it takes is writing a generator and
+  adding a new configuration option.
 
-Run the bootstrap script from the source directory:
+- Making changes or checking out different versions of this repository will not
+  immediately affect the stability of the system. The system is also less likely
+  to fall into a dangerous state where different files within the system (ie.
+  symlinked vs. generated files) reflect different revisions of this repository.
 
-    ./bootstrap
+- Programs that modify their configuration files will not accidentally affect
+  this source tree.
 
-This will set up the environment for you, symlink `~/.local/gale`, and spawn a
-shell. (It'll tell you this, of course.) Here you can use the usual Gale
-commands:
+## Building & Configuration
 
-    windconf set systemd
-    gale-apply
+The `configure` script sets build-time configuration and generates the Ninja
+build file. It is usually not necessary to invoke `configure` directly, only
+when building for the first time or changing configuration. Ninja is able to
+detect when the `configure` script changes and update its build file
+accordingly. Usage:
 
-## Changing the Source Root
+    ./configure [<option>...]
 
-On the other hand, if you only change the source root, run:
+The following configuration options are currently supported:
 
-    ./bootstrap --symlink
+    --builddir=<dir>
+      The build directory (default: build)
 
-To correct the symlink.
+    --prefix=<dir>
+      The base directory for static files (default: ~/.local)
 
-## Configuration
+    --bindir=<dir>
+      The directory for user executables (default: <prefix>/bin)
 
-The following configuration variables are understood by Gale:
-
-    systemd
-      Enable systemd support (eg. user environment configuration, units).
-
-    autologin=<action>
-      Automatically do something on login. Supported values for <action> are:
-
-      storm:<action>
-        Forward to Storm.
+    --systemd
+      Enable systemd support.
 

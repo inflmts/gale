@@ -1,34 +1,32 @@
 #
 # ~/.bashrc
 #
-# Distributed with Gale
+# This file is part of Gale.
 #
 
 # quit unless interactive
 # apparently needed for rcp or scp or something
 [[ $- != *i* ]] && return
 
-__ps1_exit_status() {
+gale_ps1_exit_status() {
   local n="$?"
-  [ "$n" -gt 0 ] && printf ' ?%s' "$n"
+  [ "$n" -gt 0 ] && printf ' #%s' "$n"
 }
 
 # build a custom prompt
+# this concatenates each piece together to form $PS1
 printf -v PS1 %s \
   '\[\e[0;1;31m\]' \
   '\u@\h ' \
   '\[\e[34m\]' \
   '\w' \
   '\[\e[33m\]' \
-  '$(__ps1_exit_status)' \
+  '$(gale_ps1_exit_status)' \
   '\[\e[0m\]' \
   ' \$ '
 
-#
-# ALIASES & FUNCTIONS
-#
-
-alias ccon='corecon'
+# FUNCTIONS & ALIASES
+# ==============================================================================
 
 alias ls='ls -hv --color=auto --group-directories-first'
 alias lsa='ls -A'
@@ -38,6 +36,8 @@ alias lla='ls -lA'
 alias grep='grep --color=auto'
 alias pacman='pacman --color=auto'
 alias date='date +"%a %Y-%m-%d %I:%M %p"'
+
+alias sysleep='systemctl suspend'
 alias userctl='systemctl --user'
 
 # list file systems
@@ -125,20 +125,25 @@ udeject() {
   fi
 }
 
-nvminit() {
-  if [ -d ~/.nvm ]; then
-    unset -f nvm nvminit
-    export NVM_DIR="$HOME/.nvm"
-    \. "$NVM_DIR/nvm.sh"
-    \. "$NVM_DIR/bash_completion"
-  else
-    echo >&2 'error: nvm is not installed'
-    return 1
-  fi
-}
+# daemonize (fork) a command
+fk() { setsid -f -- "$@" &>/dev/null; }
+# daemonize (fork) a command and exit
+fkoff() { fk "$@" && exit; }
 
-nvm() {
-  nvminit && nvm "$@"
-}
+# INITIALIZATION
+# ==============================================================================
+
+GALE_CONFDIR="${XDG_CONFIG_HOME:-$HOME/.config}/gale"
+
+# source local configuration from $XDG_CONFIG_HOME/gale/bashrc
+# (default is ~/.config/gale/bashrc)
+[[ -s "$GALE_CONFDIR/bashrc" ]] && \. "$GALE_CONFDIR/bashrc"
+
+# initialize nvm if installed
+if [ -z "$GALE_NO_NVM" ] && [ -d ~/.nvm ]; then
+  export NVM_DIR="$HOME/.nvm"
+  source "$NVM_DIR/nvm.sh" --no-use
+  source "$NVM_DIR/bash_completion"
+fi
 
 # vim:ft=bash

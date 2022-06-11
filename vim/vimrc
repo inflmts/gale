@@ -1,15 +1,18 @@
 "
 " ~/.vimrc
 "
-" Distributed with Gale
+" This file is part of Gale.
 "
+
+" PLUGINS
+" ==============================================================================
 
 " detect if vim-plug is installed
 silent! if plug#begin()
   " install plugins
   Plug 'sainnhe/sonokai'
   Plug 'preservim/nerdtree'
-  "Plug 'fcpg/vim-altscreen'
+  Plug 'fcpg/vim-altscreen'
   call plug#end()
 
   let g:sonokai_disable_italic_comment = 1
@@ -24,9 +27,8 @@ let g:NERDTreeDirArrowExpandable = "+"
 let g:NERDTreeDirArrowCollapsible = "-"
 let g:NERDTreeCascadeSingleChildDir = 0
 
-"
 " OPTIONS
-"
+" ==============================================================================
 
 " backspace over everything
 set backspace=indent,eol,start
@@ -43,22 +45,26 @@ set scrolloff=5 sidescroll=5 sidescrolloff=5
 " display
 set number showcmd nowrap title
 " automatically insert comment string (ro)
-" correct comment join (j)
+" remove comment headers on join (j)
 set formatoptions+=roj
+" automatically re-read a file if it is changed outside of Vim
+set autoread
+
+" GUI
+" ---
+
+" m    disable menu bar
+" M    don't source menu.vim
+" t    disable tearoff menu items
+" T    disable toolbar
+" l(L) disable left scrollbar (in split windows)
+" r(R) disable right scrollbar (in split windows)
+set go-=m go-=M go-=t go-=T go-=l go-=L go-=r go-=R
 " enable the mouse
 set mouse=a
 
-" m   disable menu bar
-" M   don't source menu.vim
-" t   disable tearoff menu items
-" T   disable toolbar
-" l/L disable left scrollbar (in split windows)
-" r/R disable right scrollbar (in split windows)
-set go-=m go-=M go-=t go-=T go-=l go-=L go-=r go-=R
-
-"
 " KEYBINDINGS
-"
+" ==============================================================================
 
 " git shortcuts
 nnoremap gis :!git status -sb<CR>
@@ -91,23 +97,24 @@ cnoremap <M-k>  <PageUp>
 cnoremap <Esc>x <Del>
 cnoremap <M-x>  <Del>
 
-" indent faster
 nnoremap < <<
 nnoremap > >>
 vnoremap < <gv
 vnoremap > >gv
+vnoremap <C-A> <C-A>gv
+vnoremap <C-X> <C-X>gv
 
 nnoremap <C-T> :NERDTreeToggle<CR>
 
-"
 " MISCELLANEOUS
-"
+" ==============================================================================
 
 " offer transparent background on terminal emulators
 hi Normal       ctermbg=NONE
 hi EndOfBuffer  ctermbg=NONE
-hi Terminal     ctermbg=NONE ctermfg=NONE
+hi Terminal     ctermfg=NONE ctermbg=NONE
 hi LineNr       ctermbg=233 guibg=#222226
+hi Error        ctermfg=7 ctermbg=1
 
 " color trailing whitespace red, since trailing space is death
 hi TrailSpace ctermbg=1 guibg=#ff0000

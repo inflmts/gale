@@ -1,7 +1,8 @@
 #
-# ~/.inputrc for readline(3)
+# ~/.inputrc
 #
-# Distributed with Gale
+# This file is part of Gale.
+# See readline(3).
 #
 
 # behavior
