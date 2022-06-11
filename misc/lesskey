@@ -1,0 +1,49 @@
+# ==============================================================================
+# lesskey - specify key bindings for less
+#
+# This file is part of Gale.
+# See lesskey(1)
+#
+#command
+
+# vertical scrolling
+j     forw-line
+k     back-line
+\40   forw-screen
+\177  back-screen
+g     goto-line
+G     goto-end
+
+# horizontal scrolling
+[     left-scroll
+]     right-scroll
+{     no-scroll
+}     end-scroll
+
+# searching
+/     forw-search
+\e/   back-search
+n     repeat-search
+N     reverse-search
+-     toggle-option
+_     display-option
+\eu   undo-hilite
+\eU   clear-search
+
+# files
+:p    prev-file
+:n    next-file
+
+# misc
+1     digit
+2     digit
+3     digit
+4     digit
+5     digit
+6     digit
+7     digit
+8     digit
+9     digit
+?     help
+v     version
+q     quit

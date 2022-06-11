@@ -64,6 +64,7 @@ build \$homedir/.inputrc: install misc/inputrc
 build \$homedir/.vimrc: install vim/vimrc
 build \$homedir/.dialogrc: install misc/dialogrc
 build \$homedir/.screenrc: install misc/screenrc
+build \$homedir/.lesskey: install misc/lesskey
 
 END
 
