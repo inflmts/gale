@@ -82,6 +82,12 @@ dialogmenu() {
   done
 }
 
+GALE_CONFDIR="${XDG_CONFIG_HOME:-$HOME/.config}/gale"
+
+# source local configuration from $XDG_CONFIG_HOME/gale/bashlogin
+# (default is ~/.config/gale/bashlogin)
+[[ -s "$GALE_CONFDIR/bashlogin" ]] && \. "$GALE_CONFDIR/bashlogin"
+
 # CTRL-O opens dialogmenu
 bind -m emacs -x '"\C-o":dialogmenu'
 bind -m vi-command -x '"\C-o":dialogmenu'
