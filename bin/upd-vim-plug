@@ -23,7 +23,10 @@ for OPT; do
   esac
 done
 
-[ "$needed" ] && [ -f ~/.vim/autoload/plug.vim ] && exit 0
+# if --needed was passed and plug.vim is installed, quit now
+if [ "$needed" ] && [ -f ~/.vim/autoload/plug.vim ]; then
+  exit 0
+fi
 
 echo 'Updating Vim-plug...'
 if curl -Lfo ~/.vim/autoload/plug.vim.new --create-dirs \

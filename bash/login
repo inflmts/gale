@@ -4,32 +4,8 @@
 # This file is part of Gale.
 #
 
-# use vim as editor
-export EDITOR=vim
-
-# explicitly specify xdg dirs
-export XDG_CONFIG_HOME="$HOME/.config"
-export XDG_DATA_HOME="$HOME/.data"
-export XDG_STATE_HOME="$HOME/.state"
-export XDG_CACHE_HOME="$HOME/.cache"
-
-# don't justify man pages
-export MANOPT='--nj'
-
-export PATH
-
-# prepend an entry to $PATH
-prepend_path() {
-  case :"$PATH": in
-    *:"$1":*) ;;
-    *) PATH="$1:$PATH" ;;
-  esac
-}
-
-# add standard executable directory
-prepend_path ~/.local/bin
-
-unset -f prepend_path
+# setup the environment
+. ~/.profile
 
 # quit unless interactive
 [[ $- != *i* ]] && return

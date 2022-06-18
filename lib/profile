@@ -1,0 +1,48 @@
+#
+# ~/.profile
+#
+# This file is part of Gale.
+#
+# This is a POSIX-compliant shell script that exports several environment
+# variables for the user session. Login shells and display manager wrapper
+# scripts should source this file on login.
+#
+
+# use vim as our editor
+export EDITOR=vim
+
+export XDG_CONFIG_HOME="$HOME/.config"
+export XDG_DATA_HOME="$HOME/.data"
+export XDG_STATE_HOME="$HOME/.state"
+export XDG_CACHE_HOME="$HOME/.cache"
+
+# don't justify man pages
+export MANOPT='--nj'
+
+export PATH
+
+# prepend_path <entry>
+#
+#   Prepend <entry> to the $PATH environment variable if it isn't already in
+#   there. This API is available to local configuration at
+#   $XDG_CONFIG_HOME/gale/profile.
+#
+prepend_path() {
+  case :"$PATH": in
+    *:"$1":*) ;;
+    *) PATH="$1:$PATH" ;;
+  esac
+}
+
+# add standard executable directory
+prepend_path ~/.local/bin
+
+# source local configuration from $XDG_CONFIG_HOME/gale/profile if it exists
+gale_profile="${XDG_CONFIG_HOME:-$HOME/.config}/gale/profile"
+if test -f "$gale_profile"; then
+  \. "$gale_profile"
+fi
+
+unset -f prepend_path
+
+# vim:ft=sh
