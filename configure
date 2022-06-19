@@ -12,7 +12,11 @@ LIBDIR=
 GALE_ENABLE_SYSTEMD=
 
 # source local configuration from config.sh
-[ -f config.sh ] && . ./config.sh
+has_config=
+if [ -f config.sh ]; then
+  . ./config.sh
+  has_config=1
+fi
 
 BINDIR="${BINDIR:-$PREFIX/bin}"
 LIBDIR="${LIBDIR:-$PREFIX/lib/gale}"
@@ -31,12 +35,7 @@ LIBDIR="${LIBDIR:-$PREFIX/lib/gale}"
   def configure './configure' \
     -description 'Configure Ninja' \
     -generator true
-  use configure build.ninja -ii config.sh configure util/sensei.sh bin
-
-  echo
-  def make_stub_config 'echo "# local config for Gale" > %out' \
-    -description 'Generate Stub Config'
-  use make_stub_config config.sh
+  use configure build.ninja -ii ${has_config:+config.sh} configure util/sensei.sh bin
 
   echo
   def make_gitignore 'echo \* > %out' \
