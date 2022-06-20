@@ -8,7 +8,9 @@ echo() { printf '%s\n' "$1"; }
 
 usage() {
   cat <<END
-usage: $(basename -- "$0") [<option>...]
+download and install Vim-plug
+
+usage: upd-vim-plug [<option>...]
 options:
   --needed  only download if not installed already
 END

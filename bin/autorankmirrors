@@ -1,0 +1,82 @@
+#!/bin/sh
+# automatically download and rank pacman mirrors
+#
+#   Mirrors are downloaded from <https://archlinux.org/mirrorlist/> and sorted
+#   using rankmirrors, available in the 'pacman-contrib' package.
+#
+
+err() { printf >&2 'error: %s\n' "$1"; }
+die() { printf >&2 'error: %s\n' "$1"; exit 1; }
+warn() { printf >&2 'warning: %s\n' "$1"; }
+echo() { printf '%s\n' "$1"; }
+
+usage() {
+  cat <<EOF
+automatically download and rank pacman mirrors
+
+usage: autorankmirrors [<option>...] [<country>]
+options:
+  -h        this help message
+  -n <num>  randomly pick <num> mirrors
+  -m <sec>  ranking operation timeout in seconds
+  -v        be verbose
+EOF
+}
+
+if [ "$1" = --help ]; then
+  usage
+  exit 0
+fi
+
+pick=
+timeout=
+verbose=
+while getopts :hn:m:v OPT; do
+  case "$OPT" in
+    :) die "option requires an argument: $OPTARG" ;;
+    \?) die "invalid option: $OPTARG" ;;
+    h) usage; exit 0 ;;
+    n)
+      pick=$OPTARG
+      ;;
+    m)
+      timeout=$OPTARG
+      ;;
+    v)
+      verbose=1
+      ;;
+  esac
+done
+shift "$((OPTIND - 1))"
+
+case "$#" in
+  0) country=all ;;
+  1) country=$1 ;;
+  *) die "too many arguments" ;;
+esac
+
+# ensure rankmirrors is installed
+if ! command -v rankmirrors >/dev/null 2>&1; then
+  err "rankmirrors is not installed"
+  exit 1
+fi
+
+cleanup() {
+  rm -f "$mirrorlist_src"
+}
+
+mirrorlist_src=$(mktemp /tmp/mirrorlist_src.XXXXXXXX)
+trap cleanup HUP INT BUS ILL QUIT TERM
+
+curl -Lf -o "$mirrorlist_src" "https://archlinux.org/mirrorlist/?country=$country" || \
+  die "unable to download pacman mirrorlist"
+
+sed -n 's/^#//; /^Server/p' "$mirrorlist_src" | (
+  if test -n "$pick"; then
+    shuf -n "$pick"
+  else
+    cat
+  fi
+) | rankmirrors ${timeout:+-m "$timeout"} ${verbose:+-v} -
+
+cleanup
