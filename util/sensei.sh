@@ -15,14 +15,14 @@ die() { printf >&2 'error: %s\n' "$1"; exit 1; }
 warn() { printf >&2 'warning: %s\n' "$1"; }
 echo() { printf '%s\n' "$1"; }
 
-_str_starts_with() {
+_starts_with() {
   case "$1" in
     "$2"*) true ;;
     *) false ;;
   esac
 }
 
-_str_contains() {
+_contains() {
   case "$1" in
     *"$2"*) true ;;
     *) false ;;
@@ -50,25 +50,35 @@ _format_append() {
 }
 
 _format_append_var() {
-  case "$1" in
+  local str
+  str=$1
+  case "$str" in
     # choke on newlines
     *"$NL"*) die "ninja variables may not contain newlines" ;;
-    # escape leading spaces and all '$'
-    ' '*|*'$'*) _format_append_raw "$(echo "$1" | sed 's/^ /$ /; s/\$/$$/g')" ;;
-    # pass through anything else
-    *) _format_append_raw "$1" ;;
   esac
+  case "$str" in
+    # escape all '$'
+    *'$'*) str="$(echo "$str" | sed 's/\$/$$/g')" ;;
+  esac
+  case "$str" in
+    # escape leading space
+    ' '*) str="\$$str" ;;
+  esac
+  _format_append_raw "$str"
 }
 
 _format_append_list() {
-  case "$1" in
+  local str
+  str=$1
+  case "$str" in
     # choke on newlines and '|'
     *"$NL"*|*'|'*) die "ninja paths may not contain newlines or '|'" ;;
-    # escape all spaces, '$', and ':'
-    *[\ :\$]*) _format_append_raw "$(echo "$1" | sed 's/[ :\$]/$&/g')" ;;
-    # pass through anything else
-    *) _format_append_raw "$1" ;;
   esac
+  case "$str" in
+    # escape all spaces, '$', and ':'
+    *[\ :\$]*) str="$(echo "$str" | sed 's/[ :\$]/$&/g')" ;;
+  esac
+  _format_append_raw "$str"
 }
 
 # format_parse -var|-list <format> [<arg>...]
@@ -99,7 +109,7 @@ format_parse() {
   FORMAT=$2
   shift 2
 
-  while _str_contains "$FORMAT" %; do
+  while _contains "$FORMAT" %; do
     # append the part before '%'
     _format_append "${FORMAT%%%*}"
     # isolate the part after '%'
@@ -170,7 +180,7 @@ def() {
   echo "  command = $FORMAT_RESULT"
 
   while [ "$#" -gt 0 ]; do
-    if ! _str_starts_with "$1" -; then
+    if ! _starts_with "$1" -; then
       echo >&2 "in def $rule:"
       die "variables must be prefixed with -"
     fi

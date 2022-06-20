@@ -133,14 +133,15 @@ fkoff() { fk "$@" && exit; }
 # INITIALIZATION
 # ==============================================================================
 
+GALE_ENABLE_NVM=1
+
 GALE_CONFDIR="${XDG_CONFIG_HOME:-$HOME/.config}/gale"
 
 # source local configuration from $XDG_CONFIG_HOME/gale/bashrc
-# (default is ~/.config/gale/bashrc)
 [[ -s "$GALE_CONFDIR/bashrc" ]] && \. "$GALE_CONFDIR/bashrc"
 
 # initialize nvm if installed
-if [ -z "$GALE_NO_NVM" ] && [ -d ~/.nvm ]; then
+if test "$GALE_ENABLE_NVM" && [ -d ~/.nvm ]; then
   export NVM_DIR="$HOME/.nvm"
   source "$NVM_DIR/nvm.sh" --no-use
   source "$NVM_DIR/bash_completion"

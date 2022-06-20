@@ -50,7 +50,7 @@ LIBDIR="${LIBDIR:-$PREFIX/lib/gale}"
   echo
   use install %homedir/.profile -i lib/profile
   use install %homedir/.bashrc -i bash/bashrc
-  use install %homedir/.bash_profile -i bash/login
+  use install %homedir/.bash_profile -i bash/bash_profile
   use install %homedir/.inputrc -i lib/inputrc
   use install %homedir/.vimrc -i vim/vimrc
   use install %homedir/.dialogrc -i lib/dialogrc
