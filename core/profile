@@ -1,13 +1,11 @@
 # ~/.profile
 #
-#   This file is part of Gale.
+# This file is part of Gale.
 #
-#   This POSIX shell script exports several environment variables for the user
-#   session. Login shells and display manager wrapper scripts should source this
-#   file on login.
-#
+# This POSIX shell script exports several environment variables for the user
+# session. Login shells and display manager wrapper scripts should source this
+# file on login.
 
-# use vim as our editor
 export EDITOR=vim
 
 export XDG_CONFIG_HOME="$HOME/.config"
@@ -23,7 +21,7 @@ export PATH
 # prepend_path <entry>
 #
 #   Prepend <entry> to the $PATH environment variable if it isn't already
-#   present. This API is available to $XDG_CONFIG_HOME/gale/profile.
+#   present. This API is available in $XDG_CONFIG_HOME/gale/profile.
 #
 prepend_path() {
   case :"$PATH": in
@@ -36,9 +34,9 @@ prepend_path() {
 prepend_path ~/.local/bin
 
 # source local configuration from $XDG_CONFIG_HOME/gale/profile if it exists
-gale_profile="${XDG_CONFIG_HOME:-$HOME/.config}/gale/profile"
-if test -f "$gale_profile"; then
-  \. "$gale_profile"
+LOCAL_PROFILE="${XDG_CONFIG_HOME:-$HOME/.config}/gale/profile"
+if test -f "$LOCAL_PROFILE"; then
+  . "$LOCAL_PROFILE"
 fi
 
 unset -f prepend_path

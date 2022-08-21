@@ -1,0 +1,6 @@
+[Desktop Entry]
+Type=Application
+Name=n3
+GenericName=File Manager
+Exec=gn3 -- %f
+Type=inode/directory

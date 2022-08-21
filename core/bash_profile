@@ -1,11 +1,17 @@
-#
 # ~/.bash_profile
 #
 # This file is part of Gale.
-#
 
 # setup the environment
 . ~/.profile
+
+systemctl import-environment >/dev/null 2>&1 \
+  PATH \
+  EDITOR \
+  XDG_CONFIG_HOME \
+  XDG_DATA_HOME \
+  XDG_STATE_HOME \
+  XDG_CACHE_HOME
 
 # quit unless interactive
 [[ $- != *i* ]] && return
@@ -58,10 +64,9 @@ dialogmenu() {
   done
 }
 
-GALE_CONFDIR="${XDG_CONFIG_HOME:-$HOME/.config}/gale"
-
 # source local configuration from $XDG_CONFIG_HOME/gale/bash_profile
-[[ -s "$GALE_CONFDIR/bash_profile" ]] && \. "$GALE_CONFDIR/bash_profile"
+GALE_LOCAL_CONFIG="${XDG_CONFIG_HOME:-$HOME/.config}/gale/bash_profile"
+[[ -s $GALE_LOCAL_CONFIG ]] && . "$GALE_LOCAL_CONFIG"
 
 # CTRL-O opens dialogmenu
 bind -m emacs -x '"\C-o":dialogmenu'

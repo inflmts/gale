@@ -1,0 +1,11 @@
+#!/bin/sh
+# launch a terminal
+#
+# This file is part of Gale.
+
+unset NNNLVL
+if [ "$WAYLAND_DISPLAY" ]; then
+  nohup foot >/dev/null 2>&1 &
+elif [ "$DISPLAY" ]; then
+  nohup urxvt >/dev/null 2>&1 &
+fi

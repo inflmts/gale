@@ -1,9 +1,8 @@
-#
 # ~/.screenrc
 #
 # This file is part of Gale.
-# See screen(1).
 #
+# See screen(1).
 
 startup_message off
 vbell off

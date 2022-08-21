@@ -1,0 +1,18 @@
+#!/bin/sh
+# run n3 in a terminal
+#
+# This file is part of Gale.
+#
+# Dependencies:
+#   nnn
+#   foot (for Wayland)
+#   urxvt (for X11)
+
+if [ "$WAYLAND_DISPLAY" ]; then
+  exec foot n3 "$@"
+elif [ "$DISPLAY" ]; then
+  exec urxvt -e n3 "$@"
+else
+  echo >&2 'error: not an X or Wayland session'
+  exit 127
+fi

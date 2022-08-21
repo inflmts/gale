@@ -1,0 +1,200 @@
+# ~/.bashrc
+#
+# This file is part of Gale.
+#
+# Bash shell initialization file.
+
+# quit unless interactive
+# apparently needed for rcp or scp or something
+[[ $- != *i* ]] && return
+
+shopt -u promptvars
+
+# this allows us to get away mostly with $var instead of "$var"
+IFS=
+
+# FUNCTIONS & ALIASES
+# ==============================================================================
+
+alias ls='ls -hv --color=auto --group-directories-first'
+alias lsa='ls -A'
+alias ll='ls -l'
+alias lla='ls -lA'
+
+alias grep='grep --color=auto'
+alias pacman='pacman --color=auto'
+#alias date='date +"%a %Y-%m-%d %I:%M %p"'
+
+alias sysleep='systemctl suspend'
+alias userctl='systemctl --user'
+
+# display the arguments
+argv() {
+  local arg
+  printf '%s arguments:\n' "$#"
+  for arg; do
+    printf '> %s\n' "${arg@Q}"
+  done
+}
+
+# list file systems
+lsfs() {
+  lsblk -o NAME,FSTYPE,LABEL,FSUSED,FSSIZE,FSUSE%
+}
+
+# list file systems (+UUID)
+lsfsu() {
+  lsblk -o NAME,FSTYPE,LABEL,UUID,FSUSED,FSSIZE,FSUSE%
+}
+
+# list gpt partitions
+lsgpt() {
+  lsblk -o NAME,PARTLABEL,PARTUUID
+}
+
+# list gpt file systems
+lsgfs() {
+  lsblk -o NAME,FSTYPE,LABEL,PARTLABEL,FSUSED,FSSIZE,FSUSE%
+}
+
+# cdnew <dir>
+#
+#   Create (recursively) and change to directory <dir>.
+#
+cdnew() {
+  if [[ $# -eq 1 ]]; then
+    mkdir -vp -- "$1" && cd -- "$1"
+  else
+    echo >&2 'usage: cdnew <dir>'
+    return 1
+  fi
+}
+
+_resolve_source() {
+  case $1 in
+    LABEL=*)
+      _DEVICE="/dev/disk/by-label/${1#LABEL=}" ;;
+    PARTLABEL=*)
+      _DEVICE="/dev/disk/by-partlabel/${1#PARTLABEL=}" ;;
+    /*)
+      _DEVICE="$1" ;;
+    *)
+      _DEVICE="/dev/$1" ;;
+  esac
+}
+
+# udmount <source>
+#
+#   Mount <source> with udisksctl.
+#
+udmount() {
+  if [[ $# -ne 1 ]]; then
+    echo >&2 'usage: udmount <source>'
+    return 1
+  fi
+  _resolve_source "$1"
+  udisksctl mount -b "$_DEVICE"
+}
+
+# udeject <source>
+#
+#   Unmount and power off <source> with udisksctl.
+#
+udeject() {
+  if [[ $# -ne 1 ]]; then
+    echo >&2 'usage: udeject <source>'
+    return 1
+  fi
+  _resolve_source "$1"
+  udisksctl unmount -b "$_DEVICE" && udisksctl power-off -b "$_DEVICE"
+}
+
+# daemonize (fork) a command
+f() { setsid -f -- "$@" &>/dev/null; }
+# daemonize (fork) a command and exit
+fx() { f "$@" && exit; }
+
+# lspath
+#
+#   List the contents of the $PATH environment variable.
+#
+lspath() {
+  local -
+  local ifs ent
+  ifs=$IFS
+  IFS=:
+  set -f
+  for ent in $PATH; do
+    printf '%s\n' "${ent/#"$HOME"/\~}"
+  done
+  IFS=$ifs
+}
+
+# lsenv
+#
+#   Sorts and prints exported environment variables.
+#
+lsenv() {
+  env | sort
+}
+
+# n3 [<option>...] [<path>]
+#
+#   n3 wrapper enabling cd on quit.
+#
+n3() {
+  local tmpfile excode
+  tmpfile=$(mktemp /tmp/n3.XXXXX)
+  NNN_TMPFILE=$tmpfile command n3 "$@"
+  excode=$?
+  [[ -f "$tmpfile" ]] && . "$tmpfile"
+  rm -f "$tmpfile"
+  return "$excode"
+}
+
+# INITIALIZATION
+# ==============================================================================
+
+GALE_FEATURES=
+GALE_ENABLE_NVM=
+
+# source local configuration from $XDG_CONFIG_HOME/gale/bashrc
+GALE_LOCAL_CONFIG="${XDG_CONFIG_HOME:-$HOME/.config}/gale/bashrc"
+[[ -s $GALE_LOCAL_CONFIG ]] && . "$GALE_LOCAL_CONFIG"
+
+# initialize nvm if installed
+if [[ $GALE_ENABLE_NVM ]] && [[ -d ~/.nvm ]]; then
+  GALE_FEATURES+=' +nvm'
+  export NVM_DIR="$HOME/.nvm"
+  source "$NVM_DIR/nvm.sh" --no-use
+  source "$NVM_DIR/bash_completion"
+fi
+
+# autodetect nnn
+if [[ $NNNLVL ]]; then
+  GALE_NNN_PROMPT="\[\e[35m\]nnn($NNNLVL) "
+else
+  GALE_NNN_PROMPT=
+fi
+
+printf 'Bash version %s\n' "$BASH_VERSION"
+printf '\033[1mPowered by Gale\033[0m%s\n' "$GALE_FEATURES"
+
+# this sets PS1
+gale_prepare_prompt() {
+  local excode="$?"
+  PS1='\[\e[0m\e[1m\]'
+  PS1+=$GALE_NNN_PROMPT
+  PS1+='\[\e[31m\]\u@\h \[\e[34m\]\w'
+
+  if [[ $excode -gt 0 ]]; then
+    PS1+=' \[\e[33m\]#'
+    PS1+=$excode
+  fi
+
+  PS1+=' \[\e[0m\]\$ '
+}
+
+PROMPT_COMMAND=(gale_prepare_prompt)
+
+# vim:ft=bash

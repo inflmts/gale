@@ -1,18 +1,21 @@
 #!/bin/sh
-# download and install Vim-plug
+# download and install vim-plug with curl
+#
+# This file is part of Gale.
 
-err() { printf >&2 'error: %s\n' "$1"; }
-die() { printf >&2 'error: %s\n' "$1"; exit 1; }
-warn() { printf >&2 'warning: %s\n' "$1"; }
-echo() { printf '%s\n' "$1"; }
+echo() { printf '%s\n' "$*"; }
+diag() { printf >&2 '%s\n' "$*"; }
+warn() { printf >&2 'warning: %s\n' "$*"; }
+err() { printf >&2 'error: %s\n' "$*"; }
+die() { printf >&2 'error: %s\n' "$*"; exit 1; }
 
 usage() {
   cat <<END
-download and install Vim-plug
+download and install vim-plug
 
 usage: upd-vim-plug [<option>...]
 options:
-  --needed  only download if not installed already
+  --needed  only download as needed
 END
 }
 
@@ -25,18 +28,18 @@ for OPT; do
   esac
 done
 
+file="$HOME/.vim/autoload/plug.vim"
+
 # if --needed was passed and plug.vim is installed, quit now
-if [ "$needed" ] && [ -f ~/.vim/autoload/plug.vim ]; then
+if [ "$needed" ] && [ -f "$file" ]; then
   exit 0
 fi
 
-echo 'Updating Vim-plug...'
-if curl -Lfo ~/.vim/autoload/plug.vim.new --create-dirs \
+echo 'Updating vim-plug...'
+if curl -Lfo "$file.new" --create-dirs \
   https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
 then
-  # if download succeeded,
-  # overwrite plug.vim with downloaded file
-  mv ~/.vim/autoload/plug.vim.new ~/.vim/autoload/plug.vim
-else
-  die 'Failed to update Vim-plug.'
+  # if the download succeeded,
+  # overwrite plug.vim with the downloaded file
+  mv "$file.new" "$file"
 fi

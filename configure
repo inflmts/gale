@@ -1,81 +1,229 @@
 #!/bin/sh
 # configure - ninja build file generator
 
-. util/sensei.sh
+echo() { printf '%s\n' "$*"; }
+diag() { printf >&2 '%s\n' "$*"; }
+warn() { printf >&2 'warning: %s\n' "$*"; }
+err() { printf >&2 'error: %s\n' "$*"; }
+die() { printf >&2 'error: %s\n' "$*"; exit 1; }
 
-[ "$#" -gt 0 ] && die "configure accepts no arguments"
+usage() {
+  cat <<\__EOF
+usage: configure [<option>...]
+options:
+  --quiet             disable status
+  --test              print generated ninja file to stdout
+  --builddir=<path>   build directory (default: build)
+  --prefix=<path>     static file directory (default: ~/.local)
+  --bindir=<path>     executable directory (default: $PREFIX/bin)
+  --libdir=<path>     utility directory (default: $PREFIX/lib/gale)
+  --systemd           enable systemd
+  --wayland           enable wayland
+  --sway              enable sway
+__EOF
+}
+
+QUIET=
+TEST=
 
 BUILDDIR=build
 PREFIX="$HOME/.local"
 BINDIR=
 LIBDIR=
 GALE_ENABLE_SYSTEMD=
+GALE_ENABLE_WAYLAND=
+GALE_ENABLE_SWAY=
 
-# source local configuration from config.sh
-has_config=
-if [ -f config.sh ]; then
-  . ./config.sh
-  has_config=1
-fi
+# These variables MUST match those provided at runtime, or else strange things
+# might happen!
+XDG_CONFIG_HOME="$HOME/.config"
+XDG_DATA_HOME="$HOME/.data"
+XDG_STATE_HOME="$HOME/.state"
+XDG_CACHE_HOME="$HOME/.cache"
+
+for OPT; do
+  case $OPT in
+    --help)
+      usage
+      exit 0 ;;
+    --quiet)
+      QUIET=1 ;;
+    --test)
+      TEST=1 ;;
+    --builddir=*)
+      BUILDDIR=${OPT#*=} ;;
+    --prefix=*)
+      PREFIX=${OPT#*=} ;;
+    --bindir=*)
+      BINDIR=${OPT#*=} ;;
+    --libdir=*)
+      LIBDIR=${OPT#*=} ;;
+    --systemd)
+      GALE_ENABLE_SYSTEMD=1 ;;
+    --wayland)
+      GALE_ENABLE_WAYLAND=1 ;;
+    --sway)
+      GALE_ENABLE_WAYLAND=1
+      GALE_ENABLE_SWAY=1 ;;
+    *)
+      die "invalid option: $OPT" ;;
+  esac
+done
 
 BINDIR="${BINDIR:-$PREFIX/bin}"
 LIBDIR="${LIBDIR:-$PREFIX/lib/gale}"
 
-{ # ============================================================================
-  # BEGIN NINJA FILE GENERATION
+shquote() {
+  [ "$#" -gt 0 ] && printf '%s\n' "$@" \
+    | sed "/[^0-9A-Za-z,./:+=_-]/{ s/'/'\\\\''/g; s/^/'/; s/\$/'/; }; 1!s/^/ /" \
+    | tr -d '\n'
+}
 
-  echo '# ninja build file for Gale'
-  echo
-  var builddir % "$BUILDDIR"
-  var homedir % "$HOME"
-  var bindir % "$BINDIR"
-  var libdir % "$LIBDIR"
+sedreplquote() {
+  echo "$1" | sed 's/[&\/\\]/\\&/g'
+}
 
-  echo
-  def configure './configure' \
-    -description 'Configure Ninja' \
-    -generator true
-  use configure build.ninja -ii ${has_config:+config.sh} configure util/sensei.sh bin
-
-  echo
-  def make_gitignore 'echo \* > %out' \
-    -description 'Generate Build Directory .gitignore'
-  use make_gitignore %builddir/.gitignore
-
-  echo
-  var install_mode 644
-  def install 'install -m %install_mode -T %in %out' \
-    -description 'Install %out'
-
-  echo
-  use install %homedir/.profile -i lib/profile
-  use install %homedir/.bashrc -i bash/bashrc
-  use install %homedir/.bash_profile -i bash/bash_profile
-  use install %homedir/.inputrc -i lib/inputrc
-  use install %homedir/.vimrc -i vim/vimrc
-  use install %homedir/.dialogrc -i lib/dialogrc
-  use install %homedir/.screenrc -i lib/screenrc
-  use install %homedir/.lesskey -i lib/lesskey
-
-  echo
-  for bin in bin/*; do
-    if [ -f "$bin" ] && [ -x "$bin" ]; then
-      use install %bindir/% "$(basename "$bin")" -i % "$bin" \
-        -set install_mode 755
-    fi
-  done
-
-  if test "$GALE_ENABLE_SYSTEMD"; then
-    echo
-    def make_env 'util/gen-env | install -m 644 -T /dev/stdin %out' \
-      -description 'Generate systemd environment.d'
-    use make_env %homedir/.config/environment.d/gale.conf -ii util/gen-env
+abled() {
+  if [ "$1" ]; then
+    echo ENABLED
+  else
+    echo DISABLED
   fi
+}
 
-  # END NINJA FILE GENERATION
-  # ============================================================================
-} > build.ninja.new
+sed_subst_libdir="s/@@LIBDIR@@/$(sedreplquote "$(shquote "$LIBDIR")")/"
 
-# if nothing went wrong, then
-# overwrite build.ninja with the generated file
-mv build.ninja.new build.ninja
+if [ -z "$TEST" ]; then
+  exec > build.ninja.new
+fi
+
+# add_install <target> <source> [<mode>]
+add_install() {
+  cat <<__EOF
+build $1: install $2
+  mode = ${3:-644}
+__EOF
+}
+
+# add_symlink <target> <source>
+add_symlink() {
+  cat <<__EOF
+build $1: symlink
+  target = $(realpath "$2")
+__EOF
+}
+
+# add_sed <target> <source> <script> [<mode>]
+add_sed() {
+  cat <<__EOF
+build $1: sed $2
+  script = $(shquote "$3")
+  mode = ${4:-644}
+__EOF
+}
+
+# show configuration information
+cat >&2 <<__EOF
+       build directory: $BUILDDIR
+                prefix: $PREFIX
+  executable directory: $BINDIR
+     utility directory: $LIBDIR
+               systemd: $(abled "$GALE_ENABLE_SYSTEMD")
+               wayland: $(abled "$GALE_ENABLE_WAYLAND")
+                  sway: $(abled "$GALE_ENABLE_SWAY")
+__EOF
+
+# ==============================================================================
+# BEGIN NINJA FILE GENERATION
+
+cat <<__EOF
+builddir = $BUILDDIR
+homedir = $HOME
+bindir = $BINDIR
+libdir = $LIBDIR
+confdir = $XDG_CONFIG_HOME
+datadir = $XDG_DATA_HOME
+
+rule configure
+  description = Configure Ninja
+  command = ./configure $(shquote "$@")
+  generator = 1
+build build.ninja: configure | configure
+build reconfigure: phony build.ninja
+
+rule make_gitignore
+  description = Generate Build Directory .gitignore
+  command = echo \* > \$out
+build \$builddir/.gitignore: make_gitignore
+
+# GLOBAL RULES
+
+rule install
+  description = INSTALL \$out
+  command = install -m \$mode -T \$in \$out
+
+rule symlink
+  description = SYMLINK \$target
+  command = ln -sf -T \$target \$out
+
+rule sed
+  description = SED \$out
+  command = sed \$script \$in | install -m \$mode -T /dev/stdin \$out
+__EOF
+
+echo
+add_symlink \$homedir/.bashrc core/bashrc
+add_symlink \$homedir/.bash_profile core/bash_profile
+add_symlink \$homedir/.profile core/profile
+add_symlink \$homedir/.inputrc core/inputrc
+add_symlink \$homedir/.vimrc core/vimrc
+add_symlink \$homedir/.dialogrc core/dialogrc
+add_symlink \$homedir/.screenrc core/screenrc
+add_symlink \$homedir/.lesskey core/lesskey
+
+add_symlink \$bindir/autorankmirrors bin/autorankmirrors
+add_symlink \$bindir/pacmenu bin/pacmenu
+add_symlink \$bindir/upd-vim-plug bin/upd-vim-plug
+
+add_symlink \$bindir/n3 nnn/n3
+add_symlink \$bindir/gn3 nnn/gn3
+add_symlink \$datadir/applications/gn3.desktop nnn/gn3.desktop
+
+for plugin in "$PWD"/nnn/plugins/*; do
+  if [ -f "$plugin" ]; then
+    add_symlink "\$confdir/nnn/plugins/$(basename "$plugin")" "$plugin"
+  fi
+done
+
+if [ "$GALE_ENABLE_SYSTEMD" ]; then
+  echo
+  cat <<__EOF
+rule make_env
+  description = Generate systemd environment.d
+  command = util/gen-env > \$out
+build \$homedir/.config/environment.d/gale.conf: make_env | util/gen-env
+__EOF
+fi
+
+if [ "$GALE_ENABLE_WAYLAND" ]; then
+  echo
+  add_symlink \$confdir/foot/foot.ini wayland/foot.ini
+  add_symlink \$bindir/wautosleep wayland/wautosleep
+fi
+
+if [ "$GALE_ENABLE_SWAY" ]; then
+  echo
+  add_sed \$confdir/sway/config wayland/sway.conf.in \
+    "$sed_subst_libdir"
+  add_symlink \$libdir/sway-i3status.conf wayland/i3status.conf
+  add_symlink \$bindir/run-sway wayland/run-sway
+  add_symlink \$bindir/sway-output-mode wayland/sway-output-mode
+fi
+
+# END NINJA FILE GENERATION
+# ==============================================================================
+
+if [ -z "$TEST" ]; then
+  # move the generated file in place
+  mv build.ninja.new build.ninja
+fi

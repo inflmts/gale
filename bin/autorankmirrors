@@ -5,10 +5,11 @@
 #   using rankmirrors, available in the 'pacman-contrib' package.
 #
 
-err() { printf >&2 'error: %s\n' "$1"; }
-die() { printf >&2 'error: %s\n' "$1"; exit 1; }
-warn() { printf >&2 'warning: %s\n' "$1"; }
-echo() { printf '%s\n' "$1"; }
+echo() { printf '%s\n' "$*"; }
+diag() { printf >&2 '%s\n' "$*"; }
+warn() { printf >&2 'warning: %s\n' "$*"; }
+err() { printf >&2 'error: %s\n' "$*"; }
+die() { printf >&2 'error: %s\n' "$*"; exit 1; }
 
 usage() {
   cat <<EOF
@@ -28,30 +29,31 @@ if [ "$1" = --help ]; then
   exit 0
 fi
 
-pick=
-timeout=
-verbose=
+PICK=
+TIMEOUT=
+VERBOSE=
 while getopts :hn:m:v OPT; do
   case "$OPT" in
-    :) die "option requires an argument: $OPTARG" ;;
-    \?) die "invalid option: $OPTARG" ;;
-    h) usage; exit 0 ;;
+    h)
+      usage
+      exit 0 ;;
     n)
-      pick=$OPTARG
-      ;;
+      PICK=$OPTARG ;;
     m)
-      timeout=$OPTARG
-      ;;
+      TIMEOUT=$OPTARG ;;
     v)
-      verbose=1
-      ;;
+      VERBOSE=1 ;;
+    :)
+      die "option requires an argument: $OPTARG" ;;
+    *)
+      die "invalid option: $OPTARG" ;;
   esac
 done
 shift "$((OPTIND - 1))"
 
-case "$#" in
-  0) country=all ;;
-  1) country=$1 ;;
+case $# in
+  0) COUNTRY=all ;;
+  1) COUNTRY=$1 ;;
   *) die "too many arguments" ;;
 esac
 
@@ -66,17 +68,21 @@ cleanup() {
 }
 
 mirrorlist_src=$(mktemp /tmp/mirrorlist_src.XXXXXXXX)
-trap cleanup HUP INT BUS ILL QUIT TERM
+trap cleanup HUP INT QUIT TERM
 
-curl -Lf -o "$mirrorlist_src" "https://archlinux.org/mirrorlist/?country=$country" || \
+if ! curl -LfsS -o "$mirrorlist_src" "https://archlinux.org/mirrorlist/?country=$COUNTRY"; then
+  cleanup
   die "unable to download pacman mirrorlist"
+fi
 
 sed -n 's/^#//; /^Server/p' "$mirrorlist_src" | (
-  if test -n "$pick"; then
-    shuf -n "$pick"
+  if [ "$PICK" ]; then
+    shuf -n "$PICK"
   else
     cat
   fi
-) | rankmirrors ${timeout:+-m "$timeout"} ${verbose:+-v} -
+) | rankmirrors ${TIMEOUT:+-m "$TIMEOUT"} ${VERBOSE:+-v} -
+excode=$?
 
 cleanup
+exit "$excode"

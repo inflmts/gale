@@ -1,0 +1,107 @@
+#!/bin/sh
+# wayland autosleep using swayidle
+#
+# This file is part of Gale.
+#
+# This is a simple front-end to swayidle that puts the computer to sleep after a
+# period of inactivity. It works for any compositor that swayidle supports, ie.
+# those that support the idle protocol. $XDG_RUNTIME_DIR and $WAYLAND_DISPLAY
+# must both be set.
+#
+# Dependencies:
+#   swayidle <https://github.com/swaywm/swayidle>
+#
+
+err() { printf >&2 'error: %s\n' "$1"; }
+die() { printf >&2 'error: %s\n' "$1"; exit 1; }
+warn() { printf >&2 'warning: %s\n' "$1"; }
+echo() { printf '%s\n' "$1"; }
+
+usage() {
+  cat <<EOF
+usage: wautosleep [<command>]
+commands:
+  status (default)
+  up
+  restart
+  restart-if-active
+  down
+  toggle
+EOF
+}
+
+# compute pidfile
+pidfile() {
+  [ "$XDG_RUNTIME_DIR" ] \
+    || die '$XDG_RUNTIME_DIR is not set!'
+  [ "$WAYLAND_DISPLAY" ] \
+    || die '$WAYLAND_DISPLAY is not set!'
+  PIDFILE="$XDG_RUNTIME_DIR/wautosleep.$WAYLAND_DISPLAY.pid"
+  export PIDFILE
+}
+
+# check if wautosleep is running
+wa_active() {
+  [ -f "$PIDFILE" ] \
+    && read -r pid < "$PIDFILE" \
+    && kill -0 "$pid" > /dev/null 2>&1
+}
+
+# start wautosleep
+wa_start() {
+  nohup >/dev/null 2>&1 /bin/sh <<\EOF &
+echo "$$" > "$PIDFILE"
+swayidle timeout 600 'systemctl suspend' & pid=$!
+trap 'kill "$pid"' HUP INT QUIT TERM
+wait "$pid"
+rm -f "$PIDFILE"
+EOF
+}
+
+# stop wautosleep
+# returns success if wautosleep was stopped
+# NOTE: This operation is not synchronous.
+wa_stop() {
+  [ -f "$PIDFILE" ] \
+    && read -r pid < "$PIDFILE" \
+    && kill "$pid" >/dev/null 2>&1
+}
+
+case $1 in
+  status|'')
+    pidfile
+    if wa_active; then
+      printf 'wautosleep is running\n'
+    else
+      printf 'wautosleep is not running\n'
+    fi
+    ;;
+  up)
+    pidfile
+    # NOTE: This introduces a race condition because another wautosleep could
+    # start between the wa_active and the wa_start, invalidating the check.
+    # This is okay for now, but should be kept in mind.
+    wa_active || wa_start
+    ;;
+  down)
+    pidfile
+    wa_stop
+    ;;
+  restart)
+    pidfile
+    wa_stop
+    wa_start
+    ;;
+  restart-if-active)
+    pidfile
+    wa_stop && wa_start
+    ;;
+  toggle)
+    pidfile
+    wa_stop || wa_start
+    ;;
+  *)
+    usage
+    exit 1
+    ;;
+esac

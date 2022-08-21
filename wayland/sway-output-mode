@@ -1,0 +1,58 @@
+#!/bin/sh
+# sway output mode switcher
+#
+# This file is part of Gale.
+
+err() { printf >&2 'error: %s\n' "$1"; }
+die() { printf >&2 'error: %s\n' "$1"; exit 1; }
+warn() { printf >&2 'warning: %s\n' "$1"; }
+echo() { printf '%s\n' "$1"; }
+
+usage() {
+  cat <<EOF
+usage: sway-output-mode [<option>...] [default|<mode>]
+options:
+  --noreload    don't reload sway
+EOF
+}
+
+unset NORELOAD
+
+while [ "$#" -gt 0 ]; do
+  case $1 in
+    --help) usage; exit 0 ;;
+    --noreload) NORELOAD=1 ;;
+    --) shift; break ;;
+    -*) die "invalid option: $1" ;;
+    *) break ;;
+  esac
+  shift
+done
+
+if [ -z "$XDG_RUNTIME_DIR" ]; then
+  die '$XDG_RUNTIME_DIR is not set!'
+fi
+
+case $# in
+  0) mode=default ;;
+  1) mode=$1 ;;
+  *) die 'too many arguments' ;;
+esac
+
+output_file="$XDG_RUNTIME_DIR/gale/sway-output-mode.conf"
+mode_dir="${XDG_CONFIG_HOME:-$HOME/.config}/gale/sway-output-modes"
+
+if [ -f "$mode_dir/$mode.conf" ]; then
+  # if the user has defined the mode, use the user-defined configuration
+  install -Dm644 "$mode_dir/$mode.conf" "$output_file"
+elif [ "$mode" = default ]; then
+  # otherwise, if the mode is 'default', then supply an empty configuration
+  install -Dm644 /dev/null "$output_file"
+else
+  # otherwise, fail with an error message
+  die "invalid output mode: $mode"
+fi
+
+if [ -z "$NORELOAD" ]; then
+  swaymsg reload
+fi

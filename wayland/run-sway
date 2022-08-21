@@ -1,0 +1,27 @@
+#!/bin/sh
+# sway wrapper
+#
+# This file is part of Gale.
+
+echo() { printf '%s\n' "$*"; }
+diag() { printf >&2 '%s\n' "$*"; }
+warn() { printf >&2 'warning: %s\n' "$*"; }
+err() { printf >&2 'error: %s\n' "$*"; }
+die() { printf >&2 'error: %s\n' "$*"; exit 1; }
+
+if [ -z "$XDG_RUNTIME_DIR" ]; then
+  die '$XDG_RUNTIME_DIR is not set!'
+fi
+
+export MOZ_ENABLE_WAYLAND=1
+export QT_QPA_PLATFORM=wayland
+export QT_QPA_PLATFORMTHEME=gtk3
+export QT_WAYLAND_DISABLE_WINDOWDECORATION=1
+
+# write log file
+mkdir -p "$XDG_RUNTIME_DIR/gale"
+exec >> "$XDG_RUNTIME_DIR/gale/sway.log" 2>&1
+
+date +'===== %a %Y %b %d %H:%M:%S %Z ====='
+sway-output-mode --noreload
+exec sway "$@"

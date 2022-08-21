@@ -1,0 +1,64 @@
+#!/bin/sh
+# nnn wrapper
+#
+# This file is part of Gale.
+#
+# Dependencies:
+#   nnn
+#
+
+NNN_BMS=\;
+NNN_PLUG=\;
+
+# bookmark <key> <path>
+#
+#   Bind a bookmark key.
+#
+bookmark() {
+  while case "$NNN_BMS" in *\;"$1":*) true ;; *) false ;; esac
+  do NNN_BMS="${NNN_BMS%%\;"$1":*};${NNN_BMS#*\;"$1":*\;}"
+  done
+  NNN_BMS="$NNN_BMS$1:$2;"
+}
+
+# plugin <key> <path>
+#
+#   Bind a plugin key.
+#
+plugin() {
+  while case "$NNN_PLUG" in *\;"$1":*) true ;; *) false ;; esac
+  do NNN_PLUG="${NNN_PLUG%%\;"$1":*};${NNN_PLUG#*\;"$1":*\;}"
+  done
+  NNN_PLUG="$NNN_PLUG$1:$2;"
+}
+
+# add bookmarks
+bookmark T /tmp
+bookmark C "${XDG_CONFIG_HOME:-$HOME/.config}"
+bookmark D "${XDG_DATA_HOME:-$HOME/.local/share}"
+bookmark S "${XDG_STATE_HOME:-$HOME/.local/state}"
+bookmark X "${XDG_CACHE_HOME:-$HOME/.cache}"
+bookmark R "${XDG_RUNTIME_DIR}"
+bookmark M /run/media/"$USER"
+
+# add plugins
+plugin n newwin
+plugin t terminal
+
+# if set, specifies a -T option (sort) for nnn
+N3_SORT=v
+
+# -d    show details
+# -H    show hidden files
+# -U    show user/group names in status bar
+export NNN_OPTS=dHU
+
+# source local configuration from the script $XDG_CONFIG_HOME/gale/n3rc
+# (defaults to ~/.config/gale/n3rc)
+config_file="${XDG_CONFIG_HOME:-$HOME/.config}/gale/n3rc"
+[ -s "$config_file" ] && . "$config_file"
+
+export NNN_BMS=${NNN_BMS#\;}
+export NNN_PLUG=${NNN_PLUG#\;}
+
+exec nnn ${N3_SORT:+-T "$N3_SORT"} "$@"

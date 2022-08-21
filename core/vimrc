@@ -1,0 +1,172 @@
+" ~/.vimrc
+"
+" This file is part of Gale.
+
+" OPTIONS
+" ==============================================================================
+
+set backspace=indent,eol,start
+set et sw=2 sts=2 sta ai si
+set ic is
+set splitright
+set nojoinspaces
+set scrolloff=5 sidescroll=5 sidescrolloff=5
+set number showcmd nowrap title
+" automatically insert comment string (ro)
+" remove comment headers on join (j)
+set formatoptions+=roj
+" automatically re-read a file if it is changed outside of Vim
+set autoread
+set wildmenu
+"set list listchars=leadmultispace:\│\ ,extends:>,precedes:<
+set list listchars=extends:>,precedes:<
+
+" m    disable menu bar
+" M    don't source menu.vim
+" t    disable tearoff menu items
+" T    disable toolbar
+" l(L) disable left scrollbar (in split windows)
+" r(R) disable right scrollbar (in split windows)
+set go-=m go-=M go-=t go-=T go-=l go-=L go-=r go-=R
+set mouse=a
+set fillchars=vert:│
+
+" KEYBINDINGS
+" ==============================================================================
+
+noremap <Space> <C-F>
+noremap <BS> <C-B>
+noremap <C-J> 5j
+noremap <C-K> 5k
+
+nnoremap < <<
+nnoremap > >>
+xnoremap < <gv
+xnoremap > >gv
+
+cnoremap <Esc>a <Home>
+cnoremap <M-a>  <Home>
+cnoremap <Esc>e <End>
+cnoremap <M-e>  <End>
+cnoremap <Esc>h <Left>
+cnoremap <M-h>  <Left>
+cnoremap <Esc>l <Right>
+cnoremap <M-l>  <Right>
+cnoremap <Esc>b <S-Left>
+cnoremap <M-b>  <S-Left>
+cnoremap <Esc>f <S-Right>
+cnoremap <M-f>  <S-Right>
+cnoremap <Esc>j <PageDown>
+cnoremap <M-j>  <PageDown>
+cnoremap <Esc>k <PageUp>
+cnoremap <M-k>  <PageUp>
+cnoremap <Esc>x <Del>
+cnoremap <M-x>  <Del>
+
+nnoremap <C-T> :NERDTreeToggle<CR>
+nnoremap <Leader>h :LspHover<CR>
+
+" CONFIG
+" ==============================================================================
+"
+" Source local config from $XDG_CONFIG_HOME/gale/vimrc, if available. The
+" script can optionally define these global functions:
+"
+"   GalePlug()
+"   GaleLate()
+
+let s:local_config = ($XDG_CONFIG_HOME ?? $HOME .. "/.config") .. "/gale/vimrc"
+if filereadable(s:local_config)
+  execute "source " .. fnameescape(s:local_config)
+endif
+
+" PLUGINS
+" ==============================================================================
+
+" detect if vim-plug is installed
+silent! if plug#begin()
+  " install plugins
+  Plug 'sainnhe/sonokai'
+  Plug 'preservim/nerdtree'
+  Plug 'fcpg/vim-altscreen'
+
+  let g:sonokai_disable_italic_comment = 1
+  let g:sonokai_transparent_background = 1
+  let g:sonokai_spell_foreground = 'colored'
+  let g:sonokai_disable_terminal_colors = 1
+  let g:sonokai_better_performance = 1
+
+  let g:NERDTreeShowHidden = 1
+  let g:NERDTreeDirArrowExpandable = "+"
+  let g:NERDTreeDirArrowCollapsible = "-"
+  let g:NERDTreeCascadeSingleChildDir = 0
+
+  let g:lsp_diagnostics_enabled = 1
+  let g:lsp_diagnostics_echo_cursor = 1
+
+  hi LspErrorText ctermfg=203 ctermbg=233
+
+  " run plugin hooks
+  if exists("*GalePlug")
+    call GalePlug()
+  endif
+
+  call plug#end()
+
+  " apply custom colorscheme
+  silent! colorscheme sonokai
+endif
+
+" GENERAL
+" ==============================================================================
+
+hi LineNr ctermbg=233 guibg=#222226
+hi Error ctermfg=7 ctermbg=203
+hi ErrorText cterm=underline ctermfg=203
+hi! link SignColumn LineNr
+
+" color trailing whitespace red, since trailing space is death
+hi TrailSpace ctermbg=1 guibg=#ff0000
+match TrailSpace /\s\+$/
+au WinNew * match TrailSpace /\s\+$/
+
+if $TERM == "linux"
+  hi Visual cterm=reverse
+endif
+
+au FileType sh setlocal tw=80 fo-=t
+au FileType markdown setlocal tw=80
+au FileType make setlocal noet
+au BufRead README* setlocal tw=80
+
+if has('linux')
+  command! -nargs=1 F silent execute "!setsid -f" &shell &shellcmdflag shellescape(<q-args>, 1) ">/dev/null 2>&1"
+endif
+
+" reload vim
+command! R source ~/.vimrc
+
+" ninja
+function! s:ninja()
+  let ninja_command = "!ninja"
+  if exists("g:ninja_dir") && g:ninja_dir != "."
+    let ninja_command = ninja_command .. " -C " .. shellescape(g:ninja_dir, 1)
+  endif
+  if exists("g:ninja_file")
+    let ninja_command = ninja_command .. " -f " .. shellescape(g:ninja_file, 1)
+  endif
+  execute ninja_command
+endfunction
+
+command! -nargs=1 -complete=dir NinjaDir let g:ninja_dir = <q-args>
+command! -nargs=1 -complete=file NinjaFile let g:ninja_file = <q-args>
+command! -nargs=? Ninja call <SID>ninja()
+
+nnoremap <Leader>n :call <SID>ninja()<CR>
+
+" run late hook
+if exists("*GaleLate")
+  call GaleLate()
+endif
+
+" vim:ft=vim

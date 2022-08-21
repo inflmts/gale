@@ -1,12 +1,12 @@
-#
 # ~/.inputrc
 #
 # This file is part of Gale.
-# See readline(3).
 #
+# Readline initialization file.
+# See readline(3)
 
 # behavior
-set editing-mode vi
+#set editing-mode vi
 set show-all-if-unmodified on
 set skip-completed-text on
 set revert-all-at-newline on
@@ -15,16 +15,19 @@ set revert-all-at-newline on
 #set show-mode-in-prompt on
 #set vi-ins-mode-string "\1\e[0;30;47m\2[i]\1\e[0m\2 "
 #set vi-cmd-mode-string "\1\e[0m\2[c] "
-set colored-stats on
+#set colored-stats on
 
-set keymap vi-command
 "\C-r": re-read-init-file
-"g":    beginning-of-history
-"G":    end-of-history
-"v":    ""
 
-set keymap vi-insert
-"\C-r": re-read-init-file
-"\C-l": clear-screen
+"\eh": backward-char
+"\ej": next-history
+"\ek": previous-history
+"\el": forward-char
+"\eb": vi-prev-word
+"\eB": vi-prev-word
+"\ee": vi-end-word
+"\eE": vi-end-word
+"\ew": vi-next-word
+"\eW": vi-next-word
 
 # vim:ft=readline
