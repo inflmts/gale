@@ -1,0 +1,153 @@
+#!/bin/sh
+# stupid pidfile utility
+#
+# This file is part of Gale.
+
+echo() { printf '%s\n' "$*"; }
+diag() { printf >&2 '%s\n' "$*"; }
+warn() { printf >&2 'warning: %s\n' "$*"; }
+err() { printf >&2 'error: %s\n' "$*"; }
+die() { printf >&2 'error: %s\n' "$*"; exit 1; }
+
+usage() {
+  cat <<EOF
+usage: stupid --file=<pidfile>
+  --status [--quiet]
+  --start <command> [<arg>...]
+  --restart <command> [<arg>...]
+  --restart-running <command> [<arg>...]
+  --toggle <command> [<arg>...]
+  --quit
+EOF
+}
+
+hasarg() { [ "${OPTARG+1}" ]; }
+noarg() { hasarg && die "option accepts no argument: $OPT"; }
+reqarg() { hasarg || die "option requires an argument: $OPT"; }
+
+PIDFILE=
+OPER=
+QUIET=
+while [ "$#" -gt 0 ]; do
+  case $1 in
+    --) shift; break ;;
+    -*=*) OPT=${1%%=*}; OPTARG=${1#*=} ;;
+    -?*) OPT=$1; unset OPTARG ;;
+    *) break ;;
+  esac
+
+  case $OPT in
+    -h|--help)
+      usage
+      exit 1
+      ;;
+    --file) reqarg
+      PIDFILE=$OPTARG
+      ;;
+    --status) noarg
+      OPER=status
+      ;;
+    --start) noarg
+      OPER=start
+      ;;
+    --restart) noarg
+      OPER=restart
+      ;;
+    --restart-running) noarg
+      OPER=restart-running
+      ;;
+    --toggle) noarg
+      OPER=toggle
+      ;;
+    --quit) noarg
+      OPER=quit
+      ;;
+    --quiet) noarg
+      QUIET=1
+      ;;
+    *)
+      die "invalid option: $OPT"
+      ;;
+  esac
+  shift
+done
+
+# ensure an operation was specified
+[ -z "$OPER" ] && die "no operation specified"
+
+# ensure a pidfile was specified
+[ -z "$PIDFILE" ] && die "no pidfile"
+
+# return successfully if the pidfile exists
+# and the program it references is still running
+_status() {
+  local pid
+  if pid=$(cat "$PIDFILE" 2>/dev/null) \
+    && kill -s 0 -- "$pid" >/dev/null 2>&1
+  then
+    [ "$QUIET" ] || echo "running on pid $pid"
+    exit 0
+  else
+    [ "$QUIET" ] || echo 'not running'
+    exit 1
+  fi
+}
+
+# attempt to lock the pidfile and start the program
+_start() {
+  # Using the -C option (hopefully) ensures
+  # the command fails if the pidfile exists
+  # or creates the pidfile if it doesn't.
+  (set -C; : > "$PIDFILE") >/dev/null 2>&1 || return 1
+  ( trap '' HUP
+    trap 'kill "$pid"' INT QUIT TERM
+    command "$@" & pid=$!
+    echo "$pid" >> "$PIDFILE"
+    wait "$pid"
+    rm -f -- "$PIDFILE"
+  ) <&- >/dev/null 2>&1 &
+  return 0
+}
+
+# try a couple of times to start the program
+_restart() {
+  local try=0
+  # TODO: configurable attempts?
+  #       'sleep' between tries?
+  while [ "$((try = try + 1))" -le 5 ]; do
+    _start "$@" && return
+  done
+  die "unable to restart program"
+}
+
+# attempt to kill the program with the pid in the pidfile
+# return successfully if the program was found and killed
+_quit() {
+  local pid
+  pid=$(cat "$PIDFILE" 2>/dev/null) \
+    && kill -- "$pid" >/dev/null 2>&1
+}
+
+case "$OPER" in
+  status)
+    _status
+    ;;
+  start)
+    _start "$@"
+    ;;
+  restart)
+    if _quit
+    then _restart "$@"
+    else _start "$@"
+    fi
+    ;;
+  restart-running)
+    _quit && _restart "$@"
+    ;;
+  toggle)
+    _quit || _start "$@"
+    ;;
+  quit)
+    _quit
+    ;;
+esac

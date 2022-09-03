@@ -21,87 +21,33 @@ usage() {
   cat <<EOF
 usage: wautosleep [<command>]
 commands:
-  status (default)
-  up
-  restart
-  restart-if-active
-  down
-  toggle
+     status (default)
+  u, up
+  r, restart
+     restart-running
+  d, down
+  t, toggle
 EOF
 }
 
-# compute pidfile
 pidfile() {
   [ "$XDG_RUNTIME_DIR" ] \
     || die '$XDG_RUNTIME_DIR is not set!'
   [ "$WAYLAND_DISPLAY" ] \
     || die '$WAYLAND_DISPLAY is not set!'
   PIDFILE="$XDG_RUNTIME_DIR/wautosleep.$WAYLAND_DISPLAY.pid"
-  export PIDFILE
 }
 
-# check if wautosleep is running
-wa_active() {
-  [ -f "$PIDFILE" ] \
-    && read -r pid < "$PIDFILE" \
-    && kill -0 "$pid" > /dev/null 2>&1
-}
-
-# start wautosleep
-wa_start() {
-  nohup >/dev/null 2>&1 /bin/sh <<\EOF &
-echo "$$" > "$PIDFILE"
-swayidle timeout 600 'systemctl suspend' & pid=$!
-trap 'kill "$pid"' HUP INT QUIT TERM
-wait "$pid"
-rm -f "$PIDFILE"
-EOF
-}
-
-# stop wautosleep
-# returns success if wautosleep was stopped
-# NOTE: This operation is not synchronous.
-wa_stop() {
-  [ -f "$PIDFILE" ] \
-    && read -r pid < "$PIDFILE" \
-    && kill "$pid" >/dev/null 2>&1
+wa() {
+  stupid --file="$PIDFILE" "$1" swayidle timeout 600 'systemctl suspend'
 }
 
 case $1 in
-  status|'')
-    pidfile
-    if wa_active; then
-      printf 'wautosleep is running\n'
-    else
-      printf 'wautosleep is not running\n'
-    fi
-    ;;
-  up)
-    pidfile
-    # NOTE: This introduces a race condition because another wautosleep could
-    # start between the wa_active and the wa_start, invalidating the check.
-    # This is okay for now, but should be kept in mind.
-    wa_active || wa_start
-    ;;
-  down)
-    pidfile
-    wa_stop
-    ;;
-  restart)
-    pidfile
-    wa_stop
-    wa_start
-    ;;
-  restart-if-active)
-    pidfile
-    wa_stop && wa_start
-    ;;
-  toggle)
-    pidfile
-    wa_stop || wa_start
-    ;;
-  *)
-    usage
-    exit 1
-    ;;
+  status|'') pidfile; wa --status ;;
+  u|up) pidfile; wa --start ;;
+  r|restart) pidfile; wa --restart ;;
+  restart-running) pidfile; wa --restart-running ;;
+  d|down) pidfile; wa --quit ;;
+  t|toggle) pidfile; wa --toggle ;;
+  *) usage; exit 1 ;;
 esac

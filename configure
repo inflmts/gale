@@ -184,6 +184,7 @@ add_symlink \$homedir/.lesskey core/lesskey
 add_symlink \$bindir/autorankmirrors bin/autorankmirrors
 add_symlink \$bindir/pacmenu bin/pacmenu
 add_symlink \$bindir/upd-vim-plug bin/upd-vim-plug
+add_symlink \$bindir/stupid bin/stupid
 
 add_symlink \$bindir/n3 nnn/n3
 add_symlink \$bindir/gn3 nnn/gn3
