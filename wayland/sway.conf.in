@@ -3,14 +3,17 @@
 # This file is part of Gale.
 #
 # Documentation:
-#   <https://github.com/swaywm/sway/wiki>
-#   sway(5), sway-input(5), sway-output(5), sway-bar(5)
+# - <https://github.com/swaywm/sway/wiki>
+# - sway(5)
+# - sway-input(5)
+# - sway-output(5)
+# - sway-bar(5)
 #
 # Dependencies:
-#   foot
-#   nnn
-#   jq (optional)
-#   pamixer (optional)
+# - foot
+# - nnn
+# - jq (optional)
+# - pamixer (optional)
 #
 
 # GENERAL
@@ -231,7 +234,8 @@ mode "extra" {
 # See sway-bar(5)
 
 bar {
-  status_command i3status -c @@LIBDIR@@/sway-i3status.conf
+  #status_command i3status -c @@LIBDIR@@/sway-i3status.conf
+  status_command @@LIBDIR@@/swaystatus
 
   position bottom
   font Exo 2 11

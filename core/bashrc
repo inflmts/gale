@@ -41,24 +41,15 @@ argv() {
   done
 }
 
+# BLOCK DEVICES
+
+lsblk() {
+  command lsblk -o NAME,TYPE,RM,SIZE,RO,MOUNTPOINTS "$@"
+}
+
 # list file systems
 lsfs() {
-  lsblk -o NAME,FSTYPE,LABEL,FSUSED,FSSIZE,FSUSE%
-}
-
-# list file systems (+UUID)
-lsfsu() {
-  lsblk -o NAME,FSTYPE,LABEL,UUID,FSUSED,FSSIZE,FSUSE%
-}
-
-# list gpt partitions
-lsgpt() {
-  lsblk -o NAME,PARTLABEL,PARTUUID
-}
-
-# list gpt file systems
-lsgfs() {
-  lsblk -o NAME,FSTYPE,LABEL,PARTLABEL,FSUSED,FSSIZE,FSUSE%
+  command lsblk -o NAME,FSTYPE,LABEL,FSUSED,FSUSE%,FSSIZE,MOUNTPOINTS "$@"
 }
 
 # cdnew <dir>
@@ -100,17 +91,17 @@ udmount() {
   udisksctl mount -b "$_DEVICE"
 }
 
-# udeject <source>
+# udumount <source>
 #
-#   Unmount and power off <source> with udisksctl.
+#   Unmount <source> with udisksctl.
 #
-udeject() {
+udumount() {
   if [[ $# -ne 1 ]]; then
     echo >&2 'usage: udeject <source>'
     return 1
   fi
   _resolve_source "$1"
-  udisksctl unmount -b "$_DEVICE" && udisksctl power-off -b "$_DEVICE"
+  udisksctl unmount -b "$_DEVICE"
 }
 
 # daemonize (fork) a command

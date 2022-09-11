@@ -4,8 +4,7 @@
     Yb  "88  dP__Yb  88  .o 88""
      YboodP dP""""Yb 88ood8 888888
 
-InfiniteLimits Core Configuration
-(previously known as _corecon_, _storm_, _psi_, or _coreterm_)
+# InfiniteLimits Core Configuration
 
 Github: <https://github.com/inflmts>
 
@@ -34,26 +33,14 @@ for available options. Build with
     ./configure <options>...
     ninja
 
-## Benefits of Installing
-
-- Host-specific configuration is simpler. All it takes is converting an install
-  rule to use a generator and adding some configuration.
-
-- Making changes or checking out different versions of this repository will not
-  immediately destabilize the system, since these changes will need to be
-  installed first.
-
-- Programs that modify their configuration files will not accidentally affect
-  this source tree.
-
-## Benefits of Symlinking
-
-- More appropriate for a bunch of dotfiles.
-
-- Prevents duplicating files, which saves space.
-
-- Edit-test cycles are faster, since no copying needs to take place.
-
 ## Notes
 
 Ascii text generated with <https://ascii.co.uk>.
+
+See `COMPARISON.md` for a small comparison of what I think are the pros and cons
+of various methods of dotfile management.
+
+This is probably way overcomplicated for what people usually need. I am known
+for being really good at coming up with bad ideas. That's why I need other
+people to help me, otherwise my code ends up looking like this.
+

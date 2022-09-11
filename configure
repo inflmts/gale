@@ -216,7 +216,7 @@ if [ "$GALE_ENABLE_SWAY" ]; then
   echo
   add_sed \$confdir/sway/config wayland/sway.conf.in \
     "$sed_subst_libdir"
-  add_symlink \$libdir/sway-i3status.conf wayland/i3status.conf
+  add_symlink \$libdir/swaystatus wayland/swaystatus
   add_symlink \$bindir/run-sway wayland/run-sway
   add_symlink \$bindir/sway-output-mode wayland/sway-output-mode
 fi
