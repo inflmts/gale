@@ -5,39 +5,43 @@
 " OPTIONS
 " ==============================================================================
 
+" backspace over everything
 set backspace=indent,eol,start
+" indentation
 set et sw=2 sts=2 sta ai si
-set ic is
+" searching
+set is ic smartcase
+" vsplit appears on right
 set splitright
-set nojoinspaces
-set scrolloff=5 sidescroll=5 sidescrolloff=5
-set number showcmd nowrap title
-" automatically insert comment string (ro)
-" remove comment headers on join (j)
+" join always leaves exactly one space
+set nojs
+" scrolling
+set nowrap so=5 ss=5 siso=5
+" display
+set number showcmd title fillchars=vert:│
+" automatically insert comment leader on <Enter> (r) and o/O (o)
+" remove comment leaders on join (j)
 set formatoptions+=roj
-" automatically re-read a file if it is changed outside of Vim
+" automatically re-read a file if it is changed outside of vim
 set autoread
+" command line completion shows possibilities in a menu
 set wildmenu
-"set list listchars=leadmultispace:\│\ ,extends:>,precedes:<
-set list listchars=extends:>,precedes:<
 
-" m    disable menu bar
-" M    don't source menu.vim
-" t    disable tearoff menu items
-" T    disable toolbar
-" l(L) disable left scrollbar (in split windows)
-" r(R) disable right scrollbar (in split windows)
+" m     disable menu bar
+" M     don't source menu.vim
+" t     disable tearoff menu items
+" T     disable toolbar
+" l/L   disable left scrollbar (in split windows)
+" r/R   disable right scrollbar (in split windows)
 set go-=m go-=M go-=t go-=T go-=l go-=L go-=r go-=R
+" enable the mouse in all modes
 set mouse=a
-set fillchars=vert:│
 
 " KEYBINDINGS
 " ==============================================================================
 
-noremap <Space> <C-F>
-noremap <BS> <C-B>
-noremap <C-J> 5j
-noremap <C-K> 5k
+noremap <Space> <C-D>
+noremap <BS> <C-U>
 
 nnoremap < <<
 nnoremap > >>
@@ -74,6 +78,7 @@ nnoremap <Leader>h :LspHover<CR>
 "
 "   GalePlug()
 "   GaleLate()
+"
 
 let s:local_config = ($XDG_CONFIG_HOME ?? $HOME .. "/.config") .. "/gale/vimrc"
 if filereadable(s:local_config)
