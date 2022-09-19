@@ -2,8 +2,35 @@
 #
 # This file is part of Gale.
 
-# setup the environment
-. ~/.profile
+# ENVIRONMENT VARIABLES
+# ==============================================================================
+
+export EDITOR=vim
+
+export XDG_CONFIG_HOME="$HOME/.config"
+export XDG_DATA_HOME="$HOME/.data"
+export XDG_STATE_HOME="$HOME/.log"
+export XDG_CACHE_HOME="$HOME/.cache"
+
+# don't justify man pages
+export MANOPT='--nj'
+
+export PATH
+
+# gale_add_path <entry>
+#
+#   Prepend <entry> to the $PATH environment variable if it isn't already
+#   there.
+#
+gale_add_path() {
+  case :"$PATH": in
+    *:"$1":*) ;;
+    *) PATH="$1:$PATH" ;;
+  esac
+}
+
+# add standard executable directory
+gale_add_path ~/.local/bin
 
 systemctl import-environment >/dev/null 2>&1 \
   PATH \
@@ -13,65 +40,16 @@ systemctl import-environment >/dev/null 2>&1 \
   XDG_STATE_HOME \
   XDG_CACHE_HOME
 
+# source local configuration from ~/.config/gale/bash_profile
+if [[ -s ~/.config/gale/bash_profile ]]; then
+  . ~/.config/gale/bash_profile
+fi
+
 # quit unless interactive
 [[ $- != *i* ]] && return
 
-# dialogmenu
-#
-#   A login menu using dialog(1).
-#
-dialogmenu() {
-  local resp
-
-  while resp="$(dialog --menu Menu 0 0 0 \
-    c 'return to command line' \
-    q 'logout' \
-    s 'sleep' \
-    o 'shutdown' \
-    r 'reboot' \
-    x 'launch X' \
-    3>&1 1>&2 2>&3 3>&-
-  )"; do  # ^
-          # swap stdout and stderr
-
-    case "$resp" in
-      q)
-        clear
-        exit
-        ;;
-      s)
-        systemctl suspend
-        ;;
-      o)
-        clear
-        poweroff
-        break
-        ;;
-      r)
-        clear
-        reboot
-        break
-        ;;
-      x)
-        clear
-        launchx bspwm
-        ;;
-      *)
-        clear
-        break
-        ;;
-    esac
-  done
-}
-
-# source local configuration from $XDG_CONFIG_HOME/gale/bash_profile
-GALE_LOCAL_CONFIG="${XDG_CONFIG_HOME:-$HOME/.config}/gale/bash_profile"
-[[ -s $GALE_LOCAL_CONFIG ]] && . "$GALE_LOCAL_CONFIG"
-
-# CTRL-O opens dialogmenu
-bind -m emacs -x '"\C-o":dialogmenu'
-bind -m vi-command -x '"\C-o":dialogmenu'
-bind -m vi-insert -x '"\C-o":dialogmenu'
+# INTERACTIVE-ONLY
+# ==============================================================================
 
 # load ~/.bashrc
 . ~/.bashrc

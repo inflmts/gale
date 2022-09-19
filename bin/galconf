@@ -1,0 +1,226 @@
+#!/bin/sh
+# galconf - Gale configuration utility
+#
+#   A simple grep-based utility for accessing and manipulating Gale's
+#   configuration system.
+#
+#   The Gale configuration file is at '$XDG_CONFIG_HOME/gale/config' (defaults
+#   to '~/.config/gale/config' if $XDG_CONFIG_HOME is not set). The format is
+#   simple: each line consists of a _key_ (consisting of any text except the '='
+#   character), and optionally a '=' character followed by a _value_ (consisting
+#   of any text). Comments are not supported. This file is intended to be
+#   human-readable, but edited and parsed exclusively with galconf.
+#
+# Dependencies:
+# - GNU grep
+#
+
+echo() { printf '%s\n' "$1"; }
+diag() { printf >&2 '%s\n' "$1"; }
+warn() { printf >&2 'warning: %s\n' "$1"; }
+err() { printf >&2 'error: %s\n' "$1"; }
+die() { printf >&2 'error: %s\n' "$1"; exit 1; }
+
+usage() {
+  name=$(basename "$0")
+  cat <<EOF
+usage:
+  $name [--list]
+    dump configuration
+  $name --set <key>=[<value>]...
+    set keys
+  $name --unset <key>...
+    unset keys
+  $name --test <key>...
+    test for any given key
+  $name --get [--all] <key>...
+    get first (or all) occurrence(s) of any given key
+  $name --wipe
+    wipe configuration
+options:
+  --debug     show debugging output
+EOF
+}
+
+# a sed script to sanitize a string for literal use in a POSIX basic regular
+# expression
+sed_escape_regex='s/[\.\^\$\*\[\\]/\\&/g'
+
+# config directory
+config_dir="${XDG_CONFIG_HOME:-$HOME/.config}/gale"
+# config file
+config_file="$config_dir/config"
+# temporary config file
+config_file_new="$config_file.new"
+
+MODE=
+DEBUG=
+
+nargs=$#
+for opt; do
+  if [ "$optend" ]; then set -- "$@" "$opt"; continue; fi
+  case $opt in
+    --) optend=1; continue ;;
+    -?*) ;;
+    *) set -- "$@" "$opt"; continue ;;
+  esac
+
+  case "$opt" in
+    --help)
+      usage
+      exit 0
+      ;;
+    --list)
+      MODE=list
+      ;;
+    --set)
+      MODE=set
+      ;;
+    --unset)
+      MODE=unset
+      ;;
+    --test)
+      MODE=test
+      ;;
+    --get)
+      MODE=get
+      ;;
+    --wipe)
+      MODE=wipe
+      ;;
+    --debug)
+      DEBUG=1
+      ;;
+    *)
+      die "invalid option: $opt"
+      ;;
+  esac
+done
+shift "$nargs"
+
+if [ "$DEBUG" ]; then
+  debug() { printf >&2 '%s\n' "$1"; }
+else
+  debug() { :; }
+fi
+
+list_mode() {
+  if [ "$#" -gt 0 ]; then
+    err "too many arguments"
+    exit 1
+  fi
+
+  # very simple config pretty-printer
+  if [ -e "$config_file" ]; then
+    column --table -s '=' -l 2 --table-columns KEY,VALUE "$config_file"
+  fi
+}
+
+set_mode() {
+  # quit if no arguments given
+  [ "$#" -gt 0 ] || exit 0
+
+  mkdir -p "$config_dir" || exit
+
+  { # edit existing configuration if applicable
+    if [ -s "$config_file" ]; then
+      # a `grep -Ex` pattern
+      #   1.  isolate keys (remove '=<value>')
+      #   2.  escape ERE metacharacters
+      #   3.  match an optional value
+      pattern="$(printf '%s\n' "$@" | sed -E \
+        -e 's/=.*//' \
+        -e "$sed_escape_regex" \
+        -e 's/$/(=.*)?/')"
+
+      debug "pattern: $pattern"
+
+      # pick existing entries that DON'T match the keys to be modified
+      grep -Ex -v "$pattern" "$config_file_old"
+    fi
+
+    # add new entries
+    printf '%s\n' "$@"
+  } > "$config_file_new"
+
+  mv "$config_file_new" "$config_file"
+}
+
+unset_mode() {
+  # only proceed if arguments are present
+  # and the config file has keys to delete
+  [ "$#" -gt 0 ] && [ -s "$config_file" ] || exit 0
+
+  # a `grep -Ex` pattern
+  #   1.  escape ERE metacharacters
+  #   2.  match an optional value
+  pattern="$(printf '%s\n' "$@" | sed -E \
+    -e "$sed_escape_regex" \
+    -e 's/$/(=.*)?/')"
+
+  debug "pattern: $pattern"
+
+  mkdir -p "$config_dir" || exit
+
+  # pick existing entries that don't match keys provided in the command line
+  grep -Exv "$pattern" "$config_file" > "$config_file_new"
+
+  mv "$config_file_new" "$config_file"
+}
+
+test_mode() {
+  # only proceed if arguments are present
+  # and the config file has keys in the first place
+  [ "$#" -gt 0 ] && [ -s "$config_file" ] || exit 1
+
+  # a `grep -Ex` pattern
+  #   1.  escape ERE metacharacters
+  #   2.  match an optional value (for keys passed in the command line without a
+  #       value)
+  pattern="$(printf '%s\n' "$@" | sed -E \
+    -e "$sed_escape_regex" \
+    -e '/=/!s/$/(=.*)?/')"
+
+  debug "pattern: $pattern"
+
+  grep -Exq "$pattern" "$config_file"
+}
+
+get_mode() {
+  # only proceed if arguments are present
+  # and the config file has keys in the first place
+  [ "$#" -gt 0 ] && [ -s "$config_file" ] || exit 1
+
+  # a `grep -Ex` pattern
+  #   1.  escape ERE metacharacters
+  #   2.  match an optional value
+  pattern="$(printf '%s\n' "$@" | sed -E \
+    -e "$sed_escape_regex" \
+    -e 's/$/=.*/')"
+
+  debug "pattern: $pattern"
+
+  match="$(grep -Exm 1 "$pattern" "$config_file")" && \
+    printf '%s\n' "${match#*=}"
+}
+
+wipe_mode() {
+  if [ "$#" -gt 0 ]; then
+    err "too many arguments"
+    exit 1
+  fi
+
+  # psyche
+  if [ -e "$config_file" ]; then
+    mv "$config_file" "$config_file.old"
+  fi
+}
+
+case "$MODE" in
+  set)    set_mode    "$@" ;;
+  unset)  unset_mode  "$@" ;;
+  test)   test_mode   "$@" ;;
+  get)    get_mode    "$@" ;;
+  wipe)   wipe_mode   "$@" ;;
+  *)      list_mode   "$@" ;;
+esac

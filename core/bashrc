@@ -8,9 +8,6 @@
 # apparently needed for rcp or scp or something
 [[ $- != *i* ]] && return
 
-# this allows us to get away (mostly) with $var instead of "$var"
-IFS=
-
 # Whether to use fancy colors.
 # This requires at least 256-color support from the terminal.
 GALE_FANCY=
@@ -141,11 +138,11 @@ lsenv() {
     | sed "$sed_script"
 }
 
-# n3 [<option>...] [<path>]
+# cdn3 [<option>...] [<path>]
 #
-#   n3 wrapper enabling cd on quit.
+#   n3 wrapper activating cd on quit.
 #
-n3() {
+cdn3() {
   local tmpfile excode
   tmpfile=$(mktemp /tmp/n3.XXXXX)
   NNN_TMPFILE=$tmpfile command n3 "$@"
@@ -158,31 +155,9 @@ n3() {
 # INITIALIZATION
 # ==============================================================================
 
-GALE_FEATURES=
-GALE_ENABLE_NVM=
-
-# source local configuration from $XDG_CONFIG_HOME/gale/bashrc
-gale_local_config="${XDG_CONFIG_HOME:-$HOME/.config}/gale/bashrc"
-[[ -s $gale_local_config ]] && . "$gale_local_config"
-
-# initialize nvm if installed
-if [[ $GALE_ENABLE_NVM ]] && [[ -d ~/.nvm ]]; then
-  GALE_FEATURES+=' +nvm'
-  export NVM_DIR="$HOME/.nvm"
-  source "$NVM_DIR/nvm.sh" --no-use
-  source "$NVM_DIR/bash_completion"
-fi
-
-# BANNER
-# ==============================================================================
-
-printf '\033[0;7m  Bash %s | Powered by Gale  \033[0m\n' "$BASH_VERSION"
-if [[ $GALE_FANCY ]]; then
-  printf '\033[38;5;248mSystem:\033[0m %s\n' "$(uname -srm)"
-  printf '\033[38;5;248mTerminal:\033[0m %s \033[38;5;248m(fancy)\033[0m\n' "${TERM:-unknown}"
-else
-  printf 'System: %s\n' "$(uname -srm)"
-  printf 'Terminal: %s\n' "${TERM:-unknown}"
+# source local configuration from ~/.config/gale/bashrc
+if [[ -s ~/.config/gale/bashrc ]]; then
+  . ~/.config/gale/bashrc
 fi
 
 # PROMPT

@@ -1,13 +1,11 @@
 #!/bin/sh
-# stupid pidfile utility
+# stupid - simple pidfile utility
 #
 # This file is part of Gale.
 
-echo() { printf '%s\n' "$*"; }
-diag() { printf >&2 '%s\n' "$*"; }
-warn() { printf >&2 'warning: %s\n' "$*"; }
-err() { printf >&2 'error: %s\n' "$*"; }
-die() { printf >&2 'error: %s\n' "$*"; exit 1; }
+echo() { printf '%s\n' "$1"; }
+diag() { printf >&2 '%s\n' "$1"; }
+die() { printf >&2 'error: %s\n' "$1"; exit 1; }
 
 usage() {
   cat <<EOF

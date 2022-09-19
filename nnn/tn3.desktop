@@ -1,6 +1,6 @@
 [Desktop Entry]
 Type=Application
-Name=n3
+Name=n3 in Terminal
 GenericName=File Manager
-Exec=gn3 -- %f
+Exec=tn3 -- %f
 Type=inode/directory

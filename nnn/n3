@@ -48,10 +48,11 @@ plugin t terminal
 # if set, specifies a -T option (sort) for nnn
 N3_SORT=v
 
+# -A    disable auto-select on unique filter match
 # -d    show details
 # -H    show hidden files
 # -U    show user/group names in status bar
-export NNN_OPTS=dHU
+export NNN_OPTS=AdHU
 
 # source local configuration from the script $XDG_CONFIG_HOME/gale/n3rc
 # (defaults to ~/.config/gale/n3rc)

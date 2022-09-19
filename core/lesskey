@@ -1,9 +1,10 @@
-# ==============================================================================
 # lesskey - specify key bindings for less
 #
 # This file is part of Gale.
 #
-# See lesskey(1)
+# Documentation:
+# - less(1)
+# - lesskey(1)
 
 #command
 

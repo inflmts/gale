@@ -1,0 +1,41 @@
+#!/bin/sh
+# get-vim-plug - download and install vim-plug
+#
+# This file is part of Gale.
+#
+# Dependencies:
+# - curl
+
+echo() { printf '%s\n' "$1"; }
+diag() { printf >&2 '%s\n' "$1"; }
+
+usage() {
+  cat <<END
+usage: $(basename "$0")
+Download and install vim-plug.
+END
+}
+
+for opt; do
+  case "$opt" in
+    --help)
+      usage
+      exit 0
+      ;;
+    *)
+      diag "error: invalid option: $opt"
+      exit 1
+      ;;
+  esac
+done
+
+file="$HOME/.vim/autoload/plug.vim"
+
+diag 'Downloading vim-plug...'
+if curl -Lfo "$file.new" --create-dirs \
+  https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
+then
+  # if the download succeeded,
+  # overwrite plug.vim with the downloaded file
+  mv "$file.new" "$file"
+fi

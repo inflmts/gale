@@ -1,0 +1,33 @@
+#!/bin/sh
+# bootstrap - create the ~/.gale symlink
+
+echo() { printf '%s\n' "$1"; }
+diag() { printf >&2 '%s\n' "$1"; }
+
+if [ "$#" -gt 0 ]; then
+  cat >&2 <<EOF
+usage: ./bootstrap
+
+Create the ~/.gale symlink pointing to the current directory.
+EOF
+  exit 1
+fi
+
+# compute the relative path from $HOME to cwd
+# this will be the contents of the symlink
+target=$(realpath --relative-to="$HOME" .) || exit
+
+if real_target=$(readlink ~/.gale 2>/dev/null); then
+  if [ "$real_target" != "$target" ]; then
+    diag "fixing symlink: ~/.gale -> $target"
+    ln -sf -T "$target" ~/.gale
+  else
+    diag "~/.gale symlink OK"
+  fi
+elif [ -e ~/.gale ]; then
+  diag "error: ~/.gale exists"
+  exit 1
+else
+  diag "creating symlink: ~/.gale -> $target"
+  ln -s -T "$target" ~/.gale
+fi

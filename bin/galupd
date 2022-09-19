@@ -1,0 +1,18 @@
+#!/bin/sh
+# galupd - update Gale
+#
+# This file is part of Gale.
+
+echo() { printf '%s\n' "$1"; }
+diag() { printf >&2 '%s\n' "$1"; }
+
+# chdir to home directory
+cd || exit
+
+# bootstrap the update blueprint if necessary
+if [ ! -e .data/gale/upd.ninja ]; then
+  diag 'Generating update blueprint...'
+  .gale/bin/galblueprint || exit
+fi
+
+exec ninja -f .data/gale/upd.ninja "$@"
