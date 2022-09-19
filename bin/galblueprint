@@ -106,6 +106,7 @@ if [ -z "$STDOUT" ]; then
   exec > .data/gale/upd.ninja.new
 fi
 
+# TODO: get values from configuration
 ENABLE_SYSTEMD=1
 ENABLE_WAYLAND=1
 ENABLE_SWAY=1
@@ -189,6 +190,8 @@ if [ "$ENABLE_SYSTEMD" ]; then
 fi
 
 if [ "$ENABLE_WAYLAND" ]; then
+  echo
+  echo '# --- wayland ---'
   echo
   add_symlink .config/foot/foot.ini       .gale/wayland/foot.ini
   add_symlink .local/bin/wautosleep       .gale/wayland/wautosleep

@@ -73,14 +73,14 @@ nnoremap <Leader>h :LspHover<CR>
 " CONFIG
 " ==============================================================================
 "
-" Source local config from $XDG_CONFIG_HOME/gale/vimrc, if available. The
-" script can optionally define these global functions:
+" Source local config from ~/.config/gale/vimrc, if it exists. This script can
+" optionally define these functions:
 "
-"   GalePlug()
-"   GaleLate()
+"   GalePlug()    run after plug#begin() but before plug#end()
+"   GaleLate()    run at the end
 "
 
-let s:local_config = ($XDG_CONFIG_HOME ?? $HOME .. "/.config") .. "/gale/vimrc"
+let s:local_config = $HOME .. "/.config/gale/vimrc"
 if filereadable(s:local_config)
   execute "source " .. fnameescape(s:local_config)
 endif

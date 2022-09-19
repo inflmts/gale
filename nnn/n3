@@ -54,10 +54,10 @@ N3_SORT=v
 # -U    show user/group names in status bar
 export NNN_OPTS=AdHU
 
-# source local configuration from the script $XDG_CONFIG_HOME/gale/n3rc
-# (defaults to ~/.config/gale/n3rc)
-config_file="${XDG_CONFIG_HOME:-$HOME/.config}/gale/n3rc"
-[ -s "$config_file" ] && . "$config_file"
+# source local configuration from ~/.config/gale/n3rc, if available
+if [ -s ~/.config/gale/n3rc ]; then
+  . ~/.config/gale/n3rc
+fi
 
 export NNN_BMS=${NNN_BMS#\;}
 export NNN_PLUG=${NNN_PLUG#\;}
