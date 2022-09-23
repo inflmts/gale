@@ -152,7 +152,6 @@ EOF
 echo
 add_symlink .bashrc             .gale/core/bashrc
 add_symlink .bash_profile       .gale/core/bash_profile
-add_symlink .profile            .gale/core/profile
 add_symlink .inputrc            .gale/core/inputrc
 add_symlink .vimrc              .gale/core/vimrc
 add_symlink .dialogrc           .gale/core/dialogrc

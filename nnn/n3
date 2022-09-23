@@ -34,12 +34,12 @@ plugin() {
 
 # add bookmarks
 bookmark T /tmp
-bookmark C "${XDG_CONFIG_HOME:-$HOME/.config}"
-bookmark D "${XDG_DATA_HOME:-$HOME/.local/share}"
-bookmark S "${XDG_STATE_HOME:-$HOME/.local/state}"
-bookmark X "${XDG_CACHE_HOME:-$HOME/.cache}"
-bookmark R "${XDG_RUNTIME_DIR}"
-bookmark M /run/media/"$USER"
+bookmark C ~/.config
+bookmark D ~/.data
+bookmark S ~/.log
+bookmark X ~/.cache
+bookmark R "$XDG_RUNTIME_DIR"
+bookmark M "/run/media/$USER"
 
 # add plugins
 plugin n newwin
