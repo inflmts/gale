@@ -11,7 +11,8 @@
 #   place files elsewhere.
 #
 # Dependencies:
-# - GNU coreutils
+#   - GNU coreutils
+#
 
 echo() { printf '%s\n' "$1"; }
 diag() { printf >&2 '%s\n' "$1"; }

@@ -3,6 +3,7 @@
 # This file is part of Gale.
 #
 # Bash shell initialization file.
+#
 
 # quit unless interactive
 # apparently needed for rcp or scp or something
@@ -11,8 +12,7 @@
 # Whether to use fancy colors.
 # This requires at least 256-color support from the terminal.
 GALE_FANCY=
-[[ $(tput colors 2> /dev/null) -ge 256 ]] \
-  && GALE_FANCY=1
+[[ $(tput colors 2> /dev/null) -ge 256 ]] && GALE_FANCY=1
 
 # FUNCTIONS & ALIASES
 # ==============================================================================
@@ -124,18 +124,12 @@ lspath() {
 
 # lsenv
 #
-#   Sorts and prints exported environment variables.
+#   Sorts and lists exported environment variables.
 #
 lsenv() {
-  local sed_script
-  if [[ $GALE_FANCY ]]; then
-    sed_script=$'s/^/\033[38;5;245m/; s/=/=\033[0m/'
-  else
-    sed_script=$'s/^/\033[1m/; s/=/=\033[0m/'
-  fi
   env \
     | LC_ALL=C sort -t '=' -k 1 \
-    | sed "$sed_script"
+    | sed $'s/^/\033[1m/; s/=/=\033[0m/'
 }
 
 # cdn3 [<option>...] [<path>]

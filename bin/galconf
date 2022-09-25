@@ -12,7 +12,7 @@
 #   human-readable, but edited and parsed exclusively with galconf.
 #
 # Dependencies:
-# - GNU grep
+#   - GNU grep
 #
 
 echo() { printf '%s\n' "$1"; }

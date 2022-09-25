@@ -3,7 +3,10 @@
 # This file is part of Gale.
 #
 # Readline initialization file.
-# See readline(3)
+#
+# Documentation:
+#   - readline(3)
+#
 
 # behavior
 #set editing-mode vi

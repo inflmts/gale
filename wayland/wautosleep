@@ -3,13 +3,13 @@
 #
 # This file is part of Gale.
 #
-# This is a simple front-end to swayidle that puts the computer to sleep after a
-# period of inactivity. It works for any compositor that swayidle supports, ie.
-# those that support the idle protocol. $XDG_RUNTIME_DIR and $WAYLAND_DISPLAY
-# must both be set.
+#   This is a simple front-end to swayidle that puts the computer to sleep after
+#   a period of inactivity. It works for any compositor that swayidle supports,
+#   ie. those that support the idle protocol. $XDG_RUNTIME_DIR and
+#   $WAYLAND_DISPLAY must both be set.
 #
 # Dependencies:
-#   swayidle <https://github.com/swaywm/swayidle>
+#   - swayidle <https://github.com/swaywm/swayidle>
 #
 
 err() { printf >&2 'error: %s\n' "$1"; }
