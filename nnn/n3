@@ -38,7 +38,9 @@ bookmark C ~/.config
 bookmark D ~/.data
 bookmark S ~/.log
 bookmark X ~/.cache
-bookmark R "$XDG_RUNTIME_DIR"
+if [ "$XDG_RUNTIME_DIR" ]; then
+  bookmark R "$XDG_RUNTIME_DIR"
+fi
 bookmark M "/run/media/$USER"
 
 # add plugins
