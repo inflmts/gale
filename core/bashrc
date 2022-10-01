@@ -9,10 +9,12 @@
 # apparently needed for rcp or scp or something
 [[ $- != *i* ]] && return
 
-# Whether to use fancy colors.
-# This requires at least 256-color support from the terminal.
-GALE_FANCY=
-[[ $(tput colors 2> /dev/null) -ge 256 ]] && GALE_FANCY=1
+gale_echo() { command printf '%s\n' "$1"; }
+gale_diag() { command printf >&2 '%s\n' "$1"; }
+
+# Setting this to a non-empty value turns on 256-color support in Gale.
+# If left unset, this will be automatically detected using tput.
+unset GALE_FANCY
 
 # FUNCTIONS & ALIASES
 # ==============================================================================
@@ -21,6 +23,7 @@ alias ls='ls -hv --color=auto --group-directories-first'
 alias lsa='ls -A'
 alias ll='ls -l'
 alias lla='ls -lA'
+alias tree='tree -v --dirsfirst'
 
 alias grep='grep --color=auto'
 alias pacman='pacman --color=auto'
@@ -29,13 +32,12 @@ alias pacman='pacman --color=auto'
 alias sysleep='systemctl suspend'
 alias userctl='systemctl --user'
 
-# display the arguments
+# display the function's arguments
 argv() {
-  local arg
-  printf '%s arguments:\n' "$#"
-  for arg; do
-    printf '> %s\n' "${arg@Q}"
-  done
+  gale_echo "$# argument(s):"
+  if [[ $# -gt 0 ]]; then
+    printf '%q\n' "$@"
+  fi
 }
 
 # BLOCK DEVICES
@@ -57,7 +59,7 @@ cdnew() {
   if [[ $# -eq 1 ]]; then
     mkdir -vp -- "$1" && cd -- "$1"
   else
-    echo >&2 'usage: cdnew <dir>'
+    gale_diag 'usage: cdnew <dir>'
     return 1
   fi
 }
@@ -81,7 +83,7 @@ _resolve_source() {
 #
 udmount() {
   if [[ $# -ne 1 ]]; then
-    echo >&2 'usage: udmount <source>'
+    gale_diag 'usage: udmount <source>'
     return 1
   fi
   _resolve_source "$1"
@@ -94,7 +96,7 @@ udmount() {
 #
 udumount() {
   if [[ $# -ne 1 ]]; then
-    echo >&2 'usage: udeject <source>'
+    gale_diag 'usage: udeject <source>'
     return 1
   fi
   _resolve_source "$1"
@@ -117,7 +119,7 @@ lspath() {
   IFS=:
   set -f
   for ent in $PATH; do
-    printf '%s\n' "${ent/#"$HOME"/\~}"
+    gale_echo "${ent/#"$HOME"/\~}"
   done
   IFS=$ifs
 }
@@ -152,6 +154,15 @@ cdn3() {
 # source local configuration from ~/.config/gale/bashrc
 if [[ -s ~/.config/gale/bashrc ]]; then
   . ~/.config/gale/bashrc
+fi
+
+# if $GALE_FANCY wasn't set in configuration, autodetect using tput
+if [[ -z "${GALE_FANCY+1}" ]]; then
+  if [[ "$(tput colors 2> /dev/null)" -ge 256 ]]; then
+    GALE_FANCY=1
+  else
+    GALE_FANCY=
+  fi
 fi
 
 # PROMPT
