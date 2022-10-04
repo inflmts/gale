@@ -6,23 +6,20 @@
 
 # InfiniteLimits Core Configuration
 
-Github: <https://github.com/inflmts>
+by Daniel Achelon
 
 ## Overview
 
 My dotfiles.
 
 **Gale is primarily targeted toward GNU/Linux systems.** It uses many GNU
-command-line options. It uses many Linux-specific commands. It is not guaranteed
-or intended to work on other operating systems.
+command-line options and Linux-specific commands. It is not guaranteed or
+intended to work on other operating systems.
 
-Here's how it works: Everything in this repository is shared by every host Gale
-is installed on. When making changes to the repository, keep in mind that every
-instance is intended to share the same code.
-
-The central access point for the Gale system is `~/.gale`, which may be a
-directory or a symlink to a directory containing this repository. Programs
-running under Gale will only access repository resources through this directory.
+Everything in this repository is shared between all Gale installations and made
+available at the (possibly symlinked) directory `~/.gale`. Commits should be
+crafted with complete interoperability in mind, and inconsistencies between
+hosts should be guarded behind appropriate galconf or runtime configuration.
 
 Gale places files outside the `~/.gale` directory through a process I like to
 call _updating_. Updating involves taking static files in `~/.gale` and either

@@ -2,6 +2,8 @@
 "
 " This file is part of Gale.
 "
+" Vim initialization file.
+"
 
 " OPTIONS
 " ==============================================================================
@@ -136,8 +138,12 @@ hi TrailSpace ctermbg=1 guibg=#ff0000
 match TrailSpace /\s\+$/
 au WinNew * match TrailSpace /\s\+$/
 
-if $TERM == "linux"
+if &term == "linux"
   hi Visual cterm=reverse
+endif
+
+if &term == "foot"
+  set ttyfast
 endif
 
 au FileType sh setlocal tw=80 fo-=t
