@@ -19,7 +19,7 @@
 
 ### Not Source-Controlling it in the First Place
 
-- Probably the intended operation of dotfiles.
+- Probably how dotfiles _should_ be managed.
 
 - **Compatability** between different hosts isn't an issue.
 

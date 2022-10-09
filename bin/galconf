@@ -1,6 +1,8 @@
 #!/bin/sh
 # galconf - Gale configuration utility
 #
+#   This file is part of Gale.
+#
 #   A simple grep-based utility for accessing and manipulating Gale's
 #   configuration system.
 #

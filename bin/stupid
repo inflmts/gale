@@ -5,11 +5,10 @@
 
 echo() { printf '%s\n' "$1"; }
 diag() { printf >&2 '%s\n' "$1"; }
-die() { printf >&2 'error: %s\n' "$1"; exit 1; }
 
 usage() {
   cat <<EOF
-usage: stupid --file=<pidfile>
+usage: stupid --file=<file>
   --status [--quiet]
   --start <command> [<arg>...]
   --restart <command> [<arg>...]
@@ -19,74 +18,73 @@ usage: stupid --file=<pidfile>
 EOF
 }
 
-hasarg() { [ "${OPTARG+1}" ]; }
-noarg() { hasarg && die "option accepts no argument: $OPT"; }
-reqarg() { hasarg || die "option requires an argument: $OPT"; }
-
-PIDFILE=
-OPER=
-QUIET=
+pidfile=
+oper=
+quiet=
 while [ "$#" -gt 0 ]; do
   case $1 in
-    --) shift; break ;;
-    -*=*) OPT=${1%%=*}; OPTARG=${1#*=} ;;
-    -?*) OPT=$1; unset OPTARG ;;
-    *) break ;;
-  esac
-
-  case $OPT in
-    -h|--help)
+    --file=*)
+      pidfile=${1#*=}
+      ;;
+    --status)
+      oper=status
+      ;;
+    --start)
+      oper=start
+      ;;
+    --restart)
+      oper=restart
+      ;;
+    --restart-running)
+      oper=restart-running
+      ;;
+    --toggle)
+      oper=toggle
+      ;;
+    --quit)
+      oper=quit
+      ;;
+    --quiet)
+      quiet=1
+      ;;
+    --)
+      shift
+      break
+      ;;
+    -*)
       usage
       exit 1
       ;;
-    --file) reqarg
-      PIDFILE=$OPTARG
-      ;;
-    --status) noarg
-      OPER=status
-      ;;
-    --start) noarg
-      OPER=start
-      ;;
-    --restart) noarg
-      OPER=restart
-      ;;
-    --restart-running) noarg
-      OPER=restart-running
-      ;;
-    --toggle) noarg
-      OPER=toggle
-      ;;
-    --quit) noarg
-      OPER=quit
-      ;;
-    --quiet) noarg
-      QUIET=1
-      ;;
     *)
-      die "invalid option: $OPT"
+      break
       ;;
   esac
   shift
 done
 
-# ensure an operation was specified
-[ -z "$OPER" ] && die "no operation specified"
+# ensure an operation was provided on the command line
+if [ -z "$oper" ]; then
+  diag "no operation specified"
+  exit 1
+fi
 
-# ensure a pidfile was specified
-[ -z "$PIDFILE" ] && die "no pidfile"
+# ensure a pidfile was provided on the command line
+if [ -z "$pidfile" ]; then
+  diag "no pidfile specified"
+  exit 1
+fi
 
 # return successfully if the pidfile exists
 # and the program it references is still running
 _status() {
   local pid
-  if pid=$(cat "$PIDFILE" 2>/dev/null) \
+  if pid=$(cat "$pidfile" 2>/dev/null) \
     && kill -s 0 -- "$pid" >/dev/null 2>&1
   then
-    [ "$QUIET" ] || echo "running on pid $pid"
+    [ "$quiet" ] || echo "running on pid $pid"
     exit 0
   else
-    [ "$QUIET" ] || echo 'not running'
+    [ "$quiet" ] || echo 'not running'
     exit 1
   fi
 }
@@ -96,13 +94,13 @@ _start() {
   # Using the -C option (hopefully) ensures
   # the command fails if the pidfile exists
   # or creates the pidfile if it doesn't.
-  (set -C; : > "$PIDFILE") >/dev/null 2>&1 || return 1
+  (set -C; : > "$pidfile") >/dev/null 2>&1 || return 1
   ( trap '' HUP
     trap 'kill "$pid"' INT QUIT TERM
     command "$@" & pid=$!
-    echo "$pid" >> "$PIDFILE"
+    echo "$pid" >> "$pidfile"
     wait "$pid"
-    rm -f -- "$PIDFILE"
+    rm -f -- "$pidfile"
   ) <&- >/dev/null 2>&1 &
   return 0
 }
@@ -113,20 +111,21 @@ _restart() {
   # TODO: configurable attempts?
   #       'sleep' between tries?
   while [ "$((try = try + 1))" -le 5 ]; do
-    _start "$@" && return
+    _start "$@" && return 0
   done
-  die "unable to restart program"
+  diag "unable to restart program"
+  return 1
 }
 
 # attempt to kill the program with the pid in the pidfile
 # return successfully if the program was found and killed
 _quit() {
   local pid
-  pid=$(cat "$PIDFILE" 2>/dev/null) \
+  pid=$(cat "$pidfile" 2>/dev/null) \
     && kill -- "$pid" >/dev/null 2>&1
 }
 
-case "$OPER" in
+case "$oper" in
   status)
     _status
     ;;
