@@ -5,14 +5,15 @@
 # Alacritty is a fast, cross-platform, OpenGL terminal emulator.
 #
 # Documentation:
-#   alacritty(1)
-#   https://github.com/alacritty/alacritty
+#   - alacritty(1)
+#   - https://github.com/alacritty/alacritty
 #
 
 window:
   padding:
     x: 10
     y: 10
+  opacity: .95
 font:
   size: 10
 

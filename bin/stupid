@@ -2,6 +2,7 @@
 # stupid - simple pidfile utility
 #
 # [This file is part of Gale.]
+#
 
 echo() { printf '%s\n' "$1"; }
 diag() { printf >&2 '%s\n' "$1"; }
