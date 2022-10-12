@@ -1,7 +1,7 @@
 #!/bin/sh
 # launch a terminal
 #
-# This file is part of Gale.
+# [This file is part of Gale.]
 
 unset NNNLVL
 if [ "$WAYLAND_DISPLAY" ]; then

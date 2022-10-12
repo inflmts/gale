@@ -1,7 +1,7 @@
 #!/bin/sh
 # sway wrapper
 #
-# This file is part of Gale.
+# [This file is part of Gale.]
 
 echo() { printf '%s\n' "$1"; }
 diag() { printf >&2 '%s\n' "$1"; }

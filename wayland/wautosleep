@@ -1,7 +1,7 @@
 #!/bin/sh
 # wayland autosleep using swayidle
 #
-# This file is part of Gale.
+# [This file is part of Gale.]
 #
 #   This is a simple front-end to swayidle that puts the computer to sleep after
 #   a period of inactivity. It works for any compositor that swayidle supports,

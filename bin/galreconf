@@ -1,7 +1,7 @@
 #!/bin/sh
 # galreconf - generate the update manifest
 #
-#   This file is part of Gale.
+#   [This file is part of Gale.]
 #
 #   This script generates the update manifest, the ninja build file that galupd
 #   uses to update Gale. This file is at ~/.data/gale/upd.ninja .
@@ -200,6 +200,8 @@ if [ "$enable_wayland" ]; then
   echo '# --- wayland ---'
   echo
   add_symlink .config/foot/foot.ini       .gale/foot/foot.ini
+  add_symlink .config/alacritty/alacritty.yml \
+                                          .gale/alacritty/alacritty.yml
   add_symlink .local/bin/wautosleep       .gale/wayland/wautosleep
 fi
 
