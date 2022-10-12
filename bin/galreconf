@@ -169,6 +169,7 @@ add_bin galconf
 add_bin galreconf
 add_bin get-vim-plug
 add_bin stupid
+add_bin fzman
 
 add_symlink .local/bin/n3       .gale/nnn/n3
 add_symlink .local/bin/tn3      .gale/nnn/tn3
@@ -206,9 +207,9 @@ if [ "$enable_sway" ]; then
   echo
   echo '# --- sway ---'
   echo
+  add_symlink .local/bin/galsway          .gale/sway/galsway
   add_symlink .config/sway/config         .gale/sway/sway.conf
   add_symlink .local/bin/swaystatus       .gale/sway/swaystatus
-  add_symlink .local/bin/run-sway         .gale/sway/run-sway
   add_symlink .local/bin/sway-output-mode .gale/sway/sway-output-mode
 fi
 

@@ -1,0 +1,42 @@
+#!/bin/sh
+# fzf man viewer
+#
+# This file is part of Gale.
+#
+# Dependencies:
+#   - fzf
+#   - man
+#
+
+echo() { printf '%s\n' "$1"; }
+diag() { printf >&2 '%s\n' "$1"; }
+
+usage() {
+  cat <<EOF
+fzman - fzf man viewer
+usage: fzman
+EOF
+}
+
+if [ "$#" -gt 0 ]; then
+  usage
+  exit 1
+fi
+
+check_command() {
+  if ! command -v "$1" >/dev/null 2>&1; then
+    diag "error: $1 not found"
+    exit 1
+  fi
+}
+
+check_command fzf
+check_command apropos
+
+# 'man -k' is expected to produce lines of the form
+#
+#   page (sect) - description
+#
+# in accordance with the man-db version.
+man -k '' | sed 's/\s\+//' | fzf --exact --tiebreak=begin \
+  --bind 'enter:execute(page={}; man "${page%% *}")'
