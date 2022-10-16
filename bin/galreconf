@@ -1,30 +1,32 @@
 #!/bin/sh
 # galreconf - generate the update manifest
 #
-#   [This file is part of Gale.]
+# [This file is part of Gale.]
 #
-#   This script generates the update manifest, the ninja build file that galupd
-#   uses to update Gale. This file is at ~/.data/gale/upd.ninja .
+# This script generates the update manifest, the ninja build file that galupd
+# uses to update Gale. This file is at ~/.data/gale/upd.ninja .
 #
-#   Commands in the manifest will be run with the current working directory set
-#   to the home directory. Commands should assume only the '.gale' directory
-#   exists, since it is the manifest's job to place files elsewhere.
+# Commands in the manifest will be run in the home directory. Commands run from
+# the manifest should only assume that the .gale directory exists, since it is
+# the job of the commands to place files elsewhere.
 #
 # Dependencies:
 #   - GNU coreutils
 #
+
+basename=$(basename "$0")
 
 echo() { printf '%s\n' "$1"; }
 diag() { printf >&2 '%s\n' "$1"; }
 
 usage() {
   cat <<EOF
-usage: $(basename "$0") [<option>...]
+usage: $basename [OPTION...]
 Generate the Gale update manifest.
 
 options:
   --stdout      print generated manifest to stdout
-  --auto        used internally when run by galupd
+  --auto        used internally when regenerating automatically
 EOF
 }
 
@@ -33,7 +35,7 @@ stdout=
 
 for opt; do
   case $opt in
-    --help)
+    -h|--help)
       usage
       exit 0
       ;;
@@ -44,7 +46,7 @@ for opt; do
       stdout=1
       ;;
     *)
-      diag "error: invalid option: $opt"
+      diag "$basename: invalid option: $opt"
       exit 1
       ;;
   esac
@@ -202,6 +204,7 @@ if [ "$enable_wayland" ]; then
   add_symlink .config/foot/foot.ini       .gale/foot/foot.ini
   add_symlink .config/alacritty/alacritty.yml \
                                           .gale/alacritty/alacritty.yml
+  add_symlink .config/hypr/hyprland.conf  .gale/hypr/hyprland.conf
   add_symlink .local/bin/wautosleep       .gale/wayland/wautosleep
 fi
 

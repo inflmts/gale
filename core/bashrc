@@ -9,8 +9,8 @@
 # apparently needed for rcp or scp or something
 [[ $- != *i* ]] && return
 
-gale_echo() { command printf '%s\n' "$1"; }
-gale_diag() { command printf >&2 '%s\n' "$1"; }
+gale_echo() { printf '%s\n' "$1"; }
+gale_diag() { printf >&2 '%s\n' "$1"; }
 
 # Setting this to a non-empty value turns on 256-color support in Gale.
 # If left unset, this will be automatically detected using tput.
@@ -157,13 +157,31 @@ if [[ -s ~/.config/gale/bashrc ]]; then
 fi
 
 # if $GALE_FANCY wasn't set in configuration, autodetect using tput
-if [[ -z "${GALE_FANCY+1}" ]]; then
-  if [[ "$(tput colors 2> /dev/null)" -ge 256 ]]; then
+if [[ -z ${GALE_FANCY+1} ]]; then
+  if [[ $(tput colors 2> /dev/null) -ge 256 ]]; then
     GALE_FANCY=1
   else
     GALE_FANCY=
   fi
 fi
+
+# BANNER
+# ==============================================================================
+
+(
+  unset PRETTY_NAME
+
+  # source os-release in a subshell to avoid polluting our variable space
+  if [[ -e /etc/os-release ]]; then
+    . /etc/os-release
+  elif [[ -e /usr/lib/os-release ]]; then
+    . /usr/lib/os-release
+  fi
+  printf '\n'
+  printf '  \033[1mSystem:\033[0m   %s\n' "$(uname -srm)${PRETTY_NAME:+ + $PRETTY_NAME}"
+  printf '  \033[1mTerminal:\033[0m %s\n' "$TERM${GALE_FANCY:+(+)}"
+  printf '\n'
+)
 
 # PROMPT
 # ==============================================================================
@@ -173,16 +191,16 @@ gale_show_excode() {
   local excode="$?"
   if [[ $excode -gt 0 ]]; then
     if [[ $GALE_FANCY ]]; then
-      printf >&2 '\e[0;38;5;203;48;5;88m exit %s \e[0m\n' "$excode"
+      printf >&2 '\033[0;38;5;203;48;5;88m exit %s \033[0m\n' "$excode"
     else
-      printf >&2 '\e[0;31m[exit %s]\e[0m\n' "$excode"
+      printf >&2 '\033[0;31m[exit %s]\033[0m\n' "$excode"
     fi
   fi
 }
 
 # update the terminal title
 gale_update_title() {
-  printf '\033]2;%s\007' "${USER}@${HOSTNAME%%.*} ${PWD/#$HOME/\~}"
+  printf '\033]2;%s\003\\' "${USER}@${HOSTNAME%%.*} ${PWD/#$HOME/\~}"
 }
 
 PS1=

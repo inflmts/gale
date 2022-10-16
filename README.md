@@ -45,7 +45,7 @@ Now update Gale:
 
     bin/galupd
 
-Once set up, Gale can be updated simply with `galupd`.
+Once set up, Gale can be updated with `galupd`.
 
 ## Notes
 
