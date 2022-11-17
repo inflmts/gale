@@ -7,6 +7,7 @@
 echo() { printf '%s\n' "$1"; }
 diag() { printf >&2 '%s\n' "$1"; }
 
+# chdir to home directory
 cd ~ || exit
 
 export _JAVA_AWT_WM_NONREPARENTING=1

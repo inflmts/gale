@@ -2,10 +2,12 @@
 # launch a terminal
 #
 # [This file is part of Gale.]
+#
 
-unset NNNLVL
+unset NNNLVL NNN_PIPE NNN_INCLUDE_HIDDEN \
+  nnn f1 f2 f3 f4 d1 d2 d3 d4
 if [ "$WAYLAND_DISPLAY" ]; then
-  nohup foot >/dev/null 2>&1 &
+  nohup alacritty >/dev/null 2>&1 &
 elif [ "$DISPLAY" ]; then
   nohup urxvt >/dev/null 2>&1 &
 fi

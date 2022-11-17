@@ -46,6 +46,8 @@ set mouse=a
 noremap <Space> <C-D>
 noremap <BS> <C-U>
 
+noremap <Leader>wl "=system('wl-paste -n')<CR>
+
 nnoremap < <<
 nnoremap > >>
 xnoremap < <gv
@@ -96,7 +98,7 @@ silent! if plug#begin()
   " install plugins
   Plug 'sainnhe/sonokai'
   Plug 'preservim/nerdtree'
-  Plug 'fcpg/vim-altscreen'
+  "Plug 'fcpg/vim-altscreen'
 
   let g:sonokai_disable_italic_comment = 1
   let g:sonokai_transparent_background = 1
