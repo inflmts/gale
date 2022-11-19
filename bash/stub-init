@@ -1,0 +1,3 @@
+# stub ~/.bashrc for Gale
+source ~/.gale/bash/init
+# vim:ft=bash

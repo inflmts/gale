@@ -3,13 +3,11 @@
 
 echo() { printf '%s\n' "$1"; }
 diag() { printf >&2 '%s\n' "$1"; }
+warn() { printf >&2 'warning: %s\n' "$1"; }
+err() { printf >&2 'error: %s\n' "$1"; }
 
 if [ "$#" -gt 0 ]; then
-  cat >&2 <<EOF
-usage: ./bootstrap
-
-Create the ~/.gale symlink pointing to the current directory.
-EOF
+  diag 'usage: ./bootstrap'
   exit 1
 fi
 
@@ -19,15 +17,15 @@ target=$(realpath --relative-to="$HOME" .) || exit
 
 if real_target=$(readlink ~/.gale 2>/dev/null); then
   if [ "$real_target" != "$target" ]; then
-    diag "fixing symlink: ~/.gale -> $target"
+    diag "fixing symlink: $HOME/.gale -> $target"
     ln -sf -T "$target" ~/.gale
   else
     diag "~/.gale symlink OK"
   fi
 elif [ -e ~/.gale ]; then
-  diag "error: ~/.gale exists"
+  err "$HOME/.gale exists"
   exit 1
 else
-  diag "creating symlink: ~/.gale -> $target"
+  diag "creating symlink: $HOME/.gale -> $target"
   ln -s -T "$target" ~/.gale
 fi

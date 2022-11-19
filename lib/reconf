@@ -1,0 +1,159 @@
+#!/usr/bin/env bash
+
+yes() { [ "$1" = yes ]; }
+no() { [ "$1" = no ]; }
+
+ninja_quotep() {
+  set -- "$1" "${2//\$/\$\$}"
+  set -- "$1" "${2//:/\$:}"
+  printf -v "$1" %s "${2// /\$ }"
+}
+
+shell_quotep() {
+  if [[ $2 = *[!0-9A-Za-z,./:+=_-]* ]]; then
+    ninja_quotep "$1" "'${2//\'/\'\\\'\'}'"
+  else
+    ninja_quotep "$1" "$2"
+  fi
+}
+
+# add_install <target> <source> [<mode>]
+add_install() {
+  local target="$1" source="$2" mode="${3-644}"
+  ninja_quotep target "$target"
+  ninja_quotep source "$source"
+  shell_quotep mode "$mode"
+  echo "\
+build $target: install $source
+  mode = $mode"
+}
+
+# add_symlink <target> <content>
+add_symlink() {
+  local target="$1" content="$2"
+  ninja_quotep target "$target"
+  shell_quotep content "$content"
+  echo "\
+build $target: symlink
+  content = $content"
+}
+
+# add_stub <target> <source> [<mode>]
+add_stub() {
+  local target="$1" source="$2" mode="${3-644}"
+  ninja_quotep target "$target"
+  shell_quotep source "$source"
+  shell_quotep mode "$mode"
+  echo "\
+build $target: stub
+  source = $source
+  mode = $mode"
+}
+
+# add_sed <target> <source> <script> [<mode>]
+add_sed() {
+  local target="$1" source="$2" script="$3" mode="${4-644}"
+  ninja_quotep target "$target"
+  ninja_quotep source "$source"
+  shell_quotep script "$script"
+  shell_quotep mode "$mode"
+  echo "\
+build $target: sed $source
+  script = $script
+  mode = $mode"
+}
+
+set -e
+ENABLE_SYSTEMD=$(galconf --get --default=no systemd)
+ENABLE_WAYLAND=$(galconf --get --default=no wayland)
+ENABLE_SWAY=$(galconf --get --default=no sway)
+ENABLE_VIM_PLUG=$(galconf --get --default=yes vim-plug)
+set +e
+
+echo "\
+# Gale update manifest - $(date)
+
+builddir = .data/gale
+
+rule install
+  description = INSTALL \$out
+  command = install -m \$mode -T \$in \$out
+
+rule symlink
+  description = SYMLINK \$out
+  command = ln -sf -T \$content \$out
+
+rule sed
+  description = SED \$out
+  command = sed \$script \$in | install -m \$mode -T /dev/stdin \$out
+
+rule stub
+  description = INSTALL STUB \$out
+  command = [ -e \$out ] || install -m \$mode -T \$source \$out
+  generator = 1
+
+rule reconf
+  description = Reconfiguring...
+  command = .gale/bin/galreconf --auto
+  generator = 1
+build .data/gale/upd.ninja: reconf | .gale/bin/galreconf .gale/lib/reconf"
+
+echo
+add_stub .bashrc .gale/bash/stub-init
+add_stub .bash_profile .gale/bash/stub-profile
+add_symlink .inputrc .gale/core/inputrc
+add_symlink .vimrc .gale/core/vimrc
+add_symlink .dialogrc .gale/core/dialogrc
+add_symlink .screenrc .gale/core/screenrc
+add_symlink .lesskey .gale/core/lesskey
+
+for bin in .gale/bin/*; do
+  if [ -f "$bin" ] && [ -x "$bin" ]; then
+    binname=${bin##*/}
+    add_symlink ".local/bin/$binname" "../../$bin"
+  fi
+done
+
+add_symlink .local/bin/n3 ../../.gale/nnn/n3
+add_symlink .local/bin/tn3 ../../.gale/nnn/tn3
+add_symlink .data/applications/tn3.desktop ../../.gale/nnn/tn3.desktop
+
+for plugin in .gale/nnn/plugins/*; do
+  if [ -f "$plugin" ]; then
+    pluginname=${plugin##*/}
+    add_symlink ".config/nnn/plugins/$pluginname" "../../../$plugin"
+  fi
+done
+
+echo
+echo "\
+rule get-vim-plug
+  description = Downloading vim-plug...
+  command = .gale/bin/get-vim-plug
+  generator = 1
+build .vim/autoload/plug.vim: get-vim-plug"
+
+if yes "$ENABLE_SYSTEMD"; then
+  echo
+  echo '# --- systemd ---'
+fi
+
+if yes "$ENABLE_WAYLAND"; then
+  echo
+  echo '# --- wayland ---'
+  echo
+  add_symlink .config/foot/foot.ini ../../.gale/foot/foot.ini
+  add_symlink .config/alacritty/alacritty.yml ../../.gale/alacritty/alacritty.yml
+  add_symlink .config/hypr/hyprland.conf ../../.gale/hypr/hyprland.conf
+  add_symlink .local/bin/wautosleep ../../.gale/wayland/wautosleep
+fi
+
+if yes "$ENABLE_SWAY"; then
+  echo
+  echo '# --- sway ---'
+  echo
+  add_symlink .local/bin/galsway ../../.gale/sway/galsway
+  add_symlink .config/sway/config ../../.gale/sway/sway.conf
+  add_symlink .local/bin/swaystatus ../../.gale/sway/swaystatus
+  add_symlink .local/bin/sway-output-mode ../../.gale/sway/sway-output-mode
+fi

@@ -49,4 +49,4 @@ esac
 
 pacman "-Qq$pacman_opts" "$@" | fzf \
   --preview-window 70% \
-  --preview 'pacman -Qi {}; pacman -Qql {}'
+  --preview 'pacman -Qi --color=always {}; pacman -Qql {}'

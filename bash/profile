@@ -1,6 +1,4 @@
-# ~/.bash_profile
-#
-# [This file is part of Gale.]
+# Bash login shell initialization file.
 #
 
 # ENVIRONMENT VARIABLES
@@ -13,8 +11,9 @@ export XDG_DATA_HOME="$HOME/.data"
 export XDG_STATE_HOME="$HOME/.log"
 export XDG_CACHE_HOME="$HOME/.cache"
 
-# don't justify man pages
+# man pages
 export MANOPT='--nj'
+export MANWIDTH=80
 
 export PATH
 
@@ -33,18 +32,13 @@ gale_add_path() {
 # add standard executable directory
 gale_add_path ~/.local/bin
 
-systemctl import-environment >/dev/null 2>&1 \
+systemctl import-environment &>/dev/null \
   PATH \
   EDITOR \
   XDG_CONFIG_HOME \
   XDG_DATA_HOME \
   XDG_STATE_HOME \
   XDG_CACHE_HOME
-
-# source local configuration from ~/.config/gale/bash_profile
-if [[ -s ~/.config/gale/bash_profile ]]; then
-  . ~/.config/gale/bash_profile
-fi
 
 # quit unless interactive
 [[ $- != *i* ]] && return
