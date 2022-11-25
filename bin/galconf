@@ -238,18 +238,20 @@ func_get() {
     exit 1
   fi
   validate_keys "$@"
-  [ -s "$config_file" ] || exit 2
+  if [ -s "$config_file" ]; then
+    pattern=$(printf '%s\n' "$@" | sed -E 's/$/=.*/')
+    debug "pattern: $pattern"
 
-  pattern=$(printf '%s\n' "$@" | sed -E 's/$/=.*/')
-  debug "pattern: $pattern"
-
-  if match=$(grep -Exm 1 "$pattern" "$config_file"); then
-    echo "${match#*=}"
-  elif [ "${DEFAULT+1}" ]; then
-    echo "$DEFAULT"
-  else
-    exit 2
+    if match=$(grep -Exm 1 "$pattern" "$config_file"); then
+      echo "${match#*=}"
+      exit 0
+    fi
   fi
+  if [ "${DEFAULT+1}" ]; then
+    echo "$DEFAULT"
+    exit 0
+  fi
+  exit 2
 }
 
 func_wipe() {

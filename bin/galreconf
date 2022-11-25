@@ -3,8 +3,8 @@
 #
 # [This file is part of Gale.]
 #
-# This script generates the update manifest, the ninja build file that galupd
-# uses to update Gale. This file is at ~/.data/gale/upd.ninja .
+#   This script generates the update manifest, the ninja build file that galupd
+#   uses to update Gale. This file is at ~/.data/gale/upd.ninja .
 #
 
 echo() { printf '%s\n' "$1"; }
@@ -41,8 +41,6 @@ for opt; do
       ;;
   esac
 done
-
-export PATH="$HOME/.gale/bin:$PATH"
 
 set -e
 cd ~

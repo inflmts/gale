@@ -1,8 +1,10 @@
-" ~/.vimrc
+" Vim initialization file.
 "
 " [This file is part of Gale.]
 "
-" Vim initialization file.
+" The following functions, if defined, affect the behavior of this file:
+"
+"   GalePlug()    register vim-plug plugins
 "
 
 " OPTIONS
@@ -29,6 +31,8 @@ set formatoptions+=roj
 set autoread
 " command line completion shows possibilities in a menu
 set wildmenu
+" added in Vim 9
+silent! set wildoptions=pum
 
 " m     disable menu bar
 " M     don't source menu.vim
@@ -43,6 +47,7 @@ set mouse=a
 " KEYBINDINGS
 " ==============================================================================
 
+" space and backspace scroll the window
 noremap <Space> <C-D>
 noremap <BS> <C-U>
 
@@ -53,42 +58,24 @@ nnoremap > >>
 xnoremap < <gv
 xnoremap > >gv
 
-cnoremap <Esc>a <Home>
-cnoremap <M-a>  <Home>
-cnoremap <Esc>e <End>
-cnoremap <M-e>  <End>
+cnoremap <C-A>  <Home>
+cnoremap <C-E>  <End>
+cnoremap <C-D>  <Del>
 cnoremap <Esc>h <Left>
 cnoremap <M-h>  <Left>
 cnoremap <Esc>l <Right>
 cnoremap <M-l>  <Right>
-cnoremap <Esc>b <S-Left>
-cnoremap <M-b>  <S-Left>
-cnoremap <Esc>f <S-Right>
-cnoremap <M-f>  <S-Right>
 cnoremap <Esc>j <PageDown>
 cnoremap <M-j>  <PageDown>
 cnoremap <Esc>k <PageUp>
 cnoremap <M-k>  <PageUp>
-cnoremap <Esc>x <Del>
-cnoremap <M-x>  <Del>
+cnoremap <Esc>b <S-Left>
+cnoremap <M-b>  <S-Left>
+cnoremap <Esc>f <S-Right>
+cnoremap <M-f>  <S-Right>
 
 nnoremap <C-T> :NERDTreeToggle<CR>
 nnoremap <Leader>h :LspHover<CR>
-
-" CONFIG
-" ==============================================================================
-"
-" Source local config from ~/.config/gale/vimrc, if it exists. This script can
-" optionally define these functions:
-"
-"   GalePlug()    run after plug#begin() but before plug#end()
-"   GaleLate()    run at the end
-"
-
-let s:local_config = $HOME .. "/.config/gale/vimrc"
-if filereadable(s:local_config)
-  execute "source " .. fnameescape(s:local_config)
-endif
 
 " PLUGINS
 " ==============================================================================
@@ -137,19 +124,19 @@ hi! link SignColumn LineNr
 
 " color trailing whitespace red, since trailing space is death
 hi TrailSpace ctermbg=1 guibg=#ff0000
-match TrailSpace /\s\+$/
+au VimEnter * match TrailSpace /\s\+$/
 au WinNew * match TrailSpace /\s\+$/
 
 if &term == "linux"
   hi Visual cterm=reverse
 endif
 
-if &term == "foot"
+if &term == "foot" || &term == "alacritty"
   set ttyfast
 endif
 
 au FileType sh setlocal tw=80 fo-=t
-au FileType markdown setlocal tw=80
+au FileType markdown setlocal tw=80 et sw=2 sts=2
 au FileType make setlocal noet
 au BufRead README* setlocal tw=80
 
@@ -177,10 +164,5 @@ command! -nargs=1 -complete=file NinjaFile let g:ninja_file = <q-args>
 command! -nargs=? Ninja call <SID>ninja()
 
 nnoremap <Leader>n :call <SID>ninja()<CR>
-
-" run late hook
-if exists("*GaleLate")
-  call GaleLate()
-endif
 
 " vim:ft=vim
