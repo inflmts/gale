@@ -1,6 +1,6 @@
 " Vim initialization file.
 "
-" [This file is part of Gale.]
+" Author: Daniel Li
 "
 " The following functions, if defined, affect the behavior of this file:
 "
@@ -21,7 +21,7 @@ set splitright
 " join always leaves exactly one space
 set nojs
 " scrolling
-set nowrap so=5 ss=5 siso=5
+set nowrap so=5 ss=10 siso=10
 " display
 set number showcmd title fillchars=vert:│
 " automatically insert comment leader on <Enter> (r) and o/O (o)
@@ -31,7 +31,8 @@ set formatoptions+=roj
 set autoread
 " command line completion shows possibilities in a menu
 set wildmenu
-" added in Vim 9
+" added in Vim 9:
+" use a popup menu for command line completions
 silent! set wildoptions=pum
 
 " m     disable menu bar
@@ -141,10 +142,20 @@ au FileType make setlocal noet
 au BufRead README* setlocal tw=80
 
 if has('linux')
-  command! -nargs=1 F silent execute "!setsid -f" &shell &shellcmdflag shellescape(<q-args>, 1) ">/dev/null 2>&1"
+  " :Fork {command}
+  "
+  "   Fork a command using setsid(1).
+  "
+  " For some reason, this sometimes messes up the screen. Use redraw to fix.
+  command! -nargs=1 -complete=shellcmd Fork
+        \ silent execute "!setsid -f >/dev/null 2>&1"
+        \ &shell &shellcmdflag shellescape(<q-args>, 1) | redraw!
 endif
 
-" reload vim
+" :R
+"
+"   Reload vim (that is, re-source ~/.vimrc).
+"
 command! R source ~/.vimrc
 
 " ninja

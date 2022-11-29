@@ -47,13 +47,14 @@ fork() {
 
 # BLOCK DEVICES
 
-lsblk() {
-  command lsblk -o NAME,TYPE,RM,SIZE,RO,MOUNTPOINTS "$@"
-}
-
-# list file systems
+# include file system information
 lsfs() {
   command lsblk -o NAME,FSTYPE,LABEL,FSUSED,FSUSE%,FSSIZE,MOUNTPOINTS "$@"
+}
+
+# include GPT partition information
+lsgpt() {
+  command lsblk -o NAME,TYPE,RM,SIZE,PARTUUID,PARTLABEL "$@"
 }
 
 # cdnew <dir>

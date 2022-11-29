@@ -6,7 +6,7 @@
 
 # InfiniteLimits Core Configuration
 
-by Daniel Achelon
+by Daniel Li
 
 ## Overview
 
