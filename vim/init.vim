@@ -1,3 +1,4 @@
+"
 " Vim initialization file.
 "
 " Author: Daniel Li
@@ -6,77 +7,6 @@
 "
 "   GalePlug()    register vim-plug plugins
 "
-
-" OPTIONS
-" ==============================================================================
-
-" backspace over everything
-set backspace=indent,eol,start
-" indentation
-set et sw=2 sts=2 sta ai si
-" searching
-set is ic smartcase
-" vsplit appears on right
-set splitright
-" join always leaves exactly one space
-set nojs
-" scrolling
-set nowrap so=5 ss=10 siso=10
-" display
-set number showcmd title fillchars=vert:│
-" automatically insert comment leader on <Enter> (r) and o/O (o)
-" remove comment leaders on join (j)
-set formatoptions+=roj
-" automatically re-read a file if it is changed outside of vim
-set autoread
-" command line completion shows possibilities in a menu
-set wildmenu
-" added in Vim 9:
-" use a popup menu for command line completions
-silent! set wildoptions=pum
-
-" m     disable menu bar
-" M     don't source menu.vim
-" t     disable tearoff menu items
-" T     disable toolbar
-" l/L   disable left scrollbar (in split windows)
-" r/R   disable right scrollbar (in split windows)
-set go-=m go-=M go-=t go-=T go-=l go-=L go-=r go-=R
-" enable the mouse in all modes
-set mouse=a
-
-" KEYBINDINGS
-" ==============================================================================
-
-" space and backspace scroll the window
-noremap <Space> <C-D>
-noremap <BS> <C-U>
-
-noremap <Leader>wl "=system('wl-paste -n')<CR>
-
-nnoremap < <<
-nnoremap > >>
-xnoremap < <gv
-xnoremap > >gv
-
-cnoremap <C-A>  <Home>
-cnoremap <C-E>  <End>
-cnoremap <C-D>  <Del>
-cnoremap <Esc>h <Left>
-cnoremap <M-h>  <Left>
-cnoremap <Esc>l <Right>
-cnoremap <M-l>  <Right>
-cnoremap <Esc>j <PageDown>
-cnoremap <M-j>  <PageDown>
-cnoremap <Esc>k <PageUp>
-cnoremap <M-k>  <PageUp>
-cnoremap <Esc>b <S-Left>
-cnoremap <M-b>  <S-Left>
-cnoremap <Esc>f <S-Right>
-cnoremap <M-f>  <S-Right>
-
-nnoremap <C-T> :NERDTreeToggle<CR>
-nnoremap <Leader>h :LspHover<CR>
 
 " PLUGINS
 " ==============================================================================
@@ -115,8 +45,94 @@ silent! if plug#begin()
   silent! colorscheme sonokai
 endif
 
+" OPTIONS
+" ==============================================================================
+
+" backspace over everything
+set backspace=indent,eol,start
+" indentation
+set et sw=2 sts=2 sta ai si
+" searching
+set is ic smartcase
+" editing
+set fo+=roj tw=80 nojs
+" scrolling
+set nowrap so=5 ss=10 siso=10
+" display
+set number showcmd title fillchars=vert:│
+" automatically re-read a file if it is changed outside of vim
+set autoread
+" vsplit appears on right
+set splitright
+" command line completion shows possibilities in a menu
+set wildmenu
+" added in Vim 9:
+" use a popup menu for command line completions
+if exists('&wildoptions')
+  set wildoptions=pum
+endif
+
+" m     disable menu bar
+" M     don't source menu.vim
+" t     disable tearoff menu items
+" T     disable toolbar
+" l/L   disable left scrollbar (in split windows)
+" r/R   disable right scrollbar (in split windows)
+set go-=m go-=M go-=t go-=T go-=l go-=L go-=r go-=R
+" enable the mouse in all modes
+set mouse=a
+
+" Use $XDG_CACHE_HOME/vim for swap, backup, and undo files
+let s:cache_dir = ($XDG_CACHE_HOME ?? ($HOME .. "/.cache")) .. "/vim"
+let &dir = s:cache_dir .. "/swap//"
+let &backupdir = s:cache_dir .. "/backup//"
+let &undodir = s:cache_dir .. "/undo//"
+
+" KEYBINDINGS
+" ==============================================================================
+
+" space and backspace scroll the window
+noremap <Space> <C-D>
+noremap <BS> <C-U>
+
+noremap <Leader>wl "=system('wl-paste -n')<CR>
+
+nnoremap < <<
+nnoremap > >>
+xnoremap < <gv
+xnoremap > >gv
+
+cnoremap <C-A>  <Home>
+cnoremap <C-E>  <End>
+cnoremap <C-D>  <Del>
+cnoremap <Esc>h <Left>
+cnoremap <M-h>  <Left>
+cnoremap <Esc>l <Right>
+cnoremap <M-l>  <Right>
+cnoremap <Esc>j <PageDown>
+cnoremap <M-j>  <PageDown>
+cnoremap <Esc>k <PageUp>
+cnoremap <M-k>  <PageUp>
+cnoremap <Esc>b <S-Left>
+cnoremap <M-b>  <S-Left>
+cnoremap <Esc>f <S-Right>
+cnoremap <M-f>  <S-Right>
+
+nnoremap <C-T> :NERDTreeToggle<CR>
+nnoremap <Leader>h :LspHover<CR>
+
+" AUTOCOMMANDS
+" ==============================================================================
+
+au FileType sh setlocal fo-=t
+au FileType markdown setlocal et sw=2 sts=2
+au FileType make setlocal noet
+
 " GENERAL
 " ==============================================================================
+
+filetype plugin indent on
+syntax enable
 
 hi LineNr ctermbg=233 guibg=#222226
 hi Error ctermfg=7 ctermbg=203
@@ -132,14 +148,9 @@ if &term == "linux"
   hi Visual cterm=reverse
 endif
 
-if &term == "foot" || &term == "alacritty"
+if &term =~ '^\(foot\|alacritty\)\(-\|$\)'
   set ttyfast
 endif
-
-au FileType sh setlocal tw=80 fo-=t
-au FileType markdown setlocal tw=80 et sw=2 sts=2
-au FileType make setlocal noet
-au BufRead README* setlocal tw=80
 
 if has('linux')
   " :Fork {command}

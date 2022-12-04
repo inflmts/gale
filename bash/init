@@ -1,3 +1,4 @@
+#
 # Bash shell initialization file.
 #
 
@@ -5,44 +6,62 @@
 # apparently needed for rcp or scp or something
 [[ $- != *i* ]] && return
 
-gale_echo() { printf '%s\n' "$1"; }
-gale_diag() { printf >&2 '%s\n' "$1"; }
-gale_warn() { printf >&2 'warning: %s\n' "$1"; }
-gale_err() { printf >&2 'error: %s\n' "$1"; }
+__echo() { printf '%s\n' "$1"; }
+__diag() { printf >&2 '%s\n' "$1"; }
+__warn() { printf >&2 'warning: %s\n' "$1"; }
+__err() { printf >&2 'error: %s\n' "$1"; }
 
 if [[ -z $GALE_COLORS ]]; then
   # autodetect number of colors using tput
   GALE_COLORS=$(tput colors 2>/dev/null) || GALE_COLORS=0
 fi
 
+# setup colors for ls (and tree)
+eval "$(dircolors)"
 
 # FUNCTIONS & ALIASES
 # ==============================================================================
 
-alias ls='ls -hv --color=auto --group-directories-first'
-alias lsa='ls -A'
-alias ll='ls -l'
-alias lla='ls -lA'
-alias tree='tree -v --dirsfirst'
-
 alias grep='grep --color=auto'
-alias pacman='pacman --color=auto'
 #alias date='date +"%a %Y-%m-%d %I:%M %p"'
 
 alias sysleep='systemctl suspend'
 alias userctl='systemctl --user'
 alias md='mkdir -pv'
 
+gale_ls() {
+  LC_COLLATE=C command ls -h --group-directories-first --color=auto "$@"
+}
+
+alias ls='gale_ls'
+alias lsa='gale_ls -A'
+alias ll='gale_ls -l'
+alias lla='gale_ls -lA'
+
+gale_tree() {
+  if [[ -t 1 ]]; then
+    LC_COLLATE=C command tree --dirsfirst -C "$@" | less -FXSRMKi
+  else
+    LC_COLLATE=C command tree --dirsfirst -n "$@"
+  fi
+}
+
+alias tree='gale_tree'
+alias treea='gale_tree -a'
+alias treed='gale_tree -d'
+alias treeda='gale_tree -da'
+
 # display the function's arguments
 argv() {
-  gale_echo "$# argument(s):"
+  __echo "$# argument(s):"
   if [[ $# -gt 0 ]]; then
     printf '%q\n' "$@"
   fi
 }
 
+# daemonize a process using setsid
 fork() {
-  "$@" <&- &>/dev/null & disown
+  setsid -f -- "$@" <&- &>/dev/null
 }
 
 # BLOCK DEVICES
@@ -65,7 +84,7 @@ cdnew() {
   if [[ $# -eq 1 ]]; then
     mkdir -vp -- "$1" && cd -- "$1"
   else
-    gale_diag 'usage: cdnew <dir>'
+    __diag 'usage: cdnew <dir>'
     return 1
   fi
 }
@@ -73,16 +92,16 @@ cdnew() {
 gale_resolve_block_device() {
   case $1 in
     l=*)
-      gale_echo "/dev/disk/by-label/${1#*=}"
+      __echo "/dev/disk/by-label/${1#*=}"
       ;;
     pl=*)
-      gale_echo "/dev/disk/by-partlabel/${1#*=}"
+      __echo "/dev/disk/by-partlabel/${1#*=}"
       ;;
     /*)
-      gale_echo "$1"
+      __echo "$1"
       ;;
     *)
-      gale_err "invalid block device: $1"
+      __err "invalid block device: $1"
       return 1
       ;;
   esac
@@ -95,7 +114,7 @@ gale_resolve_block_device() {
 udmount() {
   local source
   if [[ $# -ne 1 ]]; then
-    gale_diag 'usage: udmount <source>'
+    __diag 'usage: udmount <source>'
     return 1
   fi
   source=$(gale_resolve_block_device "$1") || return
@@ -109,7 +128,7 @@ udmount() {
 udumount() {
   local source
   if [[ $# -ne 1 ]]; then
-    gale_diag 'usage: udeject <source>'
+    __diag 'usage: udeject <source>'
     return 1
   fi
   source=$(gale_resolve_block_device "$1") || return
@@ -127,7 +146,7 @@ lspath() {
   IFS=:
   set -f
   for ent in $PATH; do
-    gale_echo "${ent/#"$HOME"/\~}"
+    __echo "${ent/#"$HOME"/\~}"
   done
   IFS=$ifs
 }
@@ -154,6 +173,15 @@ cdn3() {
   [[ -f $tmpfile ]] && . "$tmpfile"
   rm -f "$tmpfile"
   return "$excode"
+}
+
+mksh() {
+  if [[ $# -ne 1 ]]; then
+    __diag 'usage: mksh <file>'
+    return 1
+  fi
+  __echo '#!/bin/sh' > "$1" \
+    && chmod +x -- "$1"
 }
 
 # BANNER
@@ -183,11 +211,11 @@ cdn3() {
     timedesc=evening
   fi
 
-  gale_echo
-  gale_echo "  ${tbold}System:${treset} $(uname -srm)${PRETTY_NAME:+ ($PRETTY_NAME)}"
-  gale_echo "  ${tbold}Terminal:${treset} ${TERM:-(unknown)} ($GALE_COLORS colors)"
-  gale_echo "  ${tbold}Time:${treset} $time. Good $timedesc."
-  gale_echo
+  __echo
+  __echo "  ${tbold}System:${treset} $(uname -srm)${PRETTY_NAME:+ ($PRETTY_NAME)}"
+  __echo "  ${tbold}Terminal:${treset} ${TERM:-(unknown)} ($GALE_COLORS colors)"
+  __echo "  ${tbold}Time:${treset} $time. Good $timedesc."
+  __echo
 )
 
 # PROMPT
@@ -199,9 +227,9 @@ gale_show_excode() {
   local esc=$'\033'
   if [[ $code -gt 0 ]]; then
     if [[ $GALE_COLORS -ge 256 ]]; then
-      gale_echo "$esc[0;38;5;203;48;5;88m exit $code $esc[0m"
+      __echo "$esc[0;38;5;203;48;5;88m exit $code $esc[0m"
     else
-      gale_echo "$esc[0;31m[exit $code]$esc[0m"
+      __echo "$esc[0;31m[exit $code]$esc[0m"
     fi
   fi
 }

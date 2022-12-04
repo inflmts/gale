@@ -1,3 +1,4 @@
+#
 # Bash login shell initialization file.
 #
 
@@ -42,9 +43,6 @@ systemctl import-environment &>/dev/null \
 
 # quit unless interactive
 [[ $- != *i* ]] && return
-
-# INTERACTIVE-ONLY
-# ==============================================================================
 
 # load ~/.bashrc
 . ~/.bashrc
