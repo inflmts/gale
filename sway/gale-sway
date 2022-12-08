@@ -1,20 +1,18 @@
 #!/bin/sh
-# sway wrapper
-#
-# [This file is part of Gale.]
-#
+# sway wrapper for Gale
 
 echo() { printf '%s\n' "$1"; }
 diag() { printf >&2 '%s\n' "$1"; }
+warn() { printf >&2 'warning: %s\n' "$1"; }
+err() { printf >&2 'error: %s\n' "$1"; }
 
 # chdir to home directory
-cd ~ || exit
+cd "$HOME" || exit 2
 
 export _JAVA_AWT_WM_NONREPARENTING=1
 export XCURSOR_SIZE=24
 export MOZ_ENABLE_WAYLAND=1
 export QT_QPA_PLATFORM=wayland
-export QT_QPA_PLATFORMTHEME=gtk3
 export QT_WAYLAND_DISABLE_WINDOWDECORATION=1
 
 sway-output-mode --noreload

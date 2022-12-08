@@ -97,11 +97,11 @@ rule stub
   command = [ -e \$out ] || install -m \$mode -T \$source \$out
   generator = 1
 
-rule reconf
+rule configure
   description = Reconfiguring...
   command = .gale/bin/galreconf --auto
   generator = 1
-build .data/gale/upd.ninja: reconf | .gale/bin/galreconf .gale/lib/reconf"
+build .data/gale/upd.ninja: configure | .gale/bin/galreconf .gale/lib/configure"
 
 echo
 add_stub .bashrc .gale/bash/stub-init
@@ -154,7 +154,7 @@ fi
 if yes "$ENABLE_SWAY"; then
   echo
   echo '# Sway'
-  add_symlink .local/bin/galsway ../../.gale/sway/galsway
+  add_symlink .local/bin/gale-sway ../../.gale/sway/gale-sway
   add_symlink .config/sway/config ../../.gale/sway/sway.conf
   add_symlink .local/bin/swaystatus ../../.gale/sway/swaystatus
   add_symlink .local/bin/sway-output-mode ../../.gale/sway/sway-output-mode

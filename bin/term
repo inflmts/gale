@@ -1,0 +1,108 @@
+#!/bin/sh
+# term - start a terminal
+
+echo() { printf '%s\n' "$1"; }
+diag() { printf >&2 '%s\n' "$1"; }
+warn() { printf >&2 'warning: %s\n' "$1"; }
+err() { printf >&2 'error: %s\n' "$1"; }
+
+usage() {
+  cat <<EOF
+usage: term [<options>] [<command> [<args>...]]
+options:
+  -w, --wayland   force Wayland terminal
+  -x, --xserver   force X terminal
+EOF
+}
+
+TYPE=auto
+while [ "$#" -gt 0 ]; do
+  case $1 in
+    --)
+      shift
+      break
+      ;;
+    -[!-][!-]*)
+      rest=${1#-?}
+      arg=${1%"$rest"}
+      shift
+      set -- "$arg" "-$rest" "$@"
+      continue
+      ;;
+    -h|--help)
+      usage
+      exit 0
+      ;;
+    -w|--wayland)
+      TYPE=wayland
+      ;;
+    -x|--xserver)
+      TYPE=xserver
+      ;;
+    -*)
+      err "invalid option: $1"
+      exit 1
+      ;;
+    *)
+      break
+      ;;
+  esac
+  shift
+done
+
+if [ "$TYPE" = auto ]; then
+  if [ -n "$WAYLAND_DISPLAY" ]; then
+    TYPE=wayland
+  elif [ -n "$DISPLAY" ]; then
+    TYPE=xserver
+  else
+    err "not in graphical session"
+    diag "(neither \$WAYLAND_DISPLAY nor \$DISPLAY are set)"
+    exit 127
+  fi
+fi
+
+is_wayland() {
+  [ "$TYPE" = wayland ]
+}
+
+is_xserver() {
+  [ "$TYPE" = xserver ]
+}
+
+has_command() {
+  command -v "$1" >/dev/null 2>&1
+}
+
+unset TERMEXEC
+if is_wayland; then
+     TERMEXEC=$(galconf --get term-wayland) \
+  || TERMEXEC=$(galconf --get term) \
+  || unset TERMEXEC
+else
+     TERMEXEC=$(galconf --get term-xserver) \
+  || TERMEXEC=$(galconf --get term) \
+  || unset TERMEXEC
+fi
+
+# local configuration
+if [ -n "${TERMEXEC+1}" ]; then
+  exec sh -c "$TERMEXEC ${1+-e \$@}" term "$@"
+
+# alacritty
+elif has_command alacritty; then
+  exec alacritty ${1+-e} "$@"
+
+# foot
+elif is_wayland && has_command foot; then
+  exec foot -- "$@"
+
+# urxvt
+elif is_xserver && has_command urxvt; then
+  exec urxvt ${1+-e} "$@"
+
+# not found
+else
+  err "could not find viable terminal"
+  exit 127
+fi

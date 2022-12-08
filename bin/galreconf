@@ -9,14 +9,15 @@
 
 echo() { printf '%s\n' "$1"; }
 diag() { printf >&2 '%s\n' "$1"; }
+warn() { printf >&2 'warning: %s\n' "$1"; }
 err() { printf >&2 'error: %s\n' "$1"; }
 
 usage() {
   cat <<EOF
 usage: galreconf [<option>...]
 options:
-  --stdout      print generated manifest to stdout
-  --auto        used internally by galupd
+  -s, --stdout      print generated manifest to stdout
+      --auto        used internally by galupd
 EOF
 }
 
@@ -32,7 +33,7 @@ for opt; do
     --auto)
       AUTO=1
       ;;
-    --stdout)
+    -s|--stdout)
       STDOUT=1
       ;;
     *)
@@ -45,10 +46,15 @@ done
 set -e
 cd ~
 if [ "$STDOUT" ]; then
-  exec .gale/lib/reconf
+  if [ -t 1 ]; then
+    .gale/lib/configure | less -FSXMKi
+  else
+    .gale/lib/configure
+  fi
 else
   mkdir -p .data/gale
   rm -f .data/gale/upd.ninja.new
-  .gale/lib/reconf > .data/gale/upd.ninja.new
+  .gale/lib/configure > .data/gale/upd.ninja.new
   mv -T .data/gale/upd.ninja.new .data/gale/upd.ninja
+  .gale/bin/galupd -t cleandead
 fi
