@@ -82,11 +82,16 @@ set go-=m go-=M go-=t go-=T go-=l go-=L go-=r go-=R
 " enable the mouse in all modes
 set mouse=a
 
-" Use $XDG_CACHE_HOME/vim for swap, backup, and undo files
+" Use $XDG_CACHE_HOME/vim for swap, backup, and undo files.
 let s:cache_dir = ($XDG_CACHE_HOME ?? ($HOME .. "/.cache")) .. "/vim"
 let &dir = s:cache_dir .. "/swap//"
 let &backupdir = s:cache_dir .. "/backup//"
 let &undodir = s:cache_dir .. "/undo//"
+
+" Create these directories if they don't exist.
+call mkdir(&dir, 'p')
+call mkdir(&backupdir, 'p')
+call mkdir(&undodir, 'p')
 
 " KEYBINDINGS
 " ==============================================================================
