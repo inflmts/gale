@@ -59,9 +59,16 @@ argv() {
   fi
 }
 
-# daemonize a process using setsid
+# daemonize a process, redirecting stdout and stderr to /dev/null
+# and closing stdin
 fork() {
-  setsid -f -- "$@" <&- &>/dev/null
+  "$@" <&- &>/dev/null & disown
+}
+
+# same as fork but exits the shell afterwards
+forkx() {
+  "$@" <&- &>/dev/null & disown
+  exit
 }
 
 # BLOCK DEVICES
@@ -182,6 +189,10 @@ mksh() {
   fi
   __echo '#!/bin/sh' > "$1" \
     && chmod +x -- "$1"
+}
+
+mpv-audio() {
+  mpv --no-audio-display "$@"
 }
 
 # BANNER

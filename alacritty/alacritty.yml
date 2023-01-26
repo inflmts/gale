@@ -1,8 +1,9 @@
+#
 # alacritty.yml - alacritty configuration file
 #
-# [This file is part of Gale.]
+# This file is part of Gale.
 #
-#   Alacritty is a fast, cross-platform, OpenGL terminal emulator.
+# Alacritty is a fast, cross-platform, OpenGL terminal emulator.
 #
 # Documentation:
 #   - alacritty(1)

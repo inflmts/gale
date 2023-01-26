@@ -8,53 +8,40 @@ err() { printf >&2 'error: %s\n' "$1"; }
 
 usage() {
   cat <<EOF
-usage: term [<options>] [<command> [<args>...]]
+usage: term [-w|-x] [<command> [<args>...]]
 options:
-  -w, --wayland   force Wayland terminal
-  -x, --xserver   force X terminal
+  -w      force Wayland terminal
+  -x      force X terminal
 EOF
 }
 
 TYPE=auto
-while [ "$#" -gt 0 ]; do
-  case $1 in
-    --)
-      shift
-      break
-      ;;
-    -[!-][!-]*)
-      rest=${1#-?}
-      arg=${1%"$rest"}
-      shift
-      set -- "$arg" "-$rest" "$@"
-      continue
-      ;;
-    -h|--help)
+while getopts :hwx opt; do
+  case $opt in
+    h)
       usage
       exit 0
       ;;
-    -w|--wayland)
+    w)
       TYPE=wayland
       ;;
-    -x|--xserver)
-      TYPE=xserver
+    x)
+      TYPE=x
       ;;
-    -*)
-      err "invalid option: $1"
+    \?)
+      err "invalid option: -$OPTARG"
+      usage >&2
       exit 1
       ;;
-    *)
-      break
-      ;;
   esac
-  shift
 done
+shift "$((OPTIND - 1))"
 
 if [ "$TYPE" = auto ]; then
   if [ -n "$WAYLAND_DISPLAY" ]; then
     TYPE=wayland
   elif [ -n "$DISPLAY" ]; then
-    TYPE=xserver
+    TYPE=x
   else
     err "not in graphical session"
     diag "(neither \$WAYLAND_DISPLAY nor \$DISPLAY are set)"
@@ -66,8 +53,8 @@ is_wayland() {
   [ "$TYPE" = wayland ]
 }
 
-is_xserver() {
-  [ "$TYPE" = xserver ]
+is_x() {
+  [ "$TYPE" = x ]
 }
 
 has_command() {
@@ -80,7 +67,7 @@ if is_wayland; then
   || TERMEXEC=$(galconf --get term) \
   || unset TERMEXEC
 else
-     TERMEXEC=$(galconf --get term-xserver) \
+     TERMEXEC=$(galconf --get term-x) \
   || TERMEXEC=$(galconf --get term) \
   || unset TERMEXEC
 fi
@@ -98,7 +85,7 @@ elif is_wayland && has_command foot; then
   exec foot -- "$@"
 
 # urxvt
-elif is_xserver && has_command urxvt; then
+elif is_x && has_command urxvt; then
   exec urxvt ${1+-e} "$@"
 
 # not found

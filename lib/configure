@@ -120,6 +120,7 @@ for bin in .gale/bin/*; do
 done
 
 add_symlink .local/bin/n3 ../../.gale/nnn/n3
+add_symlink .local/bin/n3-preview ../../.gale/nnn/n3-preview
 add_symlink .local/bin/tn3 ../../.gale/nnn/tn3
 add_symlink .data/applications/tn3.desktop ../../.gale/nnn/tn3.desktop
 
