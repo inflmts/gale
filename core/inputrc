@@ -22,6 +22,9 @@ set revert-all-at-newline on
 
 "\C-r": re-read-init-file
 
+# this also clears scrollback history
+"\C-l": clear-display
+
 "\eh": backward-char
 "\ej": next-history
 "\ek": previous-history
