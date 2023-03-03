@@ -1,10 +1,10 @@
 #!/bin/sh
 # galreconf - generate the update manifest
 #
-# [This file is part of Gale.]
+# This file is part of Gale.
 #
-#   This script generates the update manifest, the ninja build file that galupd
-#   uses to update Gale. This file is at ~/.data/gale/upd.ninja .
+# This script generates the update manifest, the ninja build file that galupd
+# uses to update Gale. This file is at ~/.data/gale/upd.ninja .
 #
 
 echo() { printf '%s\n' "$1"; }
@@ -12,17 +12,20 @@ diag() { printf >&2 '%s\n' "$1"; }
 warn() { printf >&2 'warning: %s\n' "$1"; }
 err() { printf >&2 'error: %s\n' "$1"; }
 
-usage() {
+usage()
+{
   cat <<EOF
 usage: galreconf [<option>...]
 options:
   -s, --stdout      print generated manifest to stdout
+  -q, --quiet       don't print progress status
       --auto        used internally by galupd
 EOF
 }
 
-AUTO=
-STDOUT=
+auto=
+quiet=
+stdout=
 
 for opt; do
   case $opt in
@@ -31,10 +34,13 @@ for opt; do
       exit 0
       ;;
     --auto)
-      AUTO=1
+      auto=1
+      ;;
+    -q|--quiet)
+      quiet=1
       ;;
     -s|--stdout)
-      STDOUT=1
+      stdout=1
       ;;
     *)
       err "invalid option: $opt"
@@ -43,18 +49,22 @@ for opt; do
   esac
 done
 
+generate_manifest()
+{
+  .gale/internal/generate-manifest ${quiet:+--quiet}
+}
+
 set -e
 cd ~
-if [ "$STDOUT" ]; then
+if [ "$stdout" ]; then
   if [ -t 1 ]; then
-    .gale/lib/configure | less -FSXMKi
+    generate_manifest | less -FSMKi
   else
-    .gale/lib/configure
+    generate_manifest
   fi
 else
   mkdir -p .data/gale
   rm -f .data/gale/upd.ninja.new
-  .gale/lib/configure > .data/gale/upd.ninja.new
+  generate_manifest > .data/gale/upd.ninja.new
   mv -T .data/gale/upd.ninja.new .data/gale/upd.ninja
-  .gale/bin/galupd -t cleandead
 fi

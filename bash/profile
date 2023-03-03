@@ -1,6 +1,14 @@
 #
 # Bash login shell initialization file.
 #
+# This file is part of Gale. Local changes should be made at:
+#
+#   ~/.config/gale/bash_profile
+#
+
+if [[ -s ~/.config/gale/bash_profile ]]; then
+  . ~/.config/gale/bash_profile
+fi
 
 # ENVIRONMENT VARIABLES
 # ==============================================================================
@@ -12,7 +20,7 @@ export XDG_DATA_HOME="$HOME/.data"
 export XDG_STATE_HOME="$HOME/.log"
 export XDG_CACHE_HOME="$HOME/.cache"
 
-# man pages
+# options for man-db man(1)
 export MANOPT='--nj'
 export MANWIDTH=80
 
@@ -23,11 +31,11 @@ export PATH
 #   Prepend <entry> to the $PATH environment variable if it isn't already
 #   there.
 #
-gale_add_path() {
-  case :"$PATH": in
-    *:"$1":*) ;;
-    *) PATH="$1:$PATH" ;;
-  esac
+gale_add_path()
+{
+  if [[ :"$PATH": != *:"$1":* ]]; then
+    PATH="$1:$PATH"
+  fi
 }
 
 # add standard executable directory
@@ -41,8 +49,12 @@ systemctl import-environment &>/dev/null \
   XDG_STATE_HOME \
   XDG_CACHE_HOME
 
-# quit unless interactive
-[[ $- != *i* ]] && return
+# If the local configuration defines gale_late_hook, run that after everything
+# else.
+if declare -F gale_late_hook &>/dev/null; then
+  gale_late_hook
+  unset -f gale_late_hook
+fi
 
 # load ~/.bashrc
 . ~/.bashrc

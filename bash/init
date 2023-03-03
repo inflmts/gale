@@ -1,15 +1,26 @@
 #
 # Bash shell initialization file.
 #
+# This file is part of Gale. Local changes should be made at:
+#
+#   ~/.config/gale/bashrc
+#
+# Note that this configuration file is sourced regardless of whether or not the
+# session is interactive.
+#
+
+if [[ -f ~/.config/gale/bashrc ]]; then
+  . ~/.config/gale/bashrc
+fi
 
 # quit unless interactive
 # apparently needed for rcp or scp or something
 [[ $- != *i* ]] && return
 
-__echo() { printf '%s\n' "$1"; }
-__diag() { printf >&2 '%s\n' "$1"; }
-__warn() { printf >&2 'warning: %s\n' "$1"; }
-__err() { printf >&2 'error: %s\n' "$1"; }
+__echo() { command printf '%s\n' "$1"; }
+__diag() { command printf >&2 '%s\n' "$1"; }
+__warn() { command printf >&2 'warning: %s\n' "$1"; }
+__err() { command printf >&2 'error: %s\n' "$1"; }
 
 if [[ -z $GALE_COLORS ]]; then
   # autodetect number of colors using tput
@@ -29,7 +40,8 @@ alias sysleep='systemctl suspend'
 alias userctl='systemctl --user'
 alias md='mkdir -pv'
 
-gale_ls() {
+gale_ls()
+{
   LC_COLLATE=C command ls -h --group-directories-first --color=auto "$@"
 }
 
@@ -38,7 +50,8 @@ alias lsa='gale_ls -A'
 alias ll='gale_ls -l'
 alias lla='gale_ls -lA'
 
-gale_tree() {
+gale_tree()
+{
   if [[ -t 1 ]]; then
     LC_COLLATE=C command tree --dirsfirst -C "$@" | less -FXSRMKi
   else
@@ -52,7 +65,8 @@ alias treed='gale_tree -d'
 alias treeda='gale_tree -da'
 
 # display the function's arguments
-argv() {
+argv()
+{
   __echo "$# argument(s):"
   if [[ $# -gt 0 ]]; then
     printf '%q\n' "$@"
@@ -61,12 +75,14 @@ argv() {
 
 # daemonize a process, redirecting stdout and stderr to /dev/null
 # and closing stdin
-fork() {
+fork()
+{
   "$@" <&- &>/dev/null & disown
 }
 
 # same as fork but exits the shell afterwards
-forkx() {
+forkx()
+{
   "$@" <&- &>/dev/null & disown
   exit
 }
@@ -74,12 +90,14 @@ forkx() {
 # BLOCK DEVICES
 
 # include file system information
-lsfs() {
+lsfs()
+{
   command lsblk -o NAME,FSTYPE,LABEL,FSUSED,FSUSE%,FSSIZE,MOUNTPOINTS "$@"
 }
 
 # include GPT partition information
-lsgpt() {
+lsgpt()
+{
   command lsblk -o NAME,TYPE,RM,SIZE,PARTUUID,PARTLABEL "$@"
 }
 
@@ -87,7 +105,8 @@ lsgpt() {
 #
 #   Create (recursively) and change to directory <dir>.
 #
-cdnew() {
+cdnew()
+{
   if [[ $# -eq 1 ]]; then
     mkdir -vp -- "$1" && cd -- "$1"
   else
@@ -96,7 +115,8 @@ cdnew() {
   fi
 }
 
-gale_resolve_block_device() {
+gale_resolve_block_device()
+{
   case $1 in
     l=*)
       __echo "/dev/disk/by-label/${1#*=}"
@@ -118,7 +138,8 @@ gale_resolve_block_device() {
 #
 #   Mount <source> with udisksctl.
 #
-udmount() {
+udmount()
+{
   local source
   if [[ $# -ne 1 ]]; then
     __diag 'usage: udmount <source>'
@@ -132,7 +153,8 @@ udmount() {
 #
 #   Unmount <source> with udisksctl.
 #
-udumount() {
+udumount()
+{
   local source
   if [[ $# -ne 1 ]]; then
     __diag 'usage: udeject <source>'
@@ -146,7 +168,8 @@ udumount() {
 #
 #   List the contents of the $PATH environment variable.
 #
-lspath() {
+lspath()
+{
   local -
   local ifs ent
   ifs=$IFS
@@ -162,7 +185,8 @@ lspath() {
 #
 #   Sorts and lists exported environment variables.
 #
-lsenv() {
+lsenv()
+{
   env \
       | LC_ALL=C sort -t '=' -k 1 \
       | sed $'s/^/\033[1m/; s/=/=\033[0m/'
@@ -172,7 +196,8 @@ lsenv() {
 #
 #   n3 wrapper activating cd on quit.
 #
-cdn3() {
+cdn3()
+{
   local tmpfile excode
   tmpfile=$(mktemp /tmp/n3.XXXXX)
   NNN_TMPFILE=$tmpfile command n3 "$@"
@@ -182,7 +207,8 @@ cdn3() {
   return "$excode"
 }
 
-mksh() {
+mksh()
+{
   if [[ $# -ne 1 ]]; then
     __diag 'usage: mksh <file>'
     return 1
@@ -191,7 +217,8 @@ mksh() {
     && chmod +x -- "$1"
 }
 
-mpv-audio() {
+mpv-audio()
+{
   mpv --no-audio-display "$@"
 }
 
@@ -233,7 +260,8 @@ mpv-audio() {
 # ==============================================================================
 
 # if the last command exited unsuccessfully, show the exit code
-gale_show_excode() {
+gale_show_excode()
+{
   local code="$?"
   local esc=$'\033'
   if [[ $code -gt 0 ]]; then
@@ -246,7 +274,8 @@ gale_show_excode() {
 }
 
 # update the terminal title
-gale_update_title() {
+gale_update_title()
+{
   printf '\033]2;%s\003\\' "${USER}@${HOSTNAME%%.*} ${PWD/#$HOME/\~}"
 }
 
@@ -271,5 +300,33 @@ else
 fi
 
 PROMPT_COMMAND=(gale_show_excode gale_update_title)
+
+# KEYBINDINGS
+# ==============================================================================
+
+gale_readline_print_variable()
+{
+  set -- "${READLINE_LINE:0:$READLINE_POINT}"
+  set -- "${1##*[!0-9A-Za-z_]}"
+  if [[ $1 ]]; then
+    if [[ -v $1 ]]; then
+      __echo "$1=${!1@Q}"
+    else
+      __echo "$1 is unset"
+    fi
+  fi
+}
+
+bind -x '"\C-x\C-p": gale_readline_print_variable'
+
+# LATE HOOK
+# ==============================================================================
+
+# If the local configuration defines a gale_late_hook, run it after everything
+# else.
+if declare -F gale_late_hook &>/dev/null; then
+  gale_late_hook
+  unset -f gale_late_hook
+fi
 
 # vim:ft=bash

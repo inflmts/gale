@@ -40,12 +40,8 @@ shift "$((OPTIND - 1))"
 if [ "$TYPE" = auto ]; then
   if [ -n "$WAYLAND_DISPLAY" ]; then
     TYPE=wayland
-  elif [ -n "$DISPLAY" ]; then
-    TYPE=x
   else
-    err "not in graphical session"
-    diag "(neither \$WAYLAND_DISPLAY nor \$DISPLAY are set)"
-    exit 127
+    TYPE=x
   fi
 fi
 
@@ -63,11 +59,11 @@ has_command() {
 
 unset TERMEXEC
 if is_wayland; then
-     TERMEXEC=$(galconf --get term-wayland) \
+     TERMEXEC=$(galconf --get term.wayland) \
   || TERMEXEC=$(galconf --get term) \
   || unset TERMEXEC
 else
-     TERMEXEC=$(galconf --get term-x) \
+     TERMEXEC=$(galconf --get term.x) \
   || TERMEXEC=$(galconf --get term) \
   || unset TERMEXEC
 fi

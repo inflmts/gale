@@ -1,7 +1,7 @@
 #!/bin/sh
 # galupd - update Gale
 #
-# [This file is part of Gale.]
+# This file is part of Gale.
 #
 
 echo() { printf '%s\n' "$1"; }

@@ -4,22 +4,19 @@
     Yb  "88  dP__Yb  88  .o 88""
      YboodP dP""""Yb 88ood8 888888
 
-# InfiniteLimits Core Configuration
+# InfiniteLimits Linux Configuration
 
 by Daniel Li
 
 ## Overview
 
-My dotfiles.
+**Gale** is a collection of scripts and configuration files that allows me to
+manage all my personal configuration, on any host, from one centralized source
+using Git. It is intended to be the ultimate front-end; Gale is designed to
+integrate with software, not the other way around.
 
-**Gale is primarily targeted toward GNU/Linux systems.** It uses many GNU
-command-line options and Linux-specific commands. It is not guaranteed or
-intended to work on other operating systems.
-
-Everything in this repository is shared between all Gale installations and made
-available at the (possibly symlinked) directory `~/.gale`. Commits should be
-crafted with complete interoperability in mind, and inconsistencies between
-hosts should be guarded behind appropriate galconf or runtime configuration.
+**Gale is primarily targeted toward GNU/Linux systems.** Development is heavily
+dependent on the operating system I'm (struggling to) use right now.
 
 Gale places files outside the `~/.gale` directory through a process I like to
 call _updating_. Updating involves taking static files in `~/.gale` and either
@@ -36,6 +33,8 @@ and cannot be changed. Their values are:
 
 ## Getting Started
 
+This repository should be made available at `~/.gale`.
+
 If this repository is not already at `~/.gale`, a symlink to the current working
 directory can be created automatically with:
 
@@ -50,9 +49,6 @@ Once set up, Gale can be updated with `galupd`.
 ## Notes
 
 Ascii text generated with <https://ascii.co.uk>.
-
-See `COMPARISON.md` for a small comparison of what I think are the pros and cons
-of various methods of dotfile management.
 
 This is probably way overcomplicated for what I actually need. I am really good
 at coming up with bad ideas. That's why I need other people to help me,

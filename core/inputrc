@@ -1,6 +1,6 @@
 # ~/.inputrc
 #
-# [This file is part of Gale.]
+# This file is part of Gale.
 #
 # Readline initialization file.
 #
@@ -9,7 +9,7 @@
 #
 
 # behavior
-#set editing-mode vi
+set editing-mode emacs
 set show-all-if-unmodified on
 set skip-completed-text on
 set revert-all-at-newline on

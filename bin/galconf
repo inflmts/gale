@@ -31,14 +31,13 @@ usage() {
 usage: galconf [<command> [<argument>...]]
 commands:
   -l, --list
-  -s, --set <key>=<value>...    (default)
+  -s, --set <key>=<value>...
   -u, --unset <key>...
   -t, --test <key>...
-  -g, --get <key>...
+  -g, --get [--chain] [--default=<value>] <key>...
       --wipe
 options:
       --debug           show debugging output
-      --all             get all keys
 EOF
 }
 
@@ -230,6 +229,16 @@ func_test() {
   grep -Exq "$pattern" "$config_file" || exit 2
 }
 
+try_grep()
+{
+  local match
+  debug "trying grep -Exm1 $1"
+  if match=$(grep -Exm1 "$1" "$config_file"); then
+    echo "${match#*=}"
+    exit 0
+  fi
+}
+
 func_get() {
   # only proceed if arguments are present
   # and the config file has keys in the first place
@@ -239,12 +248,17 @@ func_get() {
   fi
   validate_keys "$@"
   if [ -s "$config_file" ]; then
-    pattern=$(printf '%s\n' "$@" | sed -E 's/$/=.*/')
-    debug "pattern: $pattern"
-
-    if match=$(grep -Exm 1 "$pattern" "$config_file"); then
-      echo "${match#*=}"
-      exit 0
+    if [ "$chain" ]; then
+      for key; do
+        try_grep "${key}=.*"
+      done
+    else
+      pattern="$1=.*"
+      shift
+      for key; do
+        pattern="${pattern}${_NL}$1=.*"
+      done
+      try_grep "$pattern"
     fi
   fi
   if [ "${DEFAULT+1}" ]; then

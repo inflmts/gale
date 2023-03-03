@@ -6,6 +6,7 @@
 " The following functions, if defined, affect the behavior of this file:
 "
 "   GalePlug()    register vim-plug plugins
+"   GaleLate()    run after everything else
 "
 
 " PLUGINS
@@ -191,5 +192,10 @@ command! -nargs=1 -complete=file NinjaFile let g:ninja_file = <q-args>
 command! -nargs=? Ninja call <SID>ninja()
 
 nnoremap <Leader>n :call <SID>ninja()<CR>
+
+" run late hooks
+if exists("*GaleLate")
+  call GaleLate()
+endif
 
 " vim:ft=vim
