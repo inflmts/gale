@@ -12,42 +12,74 @@
 #   - swayidle <https://github.com/swaywm/swayidle>
 #
 
-err() { printf >&2 'error: %s\n' "$1"; }
-die() { printf >&2 'error: %s\n' "$1"; exit 1; }
-warn() { printf >&2 'warning: %s\n' "$1"; }
 echo() { printf '%s\n' "$1"; }
+diag() { printf >&2 '%s\n' "$1"; }
+quit() { printf >&2 '%s\n' "$2"; exit "$1"; }
 
-usage() {
+usage()
+{
   cat <<EOF
 usage: wautosleep [<command>]
 commands:
      status (default)
-  u, up
+  s, start
+     autostart
   r, restart
      restart-running
-  d, down
+  q, quit
   t, toggle
 EOF
 }
 
-pidfile() {
-  [ "$XDG_RUNTIME_DIR" ] \
-    || die '$XDG_RUNTIME_DIR is not set!'
-  [ "$WAYLAND_DISPLAY" ] \
-    || die '$WAYLAND_DISPLAY is not set!'
-  PIDFILE="$XDG_RUNTIME_DIR/wautosleep.$WAYLAND_DISPLAY.pid"
+pidfile()
+{
+  if [ -z "$XDG_RUNTIME_DIR" ]; then
+    quit 1 '$XDG_RUNTIME_DIR is not set!'
+  fi
+  if [ -z "$WAYLAND_DISPLAY" ]; then
+    quit 1 '$WAYLAND_DISPLAY is not set!'
+  fi
+  pidfile="$XDG_RUNTIME_DIR/wautosleep.$WAYLAND_DISPLAY.pid"
 }
 
-wa() {
-  stupid --file="$PIDFILE" "$1" swayidle timeout 600 'systemctl suspend'
+_stupid()
+{
+  stupid --file="$pidfile" "$1" swayidle timeout 600 'systemctl suspend'
 }
 
 case $1 in
-  status|'') pidfile; wa --status ;;
-  u|up) pidfile; wa --start ;;
-  r|restart) pidfile; wa --restart ;;
-  restart-running) pidfile; wa --restart-running ;;
-  d|down) pidfile; wa --quit ;;
-  t|toggle) pidfile; wa --toggle ;;
-  *) usage; exit 1 ;;
+  status|'')
+    pidfile
+    _stupid --status
+    ;;
+  s|start)
+    pidfile
+    _stupid --start
+    ;;
+  autostart)
+    pidfile
+    if [ "$(galconf --get --default=yes wayland.autosleep)" = yes ]; then
+      _stupid --start
+    fi
+    ;;
+  r|restart)
+    pidfile
+    _stupid --restart
+    ;;
+  restart-running)
+    pidfile
+    _stupid --restart-running
+    ;;
+  q|quit)
+    pidfile
+    _stupid --quit
+    ;;
+  t|toggle)
+    pidfile
+    _stupid --toggle
+    ;;
+  *)
+    usage
+    exit 1
+    ;;
 esac

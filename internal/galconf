@@ -6,8 +6,7 @@
 # A simple grep-based utility for accessing and manipulating Gale's
 # configuration system.
 #
-# The Gale configuration file is located at $XDG_CONFIG_HOME/gale/config
-# (defaults to ~/.config/gale/config if $XDG_CONFIG_HOME is not set).
+# The Gale configuration file is located at `.config/gale/config`.
 #
 # The configuration file consists of lines of the following format:
 #
@@ -26,10 +25,12 @@ diag() { printf >&2 '%s\n' "$1"; }
 warn() { printf >&2 'warning: %s\n' "$1"; }
 err() { printf >&2 'error: %s\n' "$1"; }
 
-usage() {
+usage()
+{
   cat <<EOF
 usage: galconf [<command> [<argument>...]]
 commands:
+  -h, --help
   -l, --list
   -s, --set <key>=<value>...
   -u, --unset <key>...
@@ -45,25 +46,22 @@ _NL='
 '
 
 # config directory
-config_dir="${XDG_CONFIG_HOME:-$HOME/.config}/gale"
+config_dir=~/.config/gale
 # config file
 config_file="$config_dir/config"
 
-HELP=
+unset HELP MODE DEBUG DEFAULT
 MODE=set
-DEBUG=
-unset DEFAULT
 
 while [ "$#" -gt 0 ]; do
-  opt=$1
-  shift
-  case $opt in
+  case $1 in
     --)
+      shift
       break
       ;;
     -[!-][!-]*)
-      rest=${opt#-?}
-      set -- "${opt%"$rest"}" "-$rest" "$@"
+      rest=${1#-?}
+      set -- "${1%"$rest"}" "-$rest" "$@"
       ;;
     -h|--help)
       HELP=1
@@ -84,7 +82,7 @@ while [ "$#" -gt 0 ]; do
       MODE=get
       ;;
     --default=*)
-      DEFAULT=${opt#*=}
+      DEFAULT=${1#*=}
       ;;
     --bool)
       DEFAULT=${DEFAULT-no}
@@ -95,15 +93,15 @@ while [ "$#" -gt 0 ]; do
     --debug)
       DEBUG=1
       ;;
-    -?*)
-      err "invalid option: $opt"
+    -*)
+      err "invalid option: $1"
       exit 1
       ;;
     *)
-      set -- "$opt" "$@"
       break
       ;;
   esac
+  shift
 done
 
 if [ "$HELP" ]; then
@@ -117,14 +115,16 @@ else
   debug() { :; }
 fi
 
-contains() {
+contains()
+{
   case $1 in
     *"$2"*) return 0 ;;
     *) return 1 ;;
   esac
 }
 
-is_valid_key() {
+is_valid_key()
+{
   case $1 in
     *[!0-9a-z.-]*) return 1 ;;
     [0-9a-z]*) return 0 ;;
@@ -132,7 +132,8 @@ is_valid_key() {
   esac
 }
 
-validate_keys() {
+validate_keys()
+{
   local key
   for key; do
     if ! is_valid_key "$key"; then
@@ -142,7 +143,8 @@ validate_keys() {
   done
 }
 
-validate_set_arguments() {
+validate_set_arguments()
+{
   local arg
   for arg; do
     if ! contains "$arg" '='; then
@@ -160,7 +162,8 @@ validate_set_arguments() {
   done
 }
 
-func_list() {
+func_list()
+{
   if [ "$#" -gt 0 ]; then
     err "too many arguments"
     exit 1
@@ -176,7 +179,8 @@ func_list() {
   fi
 }
 
-func_set() {
+func_set()
+{
   # quit if no arguments given
   [ "$#" -gt 0 ] || exit 0
   validate_set_arguments "$@"
@@ -199,7 +203,8 @@ func_set() {
   mv "$config_file.new" "$config_file"
 }
 
-func_unset() {
+func_unset()
+{
   # only proceed if arguments are present
   # and the config file has keys to delete
   [ "$#" -gt 0 ] || exit 0
@@ -216,7 +221,8 @@ func_unset() {
   mv "$config_file.new" "$config_file"
 }
 
-func_test() {
+func_test()
+{
   # only proceed if arguments are present
   # and the config file has keys in the first place
   [ "$#" -gt 0 ] || exit 1
@@ -239,7 +245,8 @@ try_grep()
   fi
 }
 
-func_get() {
+func_get()
+{
   # only proceed if arguments are present
   # and the config file has keys in the first place
   if [ "$#" -eq 0 ]; then
@@ -268,13 +275,13 @@ func_get() {
   exit 2
 }
 
-func_wipe() {
+func_wipe()
+{
   if [ "$#" -gt 0 ]; then
     err "too many arguments"
     exit 1
   fi
 
-  # psyche
   # doesn't actually destroy, only moves to $config_file.old
   if [ -e "$config_file" ]; then
     mv "$config_file" "$config_file.old"

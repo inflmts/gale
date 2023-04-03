@@ -1,4 +1,5 @@
-# lesskey - specify key bindings for less
+#
+# ~/.lesskey
 #
 # This file is part of Gale.
 #
@@ -49,4 +50,5 @@ _     display-option
 9     digit
 ?     help
 v     version
+h     help
 q     quit
