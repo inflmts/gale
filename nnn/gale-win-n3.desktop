@@ -1,6 +1,9 @@
+#
+# This file is part of Gale.
+#
 [Desktop Entry]
 Type=Application
-Name=n3 in Terminal
+Name=n3
 GenericName=File Manager
-Exec=tn3 -- %f
+Exec=gale-win-n3 -- %f
 Type=inode/directory

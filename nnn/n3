@@ -1,10 +1,10 @@
 #!/bin/sh
 # nnn wrapper
 #
-# [This file is part of Gale.]
+# This file is part of Gale.
 #
 # Dependencies:
-#   nnn
+#   - nnn
 #
 
 NNN_BMS=\;

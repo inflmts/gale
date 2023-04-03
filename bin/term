@@ -1,5 +1,8 @@
 #!/bin/sh
-# term - start a terminal
+# start a terminal
+#
+# This file is part of Gale.
+#
 
 echo() { printf '%s\n' "$1"; }
 diag() { printf >&2 '%s\n' "$1"; }
@@ -10,32 +13,35 @@ usage() {
   cat <<EOF
 usage: term [-w|-x] [<command> [<args>...]]
 options:
-  -w      force Wayland terminal
-  -x      force X terminal
+  -w      force wayland selection
+  -x      force x11 selection
 EOF
 }
 
-TYPE=auto
-while getopts :hwx opt; do
+type=auto
+while [ "$#" -gt 0 ]; do
   case $opt in
-    h)
-      usage
-      exit 0
+    --)
+      shift
+      break
       ;;
-    w)
-      TYPE=wayland
+    -w)
+      wayland
       ;;
-    x)
-      TYPE=x
+    -x)
+      x11
       ;;
-    \?)
+    -*)
       err "invalid option: -$OPTARG"
       usage >&2
       exit 1
       ;;
+    *)
+      break
+      ;;
   esac
+  shift
 done
-shift "$((OPTIND - 1))"
 
 if [ "$TYPE" = auto ]; then
   if [ -n "$WAYLAND_DISPLAY" ]; then

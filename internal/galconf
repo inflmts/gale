@@ -1,7 +1,7 @@
 #!/bin/sh
-# galconf - Gale configuration utility
+# gale configuration utility
 #
-# [This file is part of Gale.]
+# This file is part of Gale.
 #
 # A simple grep-based utility for accessing and manipulating Gale's
 # configuration system.
@@ -9,14 +9,14 @@
 # The Gale configuration file is located at $XDG_CONFIG_HOME/gale/config
 # (defaults to ~/.config/gale/config if $XDG_CONFIG_HOME is not set).
 #
-# Each line of the configuration file consists of the following format:
+# The configuration file consists of lines of the following format:
 #
 #   <key> '=' <value>
 #
 # Keys may contain any character in the set [0-9a-z.-] and may not begin with
 # '.' or '-'. Values may contain any character except newline.
 #
-# Dependencies:
+# Requirements:
 #   - grep -E -m
 #   - sed -E
 #

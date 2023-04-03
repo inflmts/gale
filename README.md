@@ -15,21 +15,30 @@ manage all my personal configuration, on any host, from one centralized source
 using Git. It is intended to be the ultimate front-end; Gale is designed to
 integrate with software, not the other way around.
 
-**Gale is primarily targeted toward GNU/Linux systems.** Development is heavily
-dependent on the operating system I'm (struggling to) use right now.
+**Gale is primarily targeted toward GNU/Linux systems.** Development is
+obviously highly dependent on the operating system I'm using right now.
 
-Gale places files outside the `~/.gale` directory through a process I like to
-call _updating_. Updating involves taking static files in `~/.gale` and either
-creating symlinks to them or using them to generate other files. Gale uses
-[Ninja][2] perform updates.
+Gale places files outside the `~/.gale` directory through a process in Gale
+called _updating_. This involves generating a [Ninja][2] manifest with
+`galsetup` that symlinks, installs, or generates files in the home directory and
+running `galupd` which is only a wrapper around Ninja. The update can be
+customized using `galconf`. These utilities are located in the `internal`
+directory.
 
-Directories per the [XDG Base Directory Specification][1] are hardcoded in Gale
-and cannot be changed. Their values are:
+These [XDG Base Directory Specification][1] variables are hardcoded in Gale and
+cannot be changed:
 
-    $XDG_CONFIG_HOME    ~/.config
-    $XDG_DATA_HOME      ~/.data
-    $XDG_STATE_HOME     ~/.log
-    $XDG_CACHE_HOME     ~/.cache
+```
+$XDG_CONFIG_HOME    ~/.config
+$XDG_DATA_HOME      ~/.data
+```
+
+The default values of other variables are:
+
+```
+$XDG_STATE_HOME     ~/.log
+$XDG_CACHE_HOME     ~/.cache
+```
 
 ## Getting Started
 
@@ -38,21 +47,21 @@ This repository should be made available at `~/.gale`.
 If this repository is not already at `~/.gale`, a symlink to the current working
 directory can be created automatically with:
 
-    ./bootstrap
+```
+./bootstrap
+```
 
 Now update Gale:
 
-    bin/galupd
+```
+internal/galupd
+```
 
 Once set up, Gale can be updated with `galupd`.
 
 ## Notes
 
 Ascii text generated with <https://ascii.co.uk>.
-
-This is probably way overcomplicated for what I actually need. I am really good
-at coming up with bad ideas. That's why I need other people to help me,
-otherwise stuff I make ends up looking like this.
 
 [1]: https://www.freedesktop.org/basedir-spec/basedir-spec-latest.html
 [2]: https://ninja-build.org

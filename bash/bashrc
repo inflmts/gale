@@ -1,7 +1,9 @@
 #
-# Bash shell initialization file.
+# Bash initialization file
 #
-# This file is part of Gale. Local changes should be made at:
+# This file is part of Gale.
+#
+# Local changes should be made at:
 #
 #   ~/.config/gale/bashrc
 #
@@ -17,10 +19,10 @@ fi
 # apparently needed for rcp or scp or something
 [[ $- != *i* ]] && return
 
-__echo() { command printf '%s\n' "$1"; }
-__diag() { command printf >&2 '%s\n' "$1"; }
-__warn() { command printf >&2 'warning: %s\n' "$1"; }
-__err() { command printf >&2 'error: %s\n' "$1"; }
+gale_echo() { command printf '%s\n' "$1"; }
+gale_diag() { command printf >&2 '%s\n' "$1"; }
+gale_warn() { command printf >&2 'warning: %s\n' "$1"; }
+gale_err() { command printf >&2 'error: %s\n' "$1"; }
 
 if [[ -z $GALE_COLORS ]]; then
   # autodetect number of colors using tput
@@ -67,25 +69,15 @@ alias treeda='gale_tree -da'
 # display the function's arguments
 argv()
 {
-  __echo "$# argument(s):"
+  gale_echo "$# argument(s):"
   if [[ $# -gt 0 ]]; then
     printf '%q\n' "$@"
   fi
 }
 
-# daemonize a process, redirecting stdout and stderr to /dev/null
-# and closing stdin
-fork()
-{
-  "$@" <&- &>/dev/null & disown
-}
-
-# same as fork but exits the shell afterwards
-forkx()
-{
-  "$@" <&- &>/dev/null & disown
-  exit
-}
+# fork processes using setsid(1)
+.f() { setsid -f -- "$@" >/dev/null 2>&1; }
+.fx() { setsid -f -- "$@" >/dev/null 2>&1 && exit; }
 
 # BLOCK DEVICES
 
@@ -110,7 +102,7 @@ cdnew()
   if [[ $# -eq 1 ]]; then
     mkdir -vp -- "$1" && cd -- "$1"
   else
-    __diag 'usage: cdnew <dir>'
+    gale_diag 'usage: cdnew <dir>'
     return 1
   fi
 }
@@ -119,16 +111,16 @@ gale_resolve_block_device()
 {
   case $1 in
     l=*)
-      __echo "/dev/disk/by-label/${1#*=}"
+      gale_echo "/dev/disk/by-label/${1#*=}"
       ;;
     pl=*)
-      __echo "/dev/disk/by-partlabel/${1#*=}"
+      gale_echo "/dev/disk/by-partlabel/${1#*=}"
       ;;
     /*)
-      __echo "$1"
+      gale_echo "$1"
       ;;
     *)
-      __err "invalid block device: $1"
+      gale_err "invalid block device: $1"
       return 1
       ;;
   esac
@@ -142,7 +134,7 @@ udmount()
 {
   local source
   if [[ $# -ne 1 ]]; then
-    __diag 'usage: udmount <source>'
+    gale_diag 'usage: udmount <source>'
     return 1
   fi
   source=$(gale_resolve_block_device "$1") || return
@@ -157,7 +149,7 @@ udumount()
 {
   local source
   if [[ $# -ne 1 ]]; then
-    __diag 'usage: udeject <source>'
+    gale_diag 'usage: udeject <source>'
     return 1
   fi
   source=$(gale_resolve_block_device "$1") || return
@@ -176,7 +168,7 @@ lspath()
   IFS=:
   set -f
   for ent in $PATH; do
-    __echo "${ent/#"$HOME"/\~}"
+    gale_echo "${ent/#"$HOME"/\~}"
   done
   IFS=$ifs
 }
@@ -210,51 +202,17 @@ cdn3()
 mksh()
 {
   if [[ $# -ne 1 ]]; then
-    __diag 'usage: mksh <file>'
+    gale_diag 'usage: mksh <file>'
     return 1
   fi
-  __echo '#!/bin/sh' > "$1" \
+  gale_echo '#!/bin/sh' > "$1" \
     && chmod +x -- "$1"
-}
-
-mpv-audio()
-{
-  mpv --no-audio-display "$@"
 }
 
 # BANNER
 # ==============================================================================
 
-( unset PRETTY_NAME
-
-  # source os-release in a subshell to avoid polluting our variable space
-  if [[ -e /etc/os-release ]]; then
-    . /etc/os-release
-  elif [[ -e /usr/lib/os-release ]]; then
-    . /usr/lib/os-release
-  fi
-
-  tbold=$'\033[1m'
-  treset=$'\033[0m'
-
-  printf -v time '%(%a %Y %b %d %I:%M %p)T'
-  printf -v hour '%(%k)T'
-  if [[ $hour -lt 5 ]]; then
-    timedesc=evening
-  elif [[ $hour -lt 12 ]]; then
-    timedesc=morning
-  elif [[ $hour -lt 18 ]]; then
-    timedesc=afternoon
-  else
-    timedesc=evening
-  fi
-
-  __echo
-  __echo "  ${tbold}System:${treset} $(uname -srm)${PRETTY_NAME:+ ($PRETTY_NAME)}"
-  __echo "  ${tbold}Terminal:${treset} ${TERM:-(unknown)} ($GALE_COLORS colors)"
-  __echo "  ${tbold}Time:${treset} $time. Good $timedesc."
-  __echo
-)
+gale_echo $'\033[7m'"  Bash $BASH_VERSION on ${TERM:-unknown} | Powered by Gale  "$'\033[0m'
 
 # PROMPT
 # ==============================================================================
@@ -266,9 +224,9 @@ gale_show_excode()
   local esc=$'\033'
   if [[ $code -gt 0 ]]; then
     if [[ $GALE_COLORS -ge 256 ]]; then
-      __echo "$esc[0;38;5;203;48;5;88m exit $code $esc[0m"
+      gale_echo "$esc[0;38;5;203;48;5;88m exit $code $esc[0m"
     else
-      __echo "$esc[0;31m[exit $code]$esc[0m"
+      gale_echo "$esc[0;31m[exit $code]$esc[0m"
     fi
   fi
 }
@@ -310,9 +268,9 @@ gale_readline_print_variable()
   set -- "${1##*[!0-9A-Za-z_]}"
   if [[ $1 ]]; then
     if [[ -v $1 ]]; then
-      __echo "$1=${!1@Q}"
+      gale_echo "$1=${!1@Q}"
     else
-      __echo "$1 is unset"
+      gale_echo "$1 is unset"
     fi
   fi
 }

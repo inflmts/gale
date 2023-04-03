@@ -1,7 +1,9 @@
 #
-# Bash login shell initialization file.
+# Bash login initialization file
 #
-# This file is part of Gale. Local changes should be made at:
+# This file is part of Gale.
+#
+# Local changes should be made at:
 #
 #   ~/.config/gale/bash_profile
 #
@@ -22,7 +24,6 @@ export XDG_CACHE_HOME="$HOME/.cache"
 
 # options for man-db man(1)
 export MANOPT='--nj'
-export MANWIDTH=80
 
 export PATH
 

@@ -1,0 +1,279 @@
+#!/usr/bin/env bash
+# setup gale
+#
+# This file is part of the Gale build system.
+#
+# galsetup generates the update manifest, the ninja build file that galupd uses
+# to update Gale. This file is at ~/.data/gale/upd.ninja. galsetup is a bash
+# script that defines a few utility functions and sources setup.bash, which
+# actually constructs the dependency graph.
+#
+
+echo() { printf '%s\n' "$1"; }
+diag() { printf >&2 '%s\n' "$1"; }
+quit() { printf >&2 '%s\n' "$2"; exit "$1"; }
+
+usage()
+{
+  cat <<\EOF
+usage: galsetup [<option>...]
+options:
+  --stdout    print to stdout instead of writing to file
+  --quiet     don't print progress status
+  --auto      used internally by galupd
+EOF
+}
+
+setup_stdout=
+setup_quiet=
+setup_auto=
+for opt; do
+  case $opt in
+    --help)
+      usage
+      exit 0
+      ;;
+    --stdout)
+      setup_stdout=1
+      ;;
+    --quiet)
+      setup_quiet=1
+      ;;
+    --auto)
+      setup_auto=1
+      ;;
+    *)
+      quit 1 "galsetup: invalid option: $opt"
+      ;;
+  esac
+done
+
+shopt -s nullglob
+cd "$HOME" || exit 1
+
+# shell_quote <str> <result>
+#
+#   Escape <str> for the shell and store in variable <result>.
+#
+shell_quote()
+{
+  printf -v "$2" %s "'${1//\'/\'\\\'\'}'"
+}
+
+# ninja_path_quote <str> <result>
+#
+#   Escape <str> as a ninja path and store in variable <result>.
+#
+ninja_path_quote()
+{
+  set -- "${1//\$/\$\$}" "$2"
+  set -- "${1// /\$ }" "$2"
+  printf -v "$2" %s "${1//:/\$:}"
+}
+
+is_valid_input()
+{
+  case "/$1/" in
+    *//*|*/./*|*/../*) return 1 ;;
+    *) return 0 ;;
+  esac
+}
+
+is_valid_output()
+{
+  case "/$1/" in
+    *//*|*/./*|*/../*|/.gale/*) return 1 ;;
+    *) return 0 ;;
+  esac
+}
+
+assert_valid_input()
+{
+  if ! is_valid_input "$1"; then
+    quit 1 "error: invalid input filename: $1"
+  fi
+}
+
+assert_valid_output()
+{
+  if ! is_valid_output "$1"; then
+    quit 1 "error: invalid output filename: $1"
+    exit 1
+  fi
+}
+
+# add [<options>...]
+#
+#   -o <output>   output file
+#   -i <input>    input file
+#   -c <cmd>      command line
+#   -d <desc>     command description
+#   -g            generator
+#   -p            phony
+#
+#   Declare an update target.
+#
+add()
+{
+  local outputs inputs cmd desc generator tmp
+  outputs=()
+  inputs=()
+  cmd=
+  desc=
+  generator=
+  phony=
+  while [[ $# -gt 0 ]]; do
+    case $1 in
+      -o)
+        [[ $# -lt 2 ]] && quit 1 "$FUNCNAME: $1 requires an argument"
+        assert_valid_output "$2"
+        ninja_path_quote "$2" tmp
+        outputs+=("$tmp")
+        shift 2
+        ;;
+      -i)
+        [[ $# -lt 2 ]] && quit 1 "$FUNCNAME: $1 requires an argument"
+        assert_valid_input "$2"
+        ninja_path_quote "$2" tmp
+        inputs+=("$tmp")
+        shift 2
+        ;;
+      -c)
+        [[ $# -lt 2 ]] && quit 1 "$FUNCNAME: $1 requires an argument"
+        cmd=$2
+        shift 2
+        ;;
+      -d)
+        [[ $# -lt 2 ]] && quit 1 "$FUNCNAME: $1 requires an argument"
+        desc=$2
+        shift 2
+        ;;
+      -g)
+        generator=1
+        shift
+        ;;
+      -p)
+        phony=1
+        shift
+        ;;
+      *)
+        quit 1 "$FUNCNAME: invalid option: $1"
+        ;;
+    esac
+  done
+
+  if [[ ${#outputs[@]} -eq 0 ]]; then
+    quit 1 "$FUNCNAME: no outputs specified"
+  fi
+
+  if [[ $phony ]]; then
+    echo >&5 "build ${outputs[*]}: phony ${inputs[*]}"
+  else
+    [[ -z $cmd ]] && quit 1 "$FUNCNAME: no command specified"
+    [[ -z $desc ]] && quit 1 "$FUNCNAME: no description specified"
+    echo >&5 "build ${outputs[*]}: - ${inputs[*]}"
+    echo >&5 "  description = ${desc//\$/\$\$}"
+    echo >&5 "  command = ${cmd//\$/\$\$}"
+    if [[ $generator ]]; then
+      echo >&5 "  generator = 1"
+    fi
+  fi
+}
+
+setup_deps=(.gale/internal/galsetup)
+
+# add_setup_dep <file>
+#
+#   Add <file> as a setup dependency.
+#
+add_setup_dep()
+{
+  setup_deps+=("$1")
+}
+
+# include <file>
+#
+#   Source <file> and add it as a setup dependency.
+#
+include()
+{
+  local file="$1"
+  assert_valid_input "$file"
+  add_setup_dep "$file"
+  . "./$file"
+}
+
+# add_install <dest> <src> [<mode>]
+#
+#   Declare an install from <src> to <dest> with mode <mode> (default 644).
+#
+add_install()
+{
+  local dest="$1" src="$2" mode="${3-644}"
+  local dest_q src_q mode_q
+  shell_quote "$dest" dest_q
+  shell_quote "$src" src_q
+  shell_quote "$mode" mode_q
+  add -o "$dest" -i "$src" \
+      -c "install -Tm $mode_q $src_q $dest_q" \
+      -d "Installing $dest..."
+}
+
+# make_relative <path> <base> <result>
+#
+#   Make <path> relative to <base> and store in variable <result>.
+#   <path> and <base> must be canonical relative paths.
+#
+make_relative()
+{
+  while [[ $2 = */* ]]; do
+    set -- "../$1" "${2#*/}" "$3"
+  done
+  printf -v "$3" %s "$1"
+}
+
+# add_symlink <dest> <target>
+#
+#   Declare a symlink <dest> pointing to <target>.
+#
+add_symlink()
+{
+  local dest="$1" target="$2"
+  local dest_q target_q
+  make_relative "$target" "$dest" target
+  shell_quote "$dest" dest_q
+  shell_quote "$target" target_q
+  add -o "$dest" \
+      -c "ln -sfT $target_q $dest_q" \
+      -d "Symlinking $dest..."
+}
+
+generate_manifest()
+{
+  echo >&5 "rule -"
+  echo >&5 "  command = :"
+  include .gale/setup.bash
+
+  local iargs file
+  iargs=()
+  for file in "${setup_deps[@]}"; do
+    iargs+=(-i "$file")
+  done
+  add -o .data/gale/upd.ninja "${iargs[@]}" \
+      -c '.gale/internal/galsetup --auto' \
+      -d 'Reconfiguring Gale...'
+  add -p -o setup -i .data/gale/upd.ninja
+}
+
+if [[ $setup_stdout ]]; then
+  exec 5>&1 >&2 \
+    && generate_manifest
+else
+  TIMEFORMAT='Completed in %Rs (user %Us sys %Ss)'
+  time { exec 5> .data/gale/upd.ninja.new >&2 \
+      && generate_manifest \
+      && exec 5>&- \
+      && mv -f .data/gale/upd.ninja.new .data/gale/upd.ninja \
+      && .gale/internal/galupd -t restat \
+      && .gale/internal/galupd -t cleandead; }
+fi

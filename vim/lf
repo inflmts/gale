@@ -1,0 +1,11 @@
+#!/bin/sh
+# lf wrapper for vim
+#
+# This file is part of Gale.
+#
+
+exec lf -command 'set nopreview' \
+        -command 'set ratios 1' \
+        -command 'set promptfmt "\033[1;31m%d\033[37m%f\033[0m"' \
+        -command '&jq -nj --argjson id "$id" '\''"\u001b]51;\(["call", "GaleLfRecvClientId", $id] | tojson)\u0007"'\'' >/dev/tty' \
+        -command 'cmd open &jq -nj --arg f "$f" '\''"\u001b]51;\(["call", "GaleLfRecvOpen", $f] | tojson)\u0007"'\'' >/dev/tty'

@@ -1,13 +1,22 @@
 "
-" Vim initialization file.
+" Vim initialization file
 "
-" Author: Daniel Li
+" This file is part of Gale.
+"
+" Local configuration should be placed in:
+"
+"   ~/.config/gale/vimrc
 "
 " The following functions, if defined, affect the behavior of this file:
 "
 "   GalePlug()    register vim-plug plugins
 "   GaleLate()    run after everything else
 "
+
+let s:config_file = $HOME .. "/.config/gale/vimrc"
+if filereadable(s:config_file)
+  exe "source " .. fnameescape(s:config_file)
+endif
 
 " PLUGINS
 " ==============================================================================
@@ -16,7 +25,7 @@
 silent! if plug#begin()
   " install plugins
   Plug 'sainnhe/sonokai'
-  Plug 'preservim/nerdtree'
+  "Plug 'preservim/nerdtree'
   "Plug 'fcpg/vim-altscreen'
 
   let g:sonokai_disable_italic_comment = 1
@@ -42,7 +51,7 @@ silent! if plug#begin()
 
   call plug#end()
 
-  " apply custom colorscheme
+  " apply sonokai colorscheme
   silent! colorscheme sonokai
 endif
 
@@ -60,7 +69,7 @@ set fo+=roj tw=80 nojs
 " scrolling
 set nowrap so=5 ss=10 siso=10
 " display
-set number showcmd title fillchars=vert:│
+set number title fillchars=vert:│
 " automatically re-read a file if it is changed outside of vim
 set autoread
 " vsplit appears on right
@@ -101,6 +110,17 @@ call mkdir(&undodir, 'p')
 noremap <Space> <C-D>
 noremap <BS> <C-U>
 
+" CTRL-J and CTRL-K move the cursor fast
+" CTRL-N and CTRL-P move the cursor even faster
+noremap <C-J> 5j
+noremap <C-K> 5k
+noremap <C-N> 10j
+noremap <C-P> 10k
+
+noremap H z<CR>
+noremap M z.
+noremap L z-
+
 noremap <Leader>wl "=system('wl-paste -n')<CR>
 
 nnoremap < <<
@@ -111,6 +131,11 @@ xnoremap > >gv
 cnoremap <C-A>  <Home>
 cnoremap <C-E>  <End>
 cnoremap <C-D>  <Del>
+cnoremap <C-B>  <Left>
+cnoremap <C-F>  <Right>
+cnoremap <C-P>  <Up>
+cnoremap <C-N>  <Down>
+
 cnoremap <Esc>h <Left>
 cnoremap <M-h>  <Left>
 cnoremap <Esc>l <Right>
@@ -124,8 +149,7 @@ cnoremap <M-b>  <S-Left>
 cnoremap <Esc>f <S-Right>
 cnoremap <M-f>  <S-Right>
 
-nnoremap <C-T> :NERDTreeToggle<CR>
-nnoremap <Leader>h :LspHover<CR>
+nnoremap <Leader>h <Cmd>LspHover<CR>
 
 " AUTOCOMMANDS
 " ==============================================================================
@@ -154,10 +178,6 @@ if &term == "linux"
   hi Visual cterm=reverse
 endif
 
-if &term =~ '^\(foot\|alacritty\)\(-\|$\)'
-  set ttyfast
-endif
-
 if has('linux')
   " :Fork {command}
   "
@@ -175,25 +195,139 @@ endif
 "
 command! R source ~/.vimrc
 
-" ninja
-function! s:ninja()
-  let ninja_command = "!ninja"
-  if exists("g:ninja_dir") && g:ninja_dir != "."
-    let ninja_command = ninja_command .. " -C " .. shellescape(g:ninja_dir, 1)
-  endif
-  if exists("g:ninja_file")
-    let ninja_command = ninja_command .. " -f " .. shellescape(g:ninja_file, 1)
-  endif
-  execute ninja_command
+" GIT INTEGRATION
+" ==============================================================================
+
+function! GaleGitStatus() abort
+  term git --no-pager status
+  noremap <buffer> q <C-W>q
 endfunction
 
-command! -nargs=1 -complete=dir NinjaDir let g:ninja_dir = <q-args>
-command! -nargs=1 -complete=file NinjaFile let g:ninja_file = <q-args>
-command! -nargs=? Ninja call <SID>ninja()
+function! GaleGitDiffIndex() abort
+  term git --no-pager diff --stat
+  noremap <buffer> q <C-W>q
+endfunction
 
-nnoremap <Leader>n :call <SID>ninja()<CR>
+function! GaleGitDiffHead() abort
+  term git --no-pager diff --stat HEAD
+  noremap <buffer> q <C-W>q
+endfunction
 
-" run late hooks
+noremap <Leader>gs <Cmd>call GaleGitStatus()<CR>
+noremap <Leader>gd <Cmd>call GaleGitDiffIndex()<CR>
+noremap <Leader>gD <Cmd>call GaleGitDiffHead()<CR>
+
+" LF INTEGRATION
+" ==============================================================================
+
+if !exists("g:gale_lf_buf")
+  let g:gale_lf_buf = -1
+endif
+if !exists("g:gale_lf_client_id")
+  let g:gale_lf_client_id = -1
+endif
+
+" GaleLf()
+"
+"   Opens or focuses an lf explorer window.
+"
+function! GaleLf() abort
+  if bufexists(g:gale_lf_buf)
+    let winnr = bufwinnr(g:gale_lf_buf)
+    if winnr != -1
+      " focus the lf window
+      exe winnr .. "wincmd w"
+    else
+      " open the lf buffer in a new window
+      exe "topleft vertical sbuffer" g:gale_lf_buf
+    endif
+  else
+    " start lf in a new window
+    topleft vertical let g:gale_lf_buf = term_start($HOME .. "/.gale/vim/lf", {
+          \ "term_finish": "close",
+          \ "term_cols": 30,
+          \ "term_kill": "term",
+          \ "term_api": "GaleLfRecv" })
+    setlocal winfixwidth
+    setlocal statusline=lf
+    " swap lf command line and vim command line triggers
+    tnoremap <buffer> : <C-W>:
+    tnoremap <buffer> <C-W>: :
+  endif
+endfunction
+
+" GaleLfSendDir({dir})
+"
+"   Commands lf to change directory to {dir}.
+"
+function! GaleLfSendDir(dir) abort
+  if g:gale_lf_client_id != -1
+    " directory quoted as lf command argument
+    let dir = '"' .. a:dir
+          \ ->fnamemodify(':p')
+          \ ->substitute('\\', '\\\\', 'g')
+          \ ->substitute('"', '\\"', 'g') .. '"'
+    " command to send to the lf server
+    let command = "send " .. g:gale_lf_client_id .. " cd " .. dir
+    let output = systemlist("lf -remote " .. shellescape(command, 1))
+    for line in output
+      echomsg line
+    endfor
+  endif
+endfunction
+
+" GaleLfRecvClientId({buf}, {id})
+"
+"   API endpoint for receiving the lf client id, which is stored in
+"   g:gale_lf_client_id.
+"
+function! GaleLfRecvClientId(buf, id) abort
+  if type(a:id) == v:t_number
+    let g:gale_lf_client_id = a:id
+  endif
+endfunction
+
+" GaleLfRecvOpen({buf}, {file})
+"
+"   API endpoint for opening {file} from lf. {file} should be a full path.
+"
+function! GaleLfRecvOpen(buf, file) abort
+  if type(a:file) == v:t_string
+    " go to previous window
+    wincmd p
+    let file_q = fnameescape(fnamemodify(a:file, ':~:.'))
+    if bufnr() == g:gale_lf_buf
+      au WinLeave <buffer> ++once vertical resize 30
+      exe "vsplit" file_q
+    else
+      exe "drop" file_q
+    endif
+  endif
+endfunction
+
+" GaleLfRecvDir({buf}, {dir})
+"
+"   API endpoint for changing directory to {dir} from lf. {dir} should be a full
+"   path.
+"
+function! GaleLfRecvDir(buf, dir) abort
+  if type(a:dir) == v:t_string
+    exe "cd" fnameescape(dir)
+  endif
+endfunction
+
+" disarm netrw
+let g:loaded_netrw = 1
+let g:loaded_netrwPlugin = 1
+
+command! GaleLf call GaleLf()
+command! -nargs=1 -complete=dir GaleLfSendDir call GaleLfSendDir(<q-args>)
+command! GaleLfSendCwd call GaleLfSendDir(getcwd())
+noremap <C-T> <Cmd>call GaleLf()<CR>
+
+" LATE HOOKS
+" ==============================================================================
+
 if exists("*GaleLate")
   call GaleLate()
 endif

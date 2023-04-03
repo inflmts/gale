@@ -1,8 +1,7 @@
-# ~/.inputrc
+#
+# Readline configuration file
 #
 # This file is part of Gale.
-#
-# Readline initialization file.
 #
 # Documentation:
 #   - readline(3)
