@@ -33,10 +33,10 @@ done
 add_symlink .dialogrc .gale/dialog/dialogrc
 
 # screen
-add_symlink .screenrc .gale/core/screenrc
+add_symlink .screenrc .gale/screen/screenrc
 
 # less
-add_symlink .lesskey .gale/core/lesskey
+add_symlink .lesskey .gale/less/lesskey
 
 # misc
 add_symlink .local/bin/term .gale/bin/term
