@@ -13,8 +13,7 @@ echo() { printf '%s\n' "$1"; }
 diag() { printf >&2 '%s\n' "$1"; }
 quit() { printf >&2 '%s\n' "$2"; exit "$1"; }
 
-usage()
-{
+usage() {
   cat <<\EOF
 usage: galsetup [<option>...]
 options:
@@ -55,8 +54,7 @@ cd "$HOME" || exit 1
 #
 #   Escape <str> for the shell and store in variable <result>.
 #
-shell_quote()
-{
+shell_quote() {
   printf -v "$2" %s "'${1//\'/\'\\\'\'}'"
 }
 
@@ -64,38 +62,33 @@ shell_quote()
 #
 #   Escape <str> as a ninja path and store in variable <result>.
 #
-ninja_path_quote()
-{
+ninja_path_quote() {
   set -- "${1//\$/\$\$}" "$2"
   set -- "${1// /\$ }" "$2"
   printf -v "$2" %s "${1//:/\$:}"
 }
 
-is_valid_input()
-{
+is_valid_input() {
   case "/$1/" in
     *//*|*/./*|*/../*) return 1 ;;
     *) return 0 ;;
   esac
 }
 
-is_valid_output()
-{
+is_valid_output() {
   case "/$1/" in
     *//*|*/./*|*/../*|/.gale/*) return 1 ;;
     *) return 0 ;;
   esac
 }
 
-assert_valid_input()
-{
+assert_valid_input() {
   if ! is_valid_input "$1"; then
     quit 1 "error: invalid input filename: $1"
   fi
 }
 
-assert_valid_output()
-{
+assert_valid_output() {
   if ! is_valid_output "$1"; then
     quit 1 "error: invalid output filename: $1"
     exit 1
@@ -113,8 +106,7 @@ assert_valid_output()
 #
 #   Declare an update target.
 #
-add()
-{
+add() {
   local outputs inputs cmd desc generator tmp
   outputs=()
   inputs=()
@@ -186,8 +178,7 @@ setup_deps=(.gale/internal/galsetup)
 #
 #   Add <file> as a setup dependency.
 #
-add_setup_dep()
-{
+add_setup_dep() {
   setup_deps+=("$1")
 }
 
@@ -195,8 +186,7 @@ add_setup_dep()
 #
 #   Source <file> and add it as a setup dependency.
 #
-include()
-{
+include() {
   local file="$1"
   assert_valid_input "$file"
   add_setup_dep "$file"
@@ -207,8 +197,7 @@ include()
 #
 #   Declare an install from <src> to <dest> with mode <mode> (default 644).
 #
-add_install()
-{
+add_install() {
   local dest="$1" src="$2" mode="${3-644}"
   local dest_q src_q mode_q
   shell_quote "$dest" dest_q
@@ -224,8 +213,7 @@ add_install()
 #   Make <path> relative to <base> and store in variable <result>.
 #   <path> and <base> must be canonical relative paths.
 #
-make_relative()
-{
+make_relative() {
   while [[ $2 = */* ]]; do
     set -- "../$1" "${2#*/}" "$3"
   done
@@ -236,8 +224,7 @@ make_relative()
 #
 #   Declare a symlink <dest> pointing to <target>.
 #
-add_symlink()
-{
+add_symlink() {
   local dest="$1" target="$2"
   local dest_q target_q
   make_relative "$target" "$dest" target
@@ -248,8 +235,7 @@ add_symlink()
       -d "Symlinking $dest..."
 }
 
-generate_manifest()
-{
+generate_manifest() {
   echo >&5 "rule -"
   echo >&5 "  command = :"
   include .gale/setup.bash

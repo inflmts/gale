@@ -1,5 +1,5 @@
 #
-# Bash login initialization file
+# ~/.bash_profile
 #
 # This file is part of Gale.
 #
@@ -32,8 +32,7 @@ export PATH
 #   Prepend <entry> to the $PATH environment variable if it isn't already
 #   there.
 #
-gale_add_path()
-{
+gale_add_path() {
   if [[ :"$PATH": != *:"$1":* ]]; then
     PATH="$1:$PATH"
   fi

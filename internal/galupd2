@@ -16,8 +16,7 @@ echo() { printf '%s\n' "$1"; }
 diag() { printf >&2 '%s\n' "$1"; }
 quit() { printf >&2 '%s\n' "$2"; exit "$1"; }
 
-usage()
-{
+usage() {
   cat <<END
 usage: $progname [<option>...] [<target>...]
 END
@@ -62,8 +61,7 @@ getvar() { R=${!1}; }
 #
 #   Create a node and returns its id.
 #
-create_node()
-{
+create_node() {
   local type="$1" status="$2"
   local id
   id=$(( node_count++ ))
@@ -123,8 +121,7 @@ set_decl_input() { setvar "node$1_inp" "$2"; }
 #   dirty flag
 #   zero or more input ids, terminated by empty line
 #
-read_database()
-{
+read_database() {
   # FIXME: declarations
 
   while IFS=: read -r ; do
@@ -186,8 +183,7 @@ read_database()
 #
 #   Write database to stdout.
 #
-write_database()
-{
+write_database() {
   return 1
 }
 
@@ -195,8 +191,7 @@ write_database()
 #
 #   Read manifest from stdin. This may only be called once.
 #
-read_manifest()
-{
+read_manifest() {
   local line
   while getline line; do
     case $line in
@@ -214,8 +209,7 @@ read_manifest()
 #
 #   Update all declarators.
 #
-update_decls()
-{
+update_decls() {
   local i decl status input itype ifile ccount cid ctype
   set -- "$root_decl_id"
   while [[ $# -gt 0 ]]; do
@@ -247,8 +241,7 @@ update_decls()
   done
 }
 
-_request_nodes()
-{
+_request_nodes() {
   local id status type input
   while [[ $# -gt 0 ]]; do
     id=$1
@@ -278,8 +271,7 @@ _request_nodes()
   done
 }
 
-_soft_request_nodes()
-{
+_soft_request_nodes() {
   local id status type input
   while [[ $# -gt 0 ]]; do
     id=$1
@@ -301,8 +293,7 @@ _soft_request_nodes()
   done
 }
 
-update_nodes()
-{
+update_nodes() {
   local id file old_sig new_sig i dcount did
   for id; do
     request_node "$id"

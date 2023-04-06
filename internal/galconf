@@ -25,8 +25,7 @@ diag() { printf >&2 '%s\n' "$1"; }
 warn() { printf >&2 'warning: %s\n' "$1"; }
 err() { printf >&2 'error: %s\n' "$1"; }
 
-usage()
-{
+usage() {
   cat <<EOF
 usage: galconf [<command> [<argument>...]]
 commands:
@@ -115,16 +114,14 @@ else
   debug() { :; }
 fi
 
-contains()
-{
+contains() {
   case $1 in
     *"$2"*) return 0 ;;
     *) return 1 ;;
   esac
 }
 
-is_valid_key()
-{
+is_valid_key() {
   case $1 in
     *[!0-9a-z.-]*) return 1 ;;
     [0-9a-z]*) return 0 ;;
@@ -132,8 +129,7 @@ is_valid_key()
   esac
 }
 
-validate_keys()
-{
+validate_keys() {
   local key
   for key; do
     if ! is_valid_key "$key"; then
@@ -143,8 +139,7 @@ validate_keys()
   done
 }
 
-validate_set_arguments()
-{
+validate_set_arguments() {
   local arg
   for arg; do
     if ! contains "$arg" '='; then
@@ -162,8 +157,7 @@ validate_set_arguments()
   done
 }
 
-func_list()
-{
+func_list() {
   if [ "$#" -gt 0 ]; then
     err "too many arguments"
     exit 1
@@ -179,8 +173,7 @@ func_list()
   fi
 }
 
-func_set()
-{
+func_set() {
   # quit if no arguments given
   [ "$#" -gt 0 ] || exit 0
   validate_set_arguments "$@"
@@ -203,8 +196,7 @@ func_set()
   mv "$config_file.new" "$config_file"
 }
 
-func_unset()
-{
+func_unset() {
   # only proceed if arguments are present
   # and the config file has keys to delete
   [ "$#" -gt 0 ] || exit 0
@@ -221,8 +213,7 @@ func_unset()
   mv "$config_file.new" "$config_file"
 }
 
-func_test()
-{
+func_test() {
   # only proceed if arguments are present
   # and the config file has keys in the first place
   [ "$#" -gt 0 ] || exit 1
@@ -235,8 +226,7 @@ func_test()
   grep -Exq "$pattern" "$config_file" || exit 2
 }
 
-try_grep()
-{
+try_grep() {
   local match
   debug "trying grep -Exm1 $1"
   if match=$(grep -Exm1 "$1" "$config_file"); then
@@ -245,8 +235,7 @@ try_grep()
   fi
 }
 
-func_get()
-{
+func_get() {
   # only proceed if arguments are present
   # and the config file has keys in the first place
   if [ "$#" -eq 0 ]; then
@@ -275,8 +264,7 @@ func_get()
   exit 2
 }
 
-func_wipe()
-{
+func_wipe() {
   if [ "$#" -gt 0 ]; then
     err "too many arguments"
     exit 1

@@ -16,8 +16,7 @@ echo() { printf '%s\n' "$1"; }
 diag() { printf >&2 '%s\n' "$1"; }
 quit() { printf >&2 '%s\n' "$2"; exit "$1"; }
 
-usage()
-{
+usage() {
   cat <<EOF
 usage: wautosleep [<command>]
 commands:
@@ -31,8 +30,7 @@ commands:
 EOF
 }
 
-pidfile()
-{
+pidfile() {
   if [ -z "$XDG_RUNTIME_DIR" ]; then
     quit 1 '$XDG_RUNTIME_DIR is not set!'
   fi
@@ -42,8 +40,7 @@ pidfile()
   pidfile="$XDG_RUNTIME_DIR/wautosleep.$WAYLAND_DISPLAY.pid"
 }
 
-_stupid()
-{
+_stupid() {
   stupid --file="$pidfile" "$1" swayidle timeout 600 'systemctl suspend'
 }
 
