@@ -65,7 +65,7 @@ set et sw=2 sts=2 sta ai si
 " searching
 set is ic smartcase
 " editing
-set fo+=roj tw=80 nojs
+set fo+=roj nojs
 " scrolling
 set nowrap so=5 ss=10 siso=10
 " display
@@ -74,8 +74,9 @@ set number title fillchars=vert:│
 set autoread
 " vsplit appears on right
 set splitright
-" command line completion shows possibilities in a menu
-set wildmenu
+" command line completion
+set wildmenu wildmode=longest:full,full
+
 " added in Vim 9:
 " use a popup menu for command line completions
 if exists('&wildoptions')
@@ -105,13 +106,19 @@ call mkdir(&undodir, 'p')
 
 " KEYBINDINGS
 " ==============================================================================
+"
+" Tip: Use ':h map-table' to see map modes in a convenient table.
 
-" space and backspace scroll the window
+" Use <C-X> as a general shortcut for getting out of stuff.
+noremap <C-X> <Esc>
+noremap! <C-X> <Esc>
+
+" Make space and backspace scroll the window.
 noremap <Space> <C-D>
 noremap <BS> <C-U>
 
-" CTRL-J and CTRL-K move the cursor fast
-" CTRL-N and CTRL-P move the cursor even faster
+" CTRL-J and CTRL-K move the cursor fast.
+" CTRL-N and CTRL-P move the cursor even faster.
 noremap <C-J> 5j
 noremap <C-K> 5k
 noremap <C-N> 10j
@@ -151,11 +158,18 @@ cnoremap <M-f>  <S-Right>
 
 nnoremap <Leader>h <Cmd>LspHover<CR>
 
+" Some terminals send focus events which vim sometimes doesn't recognize.
+" Force vim to always recognize these escape sequences.
+" See :h xterm-focus-event
+execute "set <FocusGained>=\<Esc>[I"
+execute "set <FocusLost>=\<Esc>[O"
+
 " AUTOCOMMANDS
 " ==============================================================================
 
+au FileType * setlocal tw=80
 au FileType sh setlocal fo-=t
-au FileType markdown setlocal et sw=2 sts=2
+au FileType markdown setlocal et sw=2 sts=2 tw=80
 au FileType make setlocal noet
 
 " GENERAL

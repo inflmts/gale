@@ -8,10 +8,6 @@
 #   ~/.config/gale/bash_profile
 #
 
-if [[ -s ~/.config/gale/bash_profile ]]; then
-  . ~/.config/gale/bash_profile
-fi
-
 # ENVIRONMENT VARIABLES
 # ==============================================================================
 
@@ -40,6 +36,10 @@ gale_add_path() {
 
 # add standard executable directory
 gale_add_path ~/.local/bin
+
+if [[ -s ~/.config/gale/bash_profile ]]; then
+  . ~/.config/gale/bash_profile
+fi
 
 systemctl import-environment &>/dev/null \
   PATH \

@@ -13,6 +13,8 @@
 
 GALE_ENABLE_BANNER=yes
 
+set +H
+
 if [[ -f ~/.config/gale/bashrc ]]; then
   . ~/.config/gale/bashrc
 fi
@@ -21,10 +23,10 @@ fi
 # apparently needed for rcp or scp or something
 [[ $- != *i* ]] && return
 
-gale_echo() { command printf '%s\n' "$1"; }
-gale_diag() { command printf >&2 '%s\n' "$1"; }
-gale_warn() { command printf >&2 'warning: %s\n' "$1"; }
-gale_err() { command printf >&2 'error: %s\n' "$1"; }
+__gale_echo() { command printf '%s\n' "$1"; }
+__gale_diag() { command printf >&2 '%s\n' "$1"; }
+__gale_warn() { command printf >&2 'warning: %s\n' "$1"; }
+__gale_err() { command printf >&2 'error: %s\n' "$1"; }
 
 if [[ -z $GALE_COLORS ]]; then
   # autodetect number of colors using tput
@@ -32,52 +34,70 @@ if [[ -z $GALE_COLORS ]]; then
 fi
 
 # setup colors for ls (and tree)
-eval "$(dircolors)"
+if __gale_dircolors=$(dircolors 2>/dev/null); then
+  eval "$__gale_dircolors"
+fi
+unset __gale_dircolors
 
 ################################################################################
 ### FUNCTIONS & ALIASES
 ################################################################################
 
+__gale_spawn() {
+  setsid -f -- "$@" </dev/null >/dev/null 2>&1
+}
+
 alias grep='grep --color=auto'
-#alias date='date +"%a %Y-%m-%d %I:%M %p"'
 
 alias sysleep='systemctl suspend'
 alias userctl='systemctl --user'
 alias md='mkdir -pv'
 
-gale_ls() {
+__gale_ls() {
   LC_COLLATE=C command ls -h --group-directories-first --color=auto "$@"
 }
 
-alias ls='gale_ls'
-alias lsa='gale_ls -A'
-alias ll='gale_ls -l'
-alias lla='gale_ls -lA'
+alias ls='__gale_ls'
+alias lsa='__gale_ls -A'
+alias ll='__gale_ls -l'
+alias lla='__gale_ls -lA'
 
-gale_tree() {
-  if [[ -t 1 ]]; then
-    LC_COLLATE=C command tree --dirsfirst -C "$@" | less -FXSRMKi
-  else
-    LC_COLLATE=C command tree --dirsfirst -n "$@"
-  fi
+__gale_tree() {
+  LC_COLLATE=C command tree --dirsfirst "$@"
 }
 
-alias tree='gale_tree'
-alias treea='gale_tree -a'
-alias treed='gale_tree -d'
-alias treeda='gale_tree -da'
+alias tree='__gale_tree'
+alias treea='__gale_tree -a'
+alias treed='__gale_tree -d'
+alias treeda='__gale_tree -da'
+
+clock() {
+  date +$'\n    %a %Y/%m/%d \033[1m%I:%M %p\033[0m %Z\n'
+}
+
+bind -x '"\C-t": clock'
 
 # display the function's arguments
 argv() {
-  gale_echo "$# argument(s):"
+  __gale_echo "$# argument(s):"
   if [[ $# -gt 0 ]]; then
     printf '%q\n' "$@"
   fi
 }
 
+# display the number of arguments
+argc() {
+  __gale_echo "$# argument(s)"
+}
+
 # fork processes using setsid(1)
-.f() { setsid -f -- "$@" >/dev/null 2>&1; }
-.fx() { setsid -f -- "$@" >/dev/null 2>&1 && exit; }
+f() {
+  __gale_spawn "$@"
+}
+
+fx() {
+  __gale_spawn "$@" && exit
+}
 
 #== BLOCK DEVICES ==============================================================
 
@@ -99,24 +119,24 @@ cdnew() {
   if [[ $# -eq 1 ]]; then
     mkdir -vp -- "$1" && cd -- "$1"
   else
-    gale_diag 'usage: cdnew <dir>'
+    __gale_diag 'usage: cdnew <dir>'
     return 1
   fi
 }
 
-gale_resolve_block_device() {
+__gale_resolve_block_device() {
   case $1 in
     l=*)
-      gale_echo "/dev/disk/by-label/${1#*=}"
+      __gale_echo "/dev/disk/by-label/${1#*=}"
       ;;
     pl=*)
-      gale_echo "/dev/disk/by-partlabel/${1#*=}"
+      __gale_echo "/dev/disk/by-partlabel/${1#*=}"
       ;;
     /*)
-      gale_echo "$1"
+      __gale_echo "$1"
       ;;
     *)
-      gale_err "invalid block device: $1"
+      __gale_err "invalid block device: $1"
       return 1
       ;;
   esac
@@ -129,10 +149,10 @@ gale_resolve_block_device() {
 udmount() {
   local source
   if [[ $# -ne 1 ]]; then
-    gale_diag 'usage: udmount <source>'
+    __gale_diag 'usage: udmount <source>'
     return 1
   fi
-  source=$(gale_resolve_block_device "$1") || return
+  source=$(__gale_resolve_block_device "$1") || return
   udisksctl mount -b "$source"
 }
 
@@ -143,10 +163,10 @@ udmount() {
 udumount() {
   local source
   if [[ $# -ne 1 ]]; then
-    gale_diag 'usage: udeject <source>'
+    __gale_diag 'usage: udeject <source>'
     return 1
   fi
-  source=$(gale_resolve_block_device "$1") || return
+  source=$(__gale_resolve_block_device "$1") || return
   udisksctl unmount -b "$source"
 }
 
@@ -161,7 +181,7 @@ lspath() {
   IFS=:
   set -f
   for ent in $PATH; do
-    gale_echo "${ent/#"$HOME"/\~}"
+    __gale_echo "${ent/#"$HOME"/\~}"
   done
   IFS=$ifs
 }
@@ -190,13 +210,57 @@ cdn3() {
   return "$excode"
 }
 
-mksh() {
+__gale_mkscript_usage() {
+  cat >&2 <<\END
+usage: mkscript [options] <file>
+
+Creates an executable script. By default, mkscript creates a shell script.
+
+Options:
+  -b  make a bash script
+  -n  make a Node.js script
+  -h  show this help
+END
+}
+
+mkscript() {
+  local OPTIND=1 OPTERR=1 OPTARG
+  local string='#!/bin/sh' opt
+  local target
+  while getopts hbn opt; do
+    case $opt in
+      h) __gale_mkscript_usage; return 0 ;;
+      b) string='#!/usr/bin/env bash' ;;
+      n) string='#!/usr/bin/env node' ;;
+      *) __gale_mkscript_usage; return 1 ;;
+    esac
+  done
+  shift "$((OPTIND - 1))"
   if [[ $# -ne 1 ]]; then
-    gale_diag 'usage: mksh <file>'
+    __gale_mkscript_usage
     return 1
   fi
-  gale_echo '#!/bin/sh' > "$1" \
-    && chmod +x -- "$1"
+  target=$1
+  if [[ -e $target ]]; then
+    __gale_err "target exists: $target"
+    return 1
+  fi
+  __gale_echo "$string" > "$target" && chmod +x -- "$target"
+}
+
+# open files with xdg-open
+open() {
+  __gale_spawn xdg-open "$@"
+}
+
+# open firefox
+ff() {
+  __gale_spawn firefox "$@"
+}
+
+# open a new window in firefox
+ffnw() {
+  __gale_spawn firefox --new-window "$@"
 }
 
 ################################################################################
@@ -206,7 +270,7 @@ mksh() {
 # Disable with `GALE_ENABLE_BANNER=no`.
 
 if [[ $GALE_ENABLE_BANNER = yes ]]; then
-  gale_echo $'\033[7m'"  Bash $BASH_VERSION on ${TERM:-unknown} | Powered by Gale  "$'\033[0m'
+  __gale_echo $'\033[7m'"  Bash $BASH_VERSION on ${TERM:-unknown} | Powered by Gale  "$'\033[0m'
 fi
 
 ################################################################################
@@ -214,20 +278,20 @@ fi
 ################################################################################
 
 # if the last command exited unsuccessfully, show the exit code
-gale_show_excode() {
+__gale_show_excode() {
   local code="$?"
   local esc=$'\033'
   if [[ $code -gt 0 ]]; then
     if [[ $GALE_COLORS -ge 256 ]]; then
-      gale_echo "$esc[0;38;5;203;48;5;88m exit $code $esc[0m"
+      __gale_echo "$esc[0;38;5;203;48;5;88m exit $code $esc[0m"
     else
-      gale_echo "$esc[0;31m[exit $code]$esc[0m"
+      __gale_echo "$esc[0;31m[exit $code]$esc[0m"
     fi
   fi
 }
 
 # update the terminal title
-gale_update_title() {
+__gale_update_title() {
   printf '\033]2;%s\003\\' "${USER}@${HOSTNAME%%.*} ${PWD/#$HOME/\~}"
 }
 
@@ -251,25 +315,25 @@ else
   PS1+='\[\e[31m\]\u@\h \[\e[34m\]\w \[\e[0m\]\$ '
 fi
 
-PROMPT_COMMAND=(gale_show_excode gale_update_title)
+PROMPT_COMMAND=(__gale_show_excode __gale_update_title)
 
 ################################################################################
 ### KEYBINDINGS
 ################################################################################
 
-gale_readline_print_variable() {
+__gale_readline_print_variable() {
   set -- "${READLINE_LINE:0:$READLINE_POINT}"
   set -- "${1##*[!0-9A-Za-z_]}"
   if [[ $1 ]]; then
     if [[ -v $1 ]]; then
-      gale_echo "$1=${!1@Q}"
+      __gale_echo "$1=${!1@Q}"
     else
-      gale_echo "$1 is unset"
+      __gale_echo "$1 is unset"
     fi
   fi
 }
 
-bind -x '"\C-x\C-p": gale_readline_print_variable'
+bind -x '"\C-x\C-p": __gale_readline_print_variable'
 
 ################################################################################
 ### LATE HOOK
