@@ -41,7 +41,7 @@ if [[ -s ~/.config/gale/bash_profile ]]; then
   . ~/.config/gale/bash_profile
 fi
 
-systemctl import-environment &>/dev/null \
+systemctl --user import-environment &>/dev/null \
   PATH \
   EDITOR \
   XDG_CONFIG_HOME \
