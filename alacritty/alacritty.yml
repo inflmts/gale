@@ -14,7 +14,7 @@ window:
   padding:
     x: 10
     y: 10
-  opacity: .95
+  opacity: .8
 
 # Font
 font:
@@ -24,7 +24,7 @@ font:
 draw_bold_text_with_bright_colors: true
 colors:
   primary:
-    background: '#101012'
+    background: '#000000'
     foreground: '#ffffff'
   normal:
     black: '#232323'

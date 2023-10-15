@@ -292,7 +292,7 @@ __gale_show_excode() {
 
 # update the terminal title
 __gale_update_title() {
-  printf '\033]2;%s\003\\' "${USER}@${HOSTNAME%%.*} ${PWD/#$HOME/\~}"
+  printf '\033]2;%s\007' "${USER}@${HOSTNAME%%.*} ${PWD/#$HOME/\~}"
 }
 
 PS1=

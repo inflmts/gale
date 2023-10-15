@@ -1,7 +1,0 @@
-#!/bin/sh
-# update gale
-#
-# This file is part of the Gale build system.
-#
-
-exec ninja -C "$HOME" -f .data/gale/upd.ninja "$@"

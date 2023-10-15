@@ -1,68 +1,67 @@
+# Gale
 
-     dP""b8    db    88     888888
-    dP   `"   dPYb   88     88__
-    Yb  "88  dP__Yb  88  .o 88""
-     YboodP dP""""Yb 88ood8 888888
-
-# InfiniteLimits Linux Configuration
-
-by Daniel Li
+Daniel Li <inflmts@gmail.com>
 
 ## Overview
 
-**Gale** is a collection of scripts and configuration files that allows me to
-manage all my personal configuration, on any host, from one centralized source
-using Git. It is intended to be the ultimate front-end; Gale is designed to
-integrate with software, not the other way around.
+**Gale** is a collection of scripts, configuration files, and utilities that
+represents the personal configuration I want shared across any system I use.
+Gale is primarily targeted toward GNU/Linux systems. The single-source directory
+structure of this repository allows it to be easily managed by Git.
 
-**Gale is primarily targeted toward GNU/Linux systems.** Development is
-obviously highly dependent on the operating system I'm using right now.
+The core of Gale is a set of C utilities collectively called Galcore. Source
+code is located in the `core` directory. These utilities include `galconf`,
+which provides quick access to Gale's simple configuration system, and
+`galinst`, which is used to install Gale.
 
-Gale places files outside the `~/.gale` directory through a process in Gale
-called _updating_. This involves generating a [Ninja][2] manifest with
-`galsetup` that symlinks, installs, or generates files in the home directory and
-running `galupd` which is only a wrapper around Ninja. The update can be
-customized using `galconf`. These utilities are located in the `internal`
-directory.
+## Getting Started
 
-These [XDG Base Directory Specification][1] variables are hardcoded in Gale and
-cannot be changed:
+Requirements:
+
+* GCC/Clang
+* Make
+
+To build `galconf` and `galinst`, run `make` in the `core` directory. This will
+compile the binaries with debugging enabled. To compile an optimized release
+build, use `make ENV=release`.
+
+This repository must be made available at `~/.gale`, either physically or through
+a symbolic link.
+
+The set of symlinks to create can be controlled using `galconf`. These symlinks
+can then be created using `galinst`. Whenever the manifest or configuration are
+changed, `galinst` should be run to pick up new symlinks and delete old ones.
+
+## Details
+
+### XDG Base Directories
+
+The [XDG Base Directory
+Specification](https://specifications.freedesktop.org/basedir-spec/basedir-spec-latest.html)
+variables `$XDG_CONFIG_HOME` and `$XDG_DATA_HOME` are **hardcoded** in Gale and
+should not be changed. For example, the utilities in Galcore **do not** use
+these variables at all. Their values are:
 
 ```
 $XDG_CONFIG_HOME    ~/.config
 $XDG_DATA_HOME      ~/.data
 ```
 
-The default values of other variables are:
+Other variables, however, are read from the environment. Their default values
+are:
 
 ```
-$XDG_STATE_HOME     ~/.log
+$XDG_STATE_HOME     ~/.state
 $XDG_CACHE_HOME     ~/.cache
 ```
 
-## Getting Started
+Note that the value of `$XDG_DATA_HOME` and the default value of
+`$XDG_STATE_HOME` differ from the standard.
 
-This repository should be made available at `~/.gale`.
+## Trivia
 
-If this repository is not already at `~/.gale`, a symlink to the current working
-directory can be created automatically with:
-
-```
-./bootstrap
-```
-
-Now update Gale:
-
-```
-internal/galupd
-```
-
-Once set up, Gale can be updated with `galupd`.
-
-## Notes
-
-Ascii text generated with <https://ascii.co.uk>.
-
-[1]: https://www.freedesktop.org/basedir-spec/basedir-spec-latest.html
-[2]: https://ninja-build.org
+* I went through many, many different personal configuration systems, often
+  experimenting with vastly different management schemes, before settling on
+  Gale. These included, in not very strict order, Psi, Zeta, DMM, Corecon, and
+  Storm. In fact, the name "Gale" was chosen to mean "the wind of the storm."
 

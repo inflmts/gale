@@ -12,6 +12,8 @@
 #   - swayidle <https://github.com/swaywm/swayidle>
 #
 
+set -eu
+
 echo() { printf '%s\n' "$1"; }
 diag() { printf >&2 '%s\n' "$1"; }
 quit() { printf >&2 '%s\n' "$2"; exit "$1"; }
@@ -55,7 +57,7 @@ case $1 in
     ;;
   autostart)
     pidfile
-    if [ "$(galconf --get --default=yes wayland.autosleep)" = yes ]; then
+    if [ "$(galconf get --default=yes wayland.autosleep)" = yes ]; then
       _stupid --start
     fi
     ;;

@@ -9,13 +9,19 @@
 "
 " The following functions, if defined, affect the behavior of this file:
 "
-"   GalePlug()    register vim-plug plugins
+"   GalePlug()    run between plug#begin() and plug#end()
 "   GaleLate()    run after everything else
 "
 
 let s:config_file = $HOME .. "/.config/gale/vimrc"
 if filereadable(s:config_file)
   exe "source " .. fnameescape(s:config_file)
+endif
+
+if exists($XDG_CACHE_HOME)
+  let s:cache_dir = $XDG_CACHE_HOME .. "/vim"
+else
+  let s:cache_dir = $HOME .. "/.cache/vim"
 endif
 
 " PLUGINS
@@ -93,17 +99,6 @@ set go-=m go-=M go-=t go-=T go-=l go-=L go-=r go-=R
 " enable the mouse in all modes
 set mouse=a
 
-" Use $XDG_CACHE_HOME/vim for swap, backup, and undo files.
-let s:cache_dir = ($XDG_CACHE_HOME ?? ($HOME .. "/.cache")) .. "/vim"
-let &dir = s:cache_dir .. "/swap//"
-let &backupdir = s:cache_dir .. "/backup//"
-let &undodir = s:cache_dir .. "/undo//"
-
-" Create these directories if they don't exist.
-call mkdir(&dir, 'p')
-call mkdir(&backupdir, 'p')
-call mkdir(&undodir, 'p')
-
 " KEYBINDINGS
 " ==============================================================================
 "
@@ -161,16 +156,19 @@ nnoremap <Leader>h <Cmd>LspHover<CR>
 " Some terminals send focus events which vim sometimes doesn't recognize.
 " Force vim to always recognize these escape sequences.
 " See :h xterm-focus-event
-execute "set <FocusGained>=\<Esc>[I"
-execute "set <FocusLost>=\<Esc>[O"
+if exists("&<FocusGained>") && exists("&<FocusLost>")
+  execute "set <FocusGained>=\<Esc>[I"
+  execute "set <FocusLost>=\<Esc>[O"
+endif
 
 " AUTOCOMMANDS
 " ==============================================================================
 
-au FileType * setlocal tw=80
-au FileType sh setlocal fo-=t
-au FileType markdown setlocal et sw=2 sts=2 tw=80
-au FileType make setlocal noet
+auto FileType * setlocal tw=80
+auto FileType sh setlocal fo-=t
+auto FileType markdown setlocal et sw=2 sts=2 tw=80
+auto FileType make setlocal noet
+auto FileType asciidoc setlocal nosi comments=fb:-,fb:*,fb://
 
 " GENERAL
 " ==============================================================================
@@ -185,8 +183,8 @@ hi! link SignColumn LineNr
 
 " color trailing whitespace red, since trailing space is death
 hi TrailSpace ctermbg=1 guibg=#ff0000
-au VimEnter * match TrailSpace /\s\+$/
-au WinNew * match TrailSpace /\s\+$/
+auto VimEnter * match TrailSpace /\s\+$/
+auto WinNew * match TrailSpace /\s\+$/
 
 if &term == "linux"
   hi Visual cterm=reverse

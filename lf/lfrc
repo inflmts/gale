@@ -8,11 +8,19 @@
 #   - https://github.com/gokcehan/lf
 #
 
-set ratios 1:3:1
+set ifs
+set nopreview
+set ratios 1
 set scrolloff 5
-set hidden # show hidden files
+# show hidden files
+set hidden
 set timefmt "Mon 2006/01/02 15:04:05"
+set incsearch
+# automatically refresh files every 3 seconds
+set period 3
 
+# make <enter> an alias for l
+map <enter> open
 # open in firefox
 map <c-x>ff &firefox $fx
 # open in audacity

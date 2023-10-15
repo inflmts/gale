@@ -1,5 +1,5 @@
 #!/bin/sh
-# start a terminal
+# term - start a terminal
 #
 # This file is part of Gale.
 #
@@ -18,21 +18,22 @@ options:
 EOF
 }
 
-type=auto
-while [ "$#" -gt 0 ]; do
-  case $opt in
+termtype=
+
+while [ $# -gt 0 ]; do
+  case $1 in
     --)
       shift
       break
       ;;
     -w)
-      wayland
+      termtype=wayland
       ;;
     -x)
-      x11
+      termtype=x11
       ;;
     -*)
-      err "invalid option: -$OPTARG"
+      err "invalid option: -$1"
       usage >&2
       exit 1
       ;;
@@ -43,55 +44,57 @@ while [ "$#" -gt 0 ]; do
   shift
 done
 
-if [ "$TYPE" = auto ]; then
+if [ -z "$termtype" ]; then
   if [ -n "$WAYLAND_DISPLAY" ]; then
-    TYPE=wayland
+    termtype=wayland
   else
-    TYPE=x
+    termtype=x11
   fi
 fi
-
-is_wayland() {
-  [ "$TYPE" = wayland ]
-}
-
-is_x() {
-  [ "$TYPE" = x ]
-}
 
 has_command() {
   command -v "$1" >/dev/null 2>&1
 }
 
-unset TERMEXEC
+is_wayland() {
+  [ "$termtype" = wayland ]
+}
+
+is_x11() {
+  [ "$termtype" = x11 ]
+}
+
+no_term=
 if is_wayland; then
-     TERMEXEC=$(galconf --get term.wayland) \
-  || TERMEXEC=$(galconf --get term) \
-  || unset TERMEXEC
+     termexec=$(galconf get term.wayland) \
+  || termexec=$(galconf get term) \
+  || no_term=1
 else
-     TERMEXEC=$(galconf --get term.x) \
-  || TERMEXEC=$(galconf --get term) \
-  || unset TERMEXEC
+     termexec=$(galconf get term.x) \
+  || termexec=$(galconf get term) \
+  || no_term=1
 fi
 
 # local configuration
-if [ -n "${TERMEXEC+1}" ]; then
+if [ -z "$no_term" ]; then
   exec sh -c "$TERMEXEC ${1+-e \$@}" term "$@"
+fi
 
 # alacritty
-elif has_command alacritty; then
+if has_command alacritty; then
   exec alacritty ${1+-e} "$@"
+fi
 
 # foot
-elif is_wayland && has_command foot; then
+if is_wayland && has_command foot; then
   exec foot -- "$@"
+fi
 
 # urxvt
-elif is_x && has_command urxvt; then
+if is_x && has_command urxvt; then
   exec urxvt ${1+-e} "$@"
+fi
 
 # not found
-else
-  err "could not find viable terminal"
-  exit 127
-fi
+err "could not find viable terminal"
+exit 127
