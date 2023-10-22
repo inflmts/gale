@@ -1,0 +1,96 @@
+#!/bin/sh
+# ninja generator script
+#
+# This file is part of Galcore.
+#
+
+set -eu
+
+echo() { printf '%s\n' "$1"; }
+diag() { printf >&2 '%s\n' "$1"; }
+warn() { printf >&2 'warning: %s\n' "$1"; }
+err() { printf >&2 'error: %s\n' "$1"; }
+
+usage() {
+  cat <<EOF
+usage: $0 [options]
+options:
+  --debug       enable debugging features
+  --help        show this help
+EOF
+}
+
+env=release
+
+for option; do
+  case $option in
+    --debug)
+      env=debug
+      ;;
+    --help)
+      usage
+      exit
+      ;;
+    *)
+      err "invalid option: $option"
+      exit 1
+      ;;
+  esac
+done
+
+cd "$(dirname "$0")"
+
+configure_args=
+if [ "$env" = debug ]; then
+  configure_args="$configure_args --debug"
+fi
+
+if [ "$env" = debug ]; then
+  cflags="-DGALE_DEBUG"
+else
+  cflags="-O2"
+fi
+
+cat > build.ninja <<EOF
+builddir = build
+
+rule configure
+  description = Regenerating build files
+  command = ./configure $configure_args
+build build.ninja: configure | configure
+
+rule cc
+  description = Compiling \$out
+  command = cc $cflags -c -o \$out \$in
+
+rule link
+  description = Linking \$out
+  command = cc $cflags -o \$out \$in
+
+build galconf: link \$
+  \$builddir/common.o \$
+  \$builddir/astr.o \$
+  \$builddir/config.o \$
+  \$builddir/galconf.o
+
+build galinst: link \$
+  \$builddir/common.o \$
+  \$builddir/astr.o \$
+  \$builddir/config.o \$
+  \$builddir/galinst-base.o \$
+  \$builddir/galinst-manifest.o \$
+  \$builddir/galinst-log.o \$
+  \$builddir/galinst.o
+
+build \$builddir/common.o: cc common.c
+build \$builddir/astr.o: cc astr.c
+build \$builddir/config.o: cc config.c
+build \$builddir/galconf.o: cc galconf.c
+build \$builddir/galinst-base.o: cc galinst-base.c
+build \$builddir/galinst-manifest.o: cc galinst-manifest.c
+build \$builddir/galinst-log.o: cc galinst-log.c
+build \$builddir/galinst.o: cc galinst.c
+EOF
+
+ninja -t restat build.ninja
+ninja -t cleandead

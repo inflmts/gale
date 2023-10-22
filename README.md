@@ -19,11 +19,20 @@ which provides quick access to Gale's simple configuration system, and
 Requirements:
 
 * GCC/Clang
-* Make
+* Ninja
 
-To build `galconf` and `galinst`, run `make` in the `core` directory. This will
-compile the binaries with debugging enabled. To compile an optimized release
-build, use `make ENV=release`.
+To build Galcore, run the configure script, then build using `ninja`:
+
+```
+cd core
+./configure --debug
+ninja
+```
+
+This will create debug builds of `galconf` and `galinst` and place them in the
+`core` directory. To create an optimized release build, omit `--debug` from the
+`configure` command line. The available `configure` options can be found by
+looking at the `configure` script or by running `./configure --help`.
 
 This repository must be made available at `~/.gale`, either physically or through
 a symbolic link.
