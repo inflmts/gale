@@ -92,5 +92,4 @@ build \$builddir/galinst-log.o: cc galinst-log.c
 build \$builddir/galinst.o: cc galinst.c
 EOF
 
-ninja -t restat build.ninja
 ninja -t cleandead
