@@ -1,11 +1,11 @@
 #!/bin/sh
-# gale-sway - sway wrapper
+# gale-hyprland - hyprland wrapper
 #
 # This file is part of Gale.
 #
 
 if [ $# -gt 0 ]; then
-  echo >&2 'usage: gale-sway'
+  echo >&2 'usage: gale-hyprland'
   exit 1
 fi
 
@@ -17,5 +17,4 @@ export MOZ_ENABLE_WAYLAND=1
 export QT_QPA_PLATFORM=wayland
 export QT_WAYLAND_DISABLE_WINDOWDECORATION=1
 
-sway-output-mode --noreload
-exec sway
+exec Hyprland

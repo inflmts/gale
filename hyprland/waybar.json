@@ -1,0 +1,21 @@
+{
+  "position": "bottom",
+  "modules-left": ["hyprland/workspaces", "hyprland/submap"],
+  "modules-center": ["hyprland/window"],
+  "modules-right": ["network", "cpu", "memory", "battery", "pulseaudio", "clock"],
+  "network": {
+    "format": "{ifname}: {ipaddr}"
+  },
+  "cpu": {
+    "format": "CPU: <b>{usage}%</b>"
+  },
+  "memory": {
+    "format": "M: <b>{percentage}%</b>/{total} G"
+  },
+  "pulseaudio": {
+    "format": "V: {volume}%"
+  },
+  "clock": {
+    "format": "{:%a %Y/%m/%d <b>%I:%M %p</b>}"
+  }
+}
