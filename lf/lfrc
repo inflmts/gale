@@ -19,6 +19,10 @@ set incsearch
 # automatically refresh files every 3 seconds
 set period 3
 
+# Box
+set drawbox
+set borderfmt "\033[38;5;240m"
+
 # make <enter> an alias for l
 map <enter> open
 # open in firefox

@@ -4,7 +4,8 @@
 " This file is part of Gale.
 "
 
-" Source local configuration from `~/.config/gale/nvim-init.vim`. Note that this occurs _before_ options, mappings, etc. are configured.
+" Source local configuration from `~/.config/gale/nvim-init.vim`. Note that this
+" occurs _before_ options, mappings, etc. are configured.
 "
 " These functions can be defined to implement custom behavior:
 "
@@ -117,27 +118,31 @@ endif
 " AUTOCOMMANDS
 " ==============================================================================
 
-auto FileType * setlocal tw=80
-auto FileType sh setlocal fo-=t
-auto FileType markdown setlocal et sw=2 sts=2 tw=80
-auto FileType make setlocal noet
-auto FileType asciidoc setlocal nosi comments=fb:-,fb:*,fb://
+augroup init
+  " Clear previously defined autocommands
+  auto!
+
+  auto FileType * setlocal tw=80
+  auto FileType sh setlocal fo-=t
+  auto FileType markdown setlocal et sw=2 sts=2 tw=80
+  auto FileType make setlocal noet
+  auto FileType asciidoc setlocal nosi comments=fb:-,fb:*,fb://
+
+  " Color trailing whitespace red, because trailing whitespace is bad for your
+  " heart
+  set list
+  set listchars=trail:\  " space
+augroup END
+
+hi Whitespace ctermbg=1 guibg=#ff0000
 
 " GENERAL
 " ==============================================================================
-
-filetype plugin indent on
-syntax enable
 
 hi LineNr ctermbg=233 guibg=#222226
 hi Error ctermfg=7 ctermbg=203
 hi ErrorText cterm=underline ctermfg=203
 hi! link SignColumn LineNr
-
-" Color trailing whitespace red, since trailing space is death
-hi TrailSpace ctermbg=1 guibg=#ff0000
-auto VimEnter * match TrailSpace /\s\+$/
-auto WinNew * match TrailSpace /\s\+$/
 
 if &term == "linux"
   hi Visual cterm=reverse
