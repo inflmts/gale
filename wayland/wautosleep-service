@@ -1,0 +1,6 @@
+#!/bin/sh
+
+err() { printf >&2 'error: %s\n' "$1"; }
+
+timeout=$(galconf get --default=600 wautosleep.timeout) && \
+  exec swayidle timeout "$timeout" 'gale-sleep'

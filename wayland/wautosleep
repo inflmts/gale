@@ -1,81 +1,96 @@
 #!/bin/sh
-# wayland autosleep using swayidle
+# wautosleep - wayland autosleep controller using swayidle
 #
 # This file is part of Gale.
 #
 # This is a simple front-end to swayidle that puts the computer to sleep after a
 # period of inactivity. It works for any compositor that swayidle supports, ie.
-# those that support the idle protocol. $XDG_RUNTIME_DIR and $WAYLAND_DISPLAY
-# must both be set.
+# any compositor that supports the idle protocol. $XDG_RUNTIME_DIR and
+# $WAYLAND_DISPLAY must both be set.
 #
 # Dependencies:
 #   - swayidle <https://github.com/swaywm/swayidle>
 #
 
-set -eu
+set -u
 
 echo() { printf '%s\n' "$1"; }
 diag() { printf >&2 '%s\n' "$1"; }
-quit() { printf >&2 '%s\n' "$2"; exit "$1"; }
+warn() { printf >&2 'warning: %s\n' "$1"; }
+err() { printf >&2 'error: %s\n' "$1"; }
 
 usage() {
-  cat <<EOF
+  cat >&2 <<EOF
 usage: wautosleep [<command>]
 commands:
-     status (default)
-  s, start
-     autostart
-  r, restart
-     restart-running
-  q, quit
-  t, toggle
+  status (default)
+  on
+  off
+  toggle
+  restart
+  is-active
+  autostart
 EOF
 }
 
-pidfile() {
-  if [ -z "$XDG_RUNTIME_DIR" ]; then
-    quit 1 '$XDG_RUNTIME_DIR is not set!'
-  fi
-  if [ -z "$WAYLAND_DISPLAY" ]; then
-    quit 1 '$WAYLAND_DISPLAY is not set!'
-  fi
-  pidfile="$XDG_RUNTIME_DIR/wautosleep.$WAYLAND_DISPLAY.pid"
+if [ -z "${XDG_RUNTIME_DIR-}" ]; then
+  err '$XDG_RUNTIME_DIR is not set!'
+  exit 1
+fi
+if [ -z "${WAYLAND_DISPLAY-}" ]; then
+  err '$WAYLAND_DISPLAY is not set!'
+  exit 1
+fi
+pidfile="$XDG_RUNTIME_DIR/wautosleep.$WAYLAND_DISPLAY.pid"
+
+loadpid() {
+  [ -e "$pidfile" ] && read -r wpid pid < "$pidfile"
 }
 
-_stupid() {
-  stupid --file="$pidfile" "$1" swayidle timeout 600 'systemctl suspend'
+start() {
+  gale-pid-start --try "$pidfile" ~/.gale/wayland/wautosleep-service
 }
 
-case $1 in
-  status|'')
-    pidfile
-    _stupid --status
-    ;;
-  s|start)
-    pidfile
-    _stupid --start
-    ;;
-  autostart)
-    pidfile
-    if [ "$(galconf get --default=yes wayland.autosleep)" = yes ]; then
-      _stupid --start
+case $# in
+  0) oper=status ;;
+  1) oper=$1 ;;
+  *) usage; exit 1 ;;
+esac
+
+case $oper in
+  status)
+    if loadpid; then
+      echo "wautosleep is on (pid $wpid/$pid)"
+    else
+      echo "wautosleep is off"
     fi
     ;;
-  r|restart)
-    pidfile
-    _stupid --restart
+  on)
+    start
     ;;
-  restart-running)
-    pidfile
-    _stupid --restart-running
+  off)
+    loadpid && kill -- "$pid"
     ;;
-  q|quit)
-    pidfile
-    _stupid --quit
+  toggle)
+    if loadpid; then
+      kill -- "$pid"
+    else
+      start
+    fi
     ;;
-  t|toggle)
-    pidfile
-    _stupid --toggle
+  restart)
+    if loadpid; then
+      kill -USR1 -- "$wpid"
+    fi
+    ;;
+  is-active)
+    # we only need the exit status
+    loadpid
+    ;;
+  autostart)
+    if [ "$(galconf get --bool --default=no wautosleep.autostart)" = yes ]; then
+      start
+    fi
     ;;
   *)
     usage

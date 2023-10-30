@@ -53,33 +53,33 @@ set wildmenu wildmode=longest:full,full
 " don't automatically hide windows
 set nohidden
 
-set guifont=Cascadia\ Code:h10
 " enable the mouse in all modes
 set mouse=a
 
 " KEYBINDINGS
 " ==============================================================================
 "
-" Tip: Use ':h map-table' to see map modes in a convenient table.
+" TIP: Use ':h map-table' to see all the map modes in a convenient table.
 
-" Use CTRL-X act like Escape
-noremap <C-X> <Esc>
+" Make CTRL-X act like Escape
+noremap  <C-X> <Esc>
 noremap! <C-X> <Esc>
+nnoremap <C-X> <Cmd>noh<CR>
 
 " Make space and backspace scroll the window
-noremap <Space> <C-D>
-noremap <BS> <C-U>
+noremap  <Space> <C-D>
+noremap  <BS> <C-U>
 
 " CTRL-J and CTRL-K move the cursor fast.
 " CTRL-N and CTRL-P move the cursor even faster.
-noremap <C-J> 5j
-noremap <C-K> 5k
-noremap <C-N> 10j
-noremap <C-P> 10k
+noremap  <C-J> 5j
+noremap  <C-K> 5k
+noremap  <C-N> 10j
+noremap  <C-P> 10k
 
-noremap H z<CR>
-noremap M z.
-noremap L z-
+noremap  H z<CR>
+noremap  M z.
+noremap  L z-
 
 nnoremap < <<
 nnoremap > >>
@@ -106,6 +106,13 @@ cnoremap <Esc>b <S-Left>
 cnoremap <M-b>  <S-Left>
 cnoremap <Esc>f <S-Right>
 cnoremap <M-f>  <S-Right>
+
+" GUI
+" ==============================================================================
+
+if has('gui_running')
+  set guifont=Cascadia\ Code:h10
+endif
 
 " NEOVIDE
 " ==============================================================================
@@ -148,6 +155,6 @@ if &term == "linux"
   hi Visual cterm=reverse
 endif
 
-command! R execute "source " .. fnameescape(stdpath('config') .. "/init.vim")
+command! R echomsg "Reloading..." | execute "source " .. fnameescape(stdpath('config') .. "/init.vim")
 
 " vim:ft=vim

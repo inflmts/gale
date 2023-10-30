@@ -1,0 +1,74 @@
+#!/bin/sh
+# gale-hyprland-waybar
+#
+# This file is part of Gale.
+#
+
+set -u
+
+echo() { printf '%s\n' "$1"; }
+diag() { printf >&2 '%s\n' "$1"; }
+warn() { printf >&2 'warning: %s\n' "$1"; }
+err() { printf >&2 'error: %s\n' "$1"; }
+
+usage() {
+  cat >&2 <<EOF
+usage: gale-hyprland-waybar [<command>]
+commands:
+  status (default)
+  start
+  reload
+  restart
+  kill
+EOF
+}
+
+if [ -z "$XDG_RUNTIME_DIR" ]; then
+  err '$XDG_RUNTIME_DIR is not set!'
+  exit 1
+fi
+if [ -z "$WAYLAND_DISPLAY" ]; then
+  err '$WAYLAND_DISPLAY is not set!'
+  exit 1
+fi
+pidfile="$XDG_RUNTIME_DIR/gale-hyprland-waybar.$WAYLAND_DISPLAY.pid"
+
+loadpid() {
+  [ -e "$pidfile" ] && read -r wpid pid < "$pidfile"
+}
+
+start() {
+  gale-pid-start --try "$pidfile" waybar -c ~/.gale/hyprland/waybar.json -s ~/.gale/hyprland/waybar.css
+}
+
+case $# in
+  0) oper=status ;;
+  1) oper=$1 ;;
+  *) usage; exit 1 ;;
+esac
+
+case $oper in
+  status)
+    if loadpid; then
+      echo "waybar is running (pid $wpid/$pid)"
+    else
+      echo "waybar is not running"
+    fi
+    ;;
+  start)
+    start
+    ;;
+  reload)
+    loadpid && kill -USR2 -- "$pid"
+    ;;
+  restart)
+    loadpid && kill -USR1 -- "$wpid"
+    ;;
+  kill)
+    loadpid && kill -- "$pid"
+    ;;
+  *)
+    usage
+    exit 1
+    ;;
+esac
