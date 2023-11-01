@@ -1,17 +1,18 @@
 #!/bin/sh
-# gale-sleep - put the computer to sleep
+# gale-sleep - put the system to sleep
 #
 # This file is part of Gale.
 #
-# This script puts the computer to sleep using the method specified in the
-# galconf variable `sleep-method`. These sleep methods are available:
+# This script puts the system to sleep using the method specified in the galconf
+# variable `sleep-method`. These methods are available:
 #
-#   systemctl       systemctl suspend (systemd)
+#   systemctl       systemctl suspend (systemd, default)
+#   loginctl        loginctl suspend (elogind)
 #   zzz             zzz (Void Linux)
-#   sudo-*          as previously, but through sudo
+#   sudo-*          use sudo
 #
 
-set -eu
+set -u
 
 echo() { printf '%s\n' "$1"; }
 diag() { printf >&2 '%s\n' "$1"; }
@@ -23,23 +24,25 @@ if [ $# -gt 0 ]; then
   exit 1
 fi
 
-if ! method=$(galconf get sleep-method); then
-  err "no sleep method configured"
-  exit 127
-fi
+sudo=
+method=$(galconf get --default=systemctl sleep-method) || exit 127
+
+case $method in
+  sudo-*)
+    sudo=sudo
+    method=${method#sudo-}
+    ;;
+esac
 
 case $method in
   systemctl)
     exec systemctl suspend
     ;;
-  sudo-systemctl)
-    exec sudo systemctl suspend
+  loginctl)
+    exec loginctl suspend
     ;;
   zzz)
     exec zzz
-    ;;
-  sudo-zzz)
-    exec sudo zzz
     ;;
   *)
     err "invalid sleep method '$method'"
