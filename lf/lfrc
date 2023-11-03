@@ -8,20 +8,81 @@
 #   - https://github.com/gokcehan/lf
 #
 
+# OPTIONS
+# ==============================================================================
+
 set ifs
 set nopreview
 set ratios 1
 set scrolloff 5
 # show hidden files
 set hidden
-set timefmt "Mon 2006/01/02 15:04:05"
 set incsearch
 # automatically refresh files every 3 seconds
 set period 3
 
+set infotimefmtnew "Jan 02 15:04"
+set infotimefmtold "Jan 02, 2006"
+# statfmt is updated by the statfmt command below
+set statfmt ""
+set timefmt "Mon 2006/01/02 03:04 PM"
+
 # Box
 set drawbox
 set borderfmt "\033[38;5;240m"
+
+# COMMANDS & MAPPINGS
+# ==============================================================================
+
+# Clear some default commands
+map gg
+map gh
+
+map zh
+map zr
+map zn
+map zs
+map zt
+map za
+
+map sn
+map ss
+map st
+map sa
+map sc
+map se
+
+cmd statfmt &{{
+  fmt="\\033[1m%p\\033[0m| %c| %u:%g| %s| %t| \\033[36m-> %l\\033[0m"
+  mode=
+  [ "$lf_sortby" != natural ] && mode="$mode $lf_sortby"
+  [ "$lf_reverse" = true ] && mode="$mode rev"
+  [ "$lf_hidden" = false ] && mode="$mode hid"
+  [ -n "$mode" ] && fmt="\\033[7m$mode \\033[0m |$fmt"
+  "$lf" -remote "send $id set statfmt \"$fmt\""
+}}
+statfmt
+
+# Sort commands
+map O :set sortby natural; statfmt
+map S :set sortby size; statfmt
+map T :set sortby time; statfmt
+map E :set sortby ext; statfmt
+map I :set reverse!; statfmt
+
+# Other commands
+map <backspace> page-up
+map <backspace2> page-up
+map <space> page-down
+map <c-k> up
+map <c-j> down
+map <tab> :toggle; down
+map g top
+map ~ cd
+map . :set hidden!; statfmt
+
+# Delete command
+cmd d delete
 
 # make <enter> an alias for l
 map <enter> open
