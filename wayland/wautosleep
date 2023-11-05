@@ -69,18 +69,18 @@ case $oper in
     start
     ;;
   off)
-    loadpid && kill -- "$pid"
+    loadpid && kill "$pid"
     ;;
   toggle)
     if loadpid; then
-      kill -- "$pid"
+      kill "$pid"
     else
       start
     fi
     ;;
   restart)
     if loadpid; then
-      kill -USR1 -- "$wpid"
+      kill -USR1 "$wpid"
     fi
     ;;
   is-active)

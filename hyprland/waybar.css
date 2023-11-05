@@ -64,8 +64,8 @@ button:hover {
   background-color: #eb4d4b;
 }
 
-#mode {
-  background-color: #64727D;
+#submap {
+  background-color: #c80000;
 }
 
 #window {
@@ -84,7 +84,7 @@ button:hover {
 #wireplumber,
 #custom-media,
 #tray,
-#mode,
+#submap,
 #idle_inhibitor,
 #scratchpad,
 #mpd {

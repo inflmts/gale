@@ -59,13 +59,13 @@ case $oper in
     start
     ;;
   reload)
-    loadpid && kill -USR2 -- "$pid"
+    loadpid && kill -USR2 "$pid"
     ;;
   restart)
-    loadpid && kill -USR1 -- "$wpid"
+    loadpid && kill -USR1 "$wpid"
     ;;
   kill)
-    loadpid && kill -- "$pid"
+    loadpid && kill "$pid"
     ;;
   *)
     usage
