@@ -13,8 +13,11 @@
 
 GALE_ENABLE_BANNER=yes
 
-set +H
+# +H    disable history substitution with '!'
+# -u    fail on undefined variable references
+set +H -u
 
+unset -f gale_late_hook
 if [[ -f ~/.config/gale/bashrc ]]; then
   . ~/.config/gale/bashrc
 fi
@@ -28,9 +31,16 @@ __gale_diag() { command printf >&2 '%s\n' "$1"; }
 __gale_warn() { command printf >&2 'warning: %s\n' "$1"; }
 __gale_err() { command printf >&2 'error: %s\n' "$1"; }
 
-if [[ -z $GALE_COLORS ]]; then
-  # autodetect number of colors using tput
-  GALE_COLORS=$(tput colors 2>/dev/null) || GALE_COLORS=0
+if [[ -z ${GALE_COLORS-} ]]; then
+  # try to autodetect number of colors based on $TERM
+  case ${TERM-} in
+    # without a term, assume no color support
+    '') GALE_COLORS=0 ;;
+    # linux console only supports 8 colors
+    linux) GALE_COLORS=1 ;;
+    # go out on a whim and assume 256 color support
+    *) GALE_COLORS=2 ;;
+  esac
 fi
 
 # setup colors for ls (and tree)
@@ -43,14 +53,21 @@ unset __gale_dircolors
 ### FUNCTIONS & ALIASES
 ################################################################################
 
+# __gale_spawn <command> [<args>...]
+#
+#   Fork a command using setsid(1).
+#
 __gale_spawn() {
-  setsid -f -- "$@" </dev/null >/dev/null 2>&1
+  local path
+  if ! path=$(type -P "$1") &>/dev/null; then
+    __gale_err "command not found: $1"
+    return 1
+  fi
+  shift
+  setsid -f -- "$path" "$@" <&- &>/dev/null
 }
 
 alias grep='grep --color=auto'
-
-alias sysleep='systemctl suspend'
-alias userctl='systemctl --user'
 alias md='mkdir -pv'
 
 __gale_ls() {
@@ -90,12 +107,19 @@ argc() {
   __gale_echo "$# argument(s)"
 }
 
-# fork processes using setsid(1)
 f() {
+  if [[ $# -eq 0 ]]; then
+    __gale_diag "f: expected command"
+    return 1
+  fi
   __gale_spawn "$@"
 }
 
 fx() {
+  if [[ $# -eq 0 ]]; then
+    __gale_diag "fx: expected command"
+    return 1
+  fi
   __gale_spawn "$@" && exit
 }
 
@@ -282,7 +306,7 @@ __gale_show_excode() {
   local code="$?"
   local esc=$'\033'
   if [[ $code -gt 0 ]]; then
-    if [[ $GALE_COLORS -ge 256 ]]; then
+    if [[ $GALE_COLORS -ge 2 ]]; then
       __gale_echo "$esc[0;38;5;203;48;5;88m exit $code $esc[0m"
     else
       __gale_echo "$esc[0;31m[exit $code]$esc[0m"
@@ -299,15 +323,15 @@ PS1=
 PS1+='\[\e[0;1m\]'
 
 # autodetect nnn
-if [[ $NNNLVL ]]; then
-  if [[ $GALE_COLORS -ge 256 ]]; then
+if [[ ${NNNLVL-} ]]; then
+  if [[ $GALE_COLORS -ge 2 ]]; then
     PS1+='\[\e[37;45m\] nnn($NNNLVL) '
   else
     PS1+='\[\e[35m\]nnn($NNNLVL) '
   fi
 fi
 
-if [[ $GALE_COLORS -ge 256 ]]; then
+if [[ $GALE_COLORS -ge 2 ]]; then
   PS1+='\[\e[37;48;5;196m\] \u@\h '
   PS1+='\[\e[48;5;124m\] \w '
   PS1+='\[\e[22;38;5;203;48;5;88m\]\$\[\e[0m\] '
@@ -343,7 +367,6 @@ bind -x '"\C-x\C-p": __gale_readline_print_variable'
 # else.
 if declare -F gale_late_hook &>/dev/null; then
   gale_late_hook
-  unset -f gale_late_hook
 fi
 
 # vim:ft=bash

@@ -55,9 +55,8 @@ button:hover {
   color: #000000;
 }
 
-/* Note: Not in waybar yet as of v0.9.22 */
-#workspaces button.visible {
-  background-color: #eee;
+#workspaces button.visible:not(.active) {
+  background-color: #60606c;
 }
 
 #workspaces button.urgent {
