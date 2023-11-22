@@ -1,4 +1,4 @@
-#
+#=============================================================================
 # ~/.bashrc
 #
 # This file is part of Gale.
@@ -7,9 +7,11 @@
 #
 #   ~/.config/gale/bashrc
 #
-# Note that the check for an interactive shell occurs _after_ the local
-# configuration file is sourced.
-#
+#=============================================================================
+
+# quit unless interactive
+# apparently needed for rcp or scp or something
+[[ $- != *i* ]] && return
 
 GALE_ENABLE_BANNER=yes
 
@@ -22,21 +24,17 @@ if [[ -f ~/.config/gale/bashrc ]]; then
   . ~/.config/gale/bashrc
 fi
 
-# quit unless interactive
-# apparently needed for rcp or scp or something
-[[ $- != *i* ]] && return
-
 __gale_echo() { command printf '%s\n' "$1"; }
 __gale_diag() { command printf >&2 '%s\n' "$1"; }
 __gale_warn() { command printf >&2 'warning: %s\n' "$1"; }
 __gale_err() { command printf >&2 'error: %s\n' "$1"; }
 
 if [[ -z ${GALE_COLORS-} ]]; then
-  # try to autodetect number of colors based on $TERM
+  # try to figure out number of colors based on $TERM
   case ${TERM-} in
-    # without a term, assume no color support
-    '') GALE_COLORS=0 ;;
-    # linux console only supports 8 colors
+    # these terms support no colors
+    dumb) GALE_COLORS=0 ;;
+    # these terms support 8 colors
     linux) GALE_COLORS=1 ;;
     # go out on a whim and assume 256 color support
     *) GALE_COLORS=2 ;;
@@ -49,9 +47,9 @@ if __gale_dircolors=$(dircolors 2>/dev/null); then
 fi
 unset __gale_dircolors
 
-################################################################################
-### FUNCTIONS & ALIASES
-################################################################################
+#=============================================================================
+# FUNCTIONS & ALIASES
+#=============================================================================
 
 # __gale_spawn <command> [<args>...]
 #
@@ -123,7 +121,7 @@ fx() {
   __gale_spawn "$@" && exit
 }
 
-#== BLOCK DEVICES ==============================================================
+## BLOCK DEVIES
 
 # include file system information
 lsfs() {
@@ -236,40 +234,63 @@ cdn3() {
 
 __gale_mkscript_usage() {
   cat >&2 <<\END
-usage: mkscript [options] <file>
+usage: mkscript [options] <file> [<type>]
 
 Creates an executable script. By default, mkscript creates a shell script.
 
-Options:
-  -b  make a bash script
-  -n  make a Node.js script
-  -h  show this help
+Script types:
+  sh      shell script
+  bash    Bash script
+  node    Node.js script
 END
 }
 
 mkscript() {
-  local OPTIND=1 OPTERR=1 OPTARG
-  local string='#!/bin/sh' opt
-  local target
-  while getopts hbn opt; do
-    case $opt in
-      h) __gale_mkscript_usage; return 0 ;;
-      b) string='#!/usr/bin/env bash' ;;
-      n) string='#!/usr/bin/env node' ;;
-      *) __gale_mkscript_usage; return 1 ;;
+  local target type template_file
+
+  while [[ $# -gt 0 ]]; do
+    case $1 in
+      --)
+        shift
+        break
+        ;;
+      --help)
+        __gale_mkscript_usage
+        return 0
+        ;;
+      -*)
+        __gale_diag "mkscript: invalid option: $1"
+        return 1
+        ;;
+      *)
+        break
+        ;;
     esac
+    shift
   done
-  shift "$((OPTIND - 1))"
-  if [[ $# -ne 1 ]]; then
-    __gale_mkscript_usage
+
+  case $# in
+    1) target=$1; type=sh ;;
+    2) target=$1; type=$2 ;;
+    *) __gale_mkscript_usage; return 1 ;;
+  esac
+
+  case $type in
+    sh|bash|node)
+      template_file="$HOME/.gale/mkscript-templates/$type"
+      ;;
+    *)
+      __gale_diag "mkscript: invalid script type '$type'"
+      return 1
+      ;;
+  esac
+
+  if [[ -e "$target" ]]; then
+    __gale_diag "mkscript: target exists: $target"
     return 1
   fi
-  target=$1
-  if [[ -e $target ]]; then
-    __gale_err "target exists: $target"
-    return 1
-  fi
-  __gale_echo "$string" > "$target" && chmod +x -- "$target"
+
+  cp -- "$template_file" "$target" && chmod +x -- "$target"
 }
 
 # open files with xdg-open
@@ -287,9 +308,9 @@ ffnw() {
   __gale_spawn firefox --new-window "$@"
 }
 
-################################################################################
-### BANNER
-################################################################################
+#=============================================================================
+# BANNER
+#=============================================================================
 
 # Disable with `GALE_ENABLE_BANNER=no`.
 
@@ -297,9 +318,9 @@ if [[ $GALE_ENABLE_BANNER = yes ]]; then
   __gale_echo $'\033[7m'"  Bash $BASH_VERSION on ${TERM:-unknown} | Powered by Gale  "$'\033[0m'
 fi
 
-################################################################################
-### PROMPT
-################################################################################
+#=============================================================================
+# PROMPT
+#=============================================================================
 
 # if the last command exited unsuccessfully, show the exit code
 __gale_show_excode() {
@@ -341,9 +362,9 @@ fi
 
 PROMPT_COMMAND=(__gale_show_excode __gale_update_title)
 
-################################################################################
-### KEYBINDINGS
-################################################################################
+#=============================================================================
+# KEYBINDINGS
+#=============================================================================
 
 __gale_readline_print_variable() {
   set -- "${READLINE_LINE:0:$READLINE_POINT}"
@@ -359,9 +380,9 @@ __gale_readline_print_variable() {
 
 bind -x '"\C-x\C-p": __gale_readline_print_variable'
 
-################################################################################
-### LATE HOOK
-################################################################################
+#=============================================================================
+# LATE HOOK
+#=============================================================================
 
 # If the local configuration defines a gale_late_hook, run it after everything
 # else.
