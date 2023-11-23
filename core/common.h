@@ -60,49 +60,4 @@ char *get_dirname(const char *path);
 // '.'. Otherwise, the returned string should be released using free().
 char *get_dirname_null(const char *path);
 
-/*****************************************************************************
- * OPTPARSE
- ****************************************************************************/
-
-struct optspec
-{
-  // Option value. If 0, terminates option spec. If between 1-255, will be used
-  // as short option. Otherwise can only be specified as long option.
-  int value;
-  // Long option name. NULL indicates no long option.
-  char *name;
-  // Whether the option takes an argument.
-  bool arg;
-};
-
-struct optstate
-{
-  const struct optspec *options;
-  int index;
-  int count;
-  char **args;
-  char *optarg;
-  char *shortopt;
-};
-
-// Initializes the option parser.
-//
-//   @param s - The parser state to initialize
-//   @param options - An array of valid options, terminated by 0 value
-//   @param count - Number of arguments
-//   @param args - Array of arguments
-//
-void optinit(
-    struct optstate *s,
-    const struct optspec *options,
-    int count,
-    char **args);
-
-// If an invalid option or missing argument is encountered, prints an error
-// message and returns -1.
-// If no more options remain, returns 0.
-// Otherwise, returns the next option value.
-//
-int optparse(struct optstate *s);
-
 #endif

@@ -4,7 +4,7 @@
 # This file is part of Galcore.
 #
 
-set -eu
+set -u
 
 echo() { printf '%s\n' "$1"; }
 diag() { printf >&2 '%s\n' "$1"; }
@@ -12,7 +12,7 @@ warn() { printf >&2 'warning: %s\n' "$1"; }
 err() { printf >&2 'error: %s\n' "$1"; }
 
 usage() {
-  cat <<EOF
+  cat >&2 <<EOF
 usage: $0 [options]
 options:
   --debug       enable debugging features
@@ -38,17 +38,18 @@ for option; do
   esac
 done
 
-cd "$(dirname "$0")"
+cd "$(dirname "$0")" || exit 1
 
 configure_args=
 if [ "$env" = debug ]; then
   configure_args="$configure_args --debug"
 fi
 
+cflags="-fdiagnostics-color=always"
 if [ "$env" = debug ]; then
-  cflags="-DGALE_DEBUG"
+  cflags="$cflags -DGALE_DEBUG"
 else
-  cflags="-O2"
+  cflags="$cflags -O2"
 fi
 
 cat > build.ninja <<EOF
@@ -71,12 +72,14 @@ build galconf: link \$
   \$builddir/common.o \$
   \$builddir/astr.o \$
   \$builddir/config.o \$
+  \$builddir/optparse.o \$
   \$builddir/galconf.o
 
 build galinst: link \$
   \$builddir/common.o \$
   \$builddir/astr.o \$
   \$builddir/config.o \$
+  \$builddir/optparse.o \$
   \$builddir/galinst-base.o \$
   \$builddir/galinst-manifest.o \$
   \$builddir/galinst-log.o \$
@@ -85,6 +88,7 @@ build galinst: link \$
 build \$builddir/common.o: cc common.c
 build \$builddir/astr.o: cc astr.c
 build \$builddir/config.o: cc config.c
+build \$builddir/optparse.o: cc optparse.c
 build \$builddir/galconf.o: cc galconf.c
 build \$builddir/galinst-base.o: cc galinst-base.c
 build \$builddir/galinst-manifest.o: cc galinst-manifest.c

@@ -4,20 +4,18 @@
 #include <unistd.h>
 #include "common.h"
 #include "config.h"
+#include "optparse.h"
 #include "galinst-base.h"
 #include "galinst-manifest.h"
 
-static void usage(FILE *fp)
-{
-  fprintf(fp, "\
-usage: galinst [<option>...]\n\
-options:\n\
-  -n, --dry-run       don't do anything, only show what would happen\n\
-  -v, --verbose       be verbose\n\
-  -q, --quiet         suppress informational messages\n\
-  -h, --help          show this help\n\
-" );
-}
+static const char *usage =
+   "usage: galinst [<option>...]\n"
+   "\n"
+   "Options:\n"
+   "  -n, --dry-run       don't do anything, only show what would happen\n"
+   "  -v, --verbose       be verbose\n"
+   "  -q, --quiet         suppress informational messages\n"
+   "  -h, --help          show this help\n";
 
 bool color_output = false;
 
@@ -55,11 +53,11 @@ int main(int argc, char **argv)
 
   int opt;
   struct optstate s;
-  optinit(&s, options, argc, argv);
+  optinit(&s, argc, argv);
 
   bool dry = false;
 
-  while ((opt = optparse(&s)) != -1) {
+  while ((opt = optparse(&s, options)) != 0) {
     switch (opt) {
       case OPT_DRY:
         dry = true;
@@ -71,8 +69,10 @@ int main(int argc, char **argv)
         loglevel = LOGLEVEL_NONE;
         break;
       case OPT_HELP:
-        usage(stdout);
+        fputs(usage, stderr);
         exit(0);
+      default:
+        exit(1);
     }
   }
 
