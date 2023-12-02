@@ -8,33 +8,46 @@
 #   - https://github.com/gokcehan/lf
 #
 
+#=============================================================================
 # OPTIONS
-# ==============================================================================
+#=============================================================================
 
-set ifs
+# set $IFS to newline in subshells
+set ifs "\n"
+
+# show one column without preview
 set nopreview
 set ratios 1
+
+# leave a few lines around cursor
 set scrolloff 5
+
 # show hidden files
 set hidden
+
+# search while typing
 set incsearch
+
 # automatically refresh files every 3 seconds
 set period 3
 
+# time formats
 set infotimefmtnew "Jan 02 15:04"
 set infotimefmtold "Jan 02, 2006"
-# statfmt is updated by the statfmt command below
-set statfmt ""
 set timefmt "Mon 2006/01/02 03:04 PM"
 
-# Box
+# statfmt is updated by the statfmt command below
+set statfmt ""
+
+# draw box around directory listing
 set drawbox
 set borderfmt "\033[38;5;240m"
 
+#=============================================================================
 # COMMANDS & MAPPINGS
-# ==============================================================================
+#=============================================================================
 
-# Clear some default commands
+# remove some default commands
 map gg
 map gh
 
@@ -52,6 +65,15 @@ map sa
 map sc
 map se
 
+# use <backspace> and <space> to scroll the window
+map <backspace> page-up
+map <backspace2> page-up
+map <space> page-down
+
+# use <tab> to select files
+map <tab> :toggle; down
+
+# command to generate the status line
 cmd statfmt &{{
   fmt="\\033[1m%p\\033[0m| %c| %u:%g| %s| %t| \\033[36m-> %l\\033[0m"
   mode=
@@ -63,25 +85,19 @@ cmd statfmt &{{
 }}
 statfmt
 
-# Sort commands
+# sort commands
 map O :set sortby natural; statfmt
 map S :set sortby size; statfmt
 map T :set sortby time; statfmt
 map E :set sortby ext; statfmt
 map I :set reverse!; statfmt
 
-# Other commands
-map <backspace> page-up
-map <backspace2> page-up
-map <space> page-down
-map <c-k> up
-map <c-j> down
-map <tab> :toggle; down
+# other commands
 map g top
 map ~ cd
 map . :set hidden!; statfmt
 
-# Delete command
+# delete command
 cmd d delete
 
 # make <enter> an alias for l

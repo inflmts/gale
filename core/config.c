@@ -109,7 +109,6 @@ static inline int config_parse_eof(struct config_parse_state *cp)
   return cp->cur == NULL;
 }
 
-// Returns 0 if the function succeeds or -1 if an error occurs.
 static int config_parse_next(struct config_parse_state *cp)
 {
   if ((++cp->cur) >= cp->end) {
@@ -142,7 +141,9 @@ static void config_parse_set_syntax_error(
   va_list ap;
   va_start(ap, format);
   free(cp->errmsg);
-  cp->errmsg = xstrfmt("syntax error at line %u: %s", cp->line, xvstrfmt(format, ap));
+  char *msg = xvstrfmt(format, ap);
+  cp->errmsg = xstrfmt("syntax error at line %u: %s", cp->line, msg);
+  free(msg);
   va_end(ap);
 }
 
@@ -247,7 +248,7 @@ static int config_parse_config(struct config_parse_state *cp)
   }
 }
 
-int config_parse(struct config *conf, int fd, char **errmsg)
+static int config_parse(struct config *conf, int fd, char **errmsg)
 {
   struct config_parse_state cp;
   cp.conf = conf;
