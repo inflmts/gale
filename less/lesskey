@@ -1,44 +1,63 @@
-#
-# ~/.lesskey
+#=================================================
+# Key binding configuration file for less
 #
 # This file is part of Gale.
 #
 # Documentation:
-#   - less(1)
 #   - lesskey(1)
-#
+#   - less(1)
+#=================================================
 
 #command
 
-# vertical scrolling
+q     quit
+Q     quit
+?     help
+v     version
+V     version
+^G    status
+#^L    redraw
+#r     redraw
+#R     redraw-flush
+
 j     forw-line
 k     back-line
 \40   forw-screen
+\b    back-screen
 \177  back-screen
 g     goto-line
 G     goto-end
+p     percent
+%     percent
+h     left-scroll
+l     right-scroll
+^     no-scroll
+$     end-scroll
 
-# horizontal scrolling
-[     left-scroll
-]     right-scroll
-{     no-scroll
-}     end-scroll
-
-# searching
 /     forw-search
 \e/   back-search
 n     repeat-search
 N     reverse-search
 -     toggle-option
 _     display-option
-\eu   undo-hilite
-\eU   clear-search
+^X    clear-search
 
-# files
+m     set-mark
+M     set-mark-bottom
+'     goto-mark
+\em   clear-mark
+
+{     forw-bracket {}
+}     back-bracket {}
+(     forw-bracket ()
+)     back-bracket ()
+[     forw-bracket []
+]     back-bracket []
+
+:e    examine
 :p    prev-file
 :n    next-file
 
-# misc
 1     digit
 2     digit
 3     digit
@@ -48,7 +67,14 @@ _     display-option
 7     digit
 8     digit
 9     digit
-?     help
-v     version
-h     help
-q     quit
+-     toggle-option
+_     display-option
+!     shell
+|     pipe
+v     visual
+
+#stop
+
+#line-edit
+
+^X    abort
