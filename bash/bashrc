@@ -24,11 +24,10 @@ if [[ -f ~/.config/gale/bashrc ]]; then
   . ~/.config/gale/bashrc
 fi
 
-__gale_echo() { command printf '%s\n' "${1-}"; }
-__gale_print() { command printf '%s' "$1"; }
-__gale_diag() { command printf >&2 '%s\n' "${1-}"; }
-__gale_warn() { command printf >&2 'warning: %s\n' "$1"; }
-__gale_err() { command printf >&2 'error: %s\n' "$1"; }
+echo() { command printf '%s\n' "${1-}"; }
+diag() { command printf >&2 '%s\n' "${1-}"; }
+warn() { command printf >&2 'warning: %s\n' "$1"; }
+err() { command printf >&2 'error: %s\n' "$1"; }
 
 if [[ -z ${GALE_COLORS-} ]]; then
   # try to figure out number of colors based on $TERM
@@ -53,14 +52,64 @@ unset __gale_dircolors
 #=============================================================================
 
 gale_menu() {
-  local key
-  printf '\033[1mMenu:\033[0m [q] abort [s] sleep '
+  local tty is_vt options key
+
+  if tty=$(tty) && [[ $tty = /dev/tty* ]]; then
+    is_vt=1
+  else
+    is_vt=0
+  fi
+
+  options='[q] abort [s] sleep [o] shutdown '
+  if (( is_vt )); then
+    options+='[d] desktop '
+  fi
+  printf '\033[1mMenu:\033[0m %s' "$options"
   read -rsN1 key
   printf '\r\033[K'
+
   case $key in
     s)
       gale-sleep
       ;;
+    o)
+      printf '\033[1;31mAre you sure you want to shutdown the computer?\033[0m '
+      if gale_confirm; then
+        gale-shutdown
+      fi
+      ;;
+    d)
+      if (( is_vt )); then
+        gale_desktop_menu
+      fi
+      ;;
+  esac
+}
+
+gale_desktop_menu() {
+  local key
+
+  printf '\033[1mLaunch desktop:\033[0m [q] abort [s] sway [h] hyprland '
+  read -rsN1 key
+  printf '\r\033[K'
+
+  case $key in
+    s)
+      gale-sway
+      ;;
+    h)
+      gale-hyprland
+      ;;
+  esac
+}
+
+gale_confirm() {
+  local key
+  read -rsN1 key
+  echo
+  case $key in
+    [yY]) return 0 ;;
+    *) return 1 ;;
   esac
 }
 
@@ -77,7 +126,7 @@ bind -x '"\C-o": gale_menu'
 __gale_spawn() {
   local path
   if ! path=$(type -P "$1") &>/dev/null; then
-    __gale_err "command not found: $1"
+    err "command not found: $1"
     return 1
   fi
   shift
@@ -113,7 +162,7 @@ bind -x '"\C-t": clock'
 
 # display the function's arguments
 argv() {
-  __gale_echo "$# argument(s):"
+  echo "$# argument(s):"
   if [[ $# -gt 0 ]]; then
     printf '%q\n' "$@"
   fi
@@ -121,12 +170,12 @@ argv() {
 
 # display the number of arguments
 argc() {
-  __gale_echo "$# argument(s)"
+  echo "$# argument(s)"
 }
 
 f() {
   if [[ $# -eq 0 ]]; then
-    __gale_diag "f: expected command"
+    diag "f: expected command"
     return 1
   fi
   __gale_spawn "$@"
@@ -134,7 +183,7 @@ f() {
 
 fx() {
   if [[ $# -eq 0 ]]; then
-    __gale_diag "fx: expected command"
+    diag "fx: expected command"
     return 1
   fi
   __gale_spawn "$@" && exit
@@ -160,7 +209,7 @@ cdnew() {
   if [[ $# -eq 1 ]]; then
     mkdir -vp -- "$1" && cd -- "$1"
   else
-    __gale_diag 'usage: cdnew <dir>'
+    diag 'usage: cdnew <dir>'
     return 1
   fi
 }
@@ -168,16 +217,16 @@ cdnew() {
 __gale_resolve_block_device() {
   case $1 in
     l=*)
-      __gale_echo "/dev/disk/by-label/${1#*=}"
+      echo "/dev/disk/by-label/${1#*=}"
       ;;
     pl=*)
-      __gale_echo "/dev/disk/by-partlabel/${1#*=}"
+      echo "/dev/disk/by-partlabel/${1#*=}"
       ;;
     /*)
-      __gale_echo "$1"
+      echo "$1"
       ;;
     *)
-      __gale_err "invalid block device: $1"
+      err "invalid block device: $1"
       return 1
       ;;
   esac
@@ -190,7 +239,7 @@ __gale_resolve_block_device() {
 udmount() {
   local source
   if [[ $# -ne 1 ]]; then
-    __gale_diag 'usage: udmount <source>'
+    diag 'usage: udmount <source>'
     return 1
   fi
   source=$(__gale_resolve_block_device "$1") || return
@@ -204,7 +253,7 @@ udmount() {
 udumount() {
   local source
   if [[ $# -ne 1 ]]; then
-    __gale_diag 'usage: udeject <source>'
+    diag 'usage: udeject <source>'
     return 1
   fi
   source=$(__gale_resolve_block_device "$1") || return
@@ -222,7 +271,7 @@ lspath() {
   IFS=:
   set -f
   for ent in $PATH; do
-    __gale_echo "${ent/#"$HOME"/\~}"
+    echo "${ent/#"$HOME"/\~}"
   done
   IFS=$ifs
 }
@@ -278,7 +327,7 @@ mkscript() {
         return 0
         ;;
       -*)
-        __gale_diag "mkscript: invalid option: $1"
+        diag "mkscript: invalid option: $1"
         return 1
         ;;
       *)
@@ -299,13 +348,13 @@ mkscript() {
       template_file="$HOME/.gale/mkscript-templates/$type"
       ;;
     *)
-      __gale_diag "mkscript: invalid script type '$type'"
+      diag "mkscript: invalid script type '$type'"
       return 1
       ;;
   esac
 
   if [[ -e "$target" ]]; then
-    __gale_diag "mkscript: target exists: $target"
+    diag "mkscript: target exists: $target"
     return 1
   fi
 
@@ -334,7 +383,7 @@ ffnw() {
 # Disable with `GALE_ENABLE_BANNER=no`.
 
 if [[ $GALE_ENABLE_BANNER = yes ]]; then
-  __gale_echo $'\033[7m'"  Bash $BASH_VERSION on ${TERM:-unknown} | Powered by Gale  "$'\033[0m'
+  echo $'\033[7m'"  Bash $BASH_VERSION on ${TERM:-unknown} | Powered by Gale  "$'\033[0m'
 fi
 
 #=============================================================================
@@ -347,9 +396,9 @@ __gale_show_excode() {
   local esc=$'\033'
   if [[ $code -gt 0 ]]; then
     if [[ $GALE_COLORS -ge 2 ]]; then
-      __gale_echo "$esc[0;38;5;203;48;5;88m exit $code $esc[0m"
+      echo "$esc[0;38;5;203;48;5;88m exit $code $esc[0m"
     else
-      __gale_echo "$esc[0;31m[exit $code]$esc[0m"
+      echo "$esc[0;31m[exit $code]$esc[0m"
     fi
   fi
 }
@@ -390,9 +439,9 @@ __gale_readline_print_variable() {
   set -- "${1##*[!0-9A-Za-z_]}"
   if [[ $1 ]]; then
     if [[ -v $1 ]]; then
-      __gale_echo "$1=${!1@Q}"
+      echo "$1=${!1@Q}"
     else
-      __gale_echo "$1 is unset"
+      echo "$1 is unset"
     fi
   fi
 }
