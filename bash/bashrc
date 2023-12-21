@@ -24,10 +24,10 @@ if [[ -f ~/.config/gale/bashrc ]]; then
   . ~/.config/gale/bashrc
 fi
 
-echo() { command printf '%s\n' "${1-}"; }
-diag() { command printf >&2 '%s\n' "${1-}"; }
-warn() { command printf >&2 'warning: %s\n' "$1"; }
-err() { command printf >&2 'error: %s\n' "$1"; }
+echo() { command printf '%s\n' "$*"; }
+diag() { command printf >&2 '%s\n' "$*"; }
+warn() { command printf >&2 'warning: %s\n' "$*"; }
+err() { command printf >&2 'error: %s\n' "$*"; }
 
 if [[ -z ${GALE_COLORS-} ]]; then
   # try to figure out number of colors based on $TERM
