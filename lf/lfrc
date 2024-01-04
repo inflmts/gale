@@ -96,6 +96,7 @@ map I :set reverse!; statfmt
 map g top
 map ~ cd
 map . :set hidden!; statfmt
+map o push &<space>"$f"<c-a>
 
 # delete command
 cmd d delete
@@ -103,6 +104,8 @@ cmd d delete
 # make <enter> an alias for l
 map <enter> open
 # open in firefox
-map <c-x>ff &firefox $fx
+#map <c-x>ff &firefox $fx
 # open in audacity
-map <c-x>au &audacity "$f"
+#map <c-x>au &audacity "$f"
+
+cmap <c-x> cmd-interrupt
