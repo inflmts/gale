@@ -113,7 +113,9 @@ gale_confirm() {
   esac
 }
 
-bind -x '"\C-o": gale_menu'
+# Bind F5 to the Gale menu
+bind -x '"\e[15~": gale_menu'
+bind -x '"\e[[E": gale_menu'
 
 #=============================================================================
 # FUNCTIONS & ALIASES
