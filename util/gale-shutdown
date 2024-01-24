@@ -3,12 +3,6 @@
 #
 # This file is part of Gale.
 #
-# This script powers off the system using the method specified in the galconf
-# variable `shutdown-method`. These methods are available:
-#
-#   poweroff        (default)
-#   sudo-poweroff   sudo poweroff
-#
 
 set -u
 
@@ -22,22 +16,4 @@ if [ $# -gt 0 ]; then
   exit 1
 fi
 
-sudo=
-method=$(galconf get --default=poweroff shutdown-method) || exit 127
-
-case $method in
-  sudo-*)
-    sudo=sudo
-    method=${method#sudo-}
-    ;;
-esac
-
-case $method in
-  poweroff)
-    exec $sudo poweroff
-    ;;
-  *)
-    err "invalid shutdown method '$method'"
-    exit 127
-    ;;
-esac
+exec poweroff

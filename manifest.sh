@@ -1,84 +1,60 @@
-[core]
-default enabled
-
-require generic
-require bash
-require dialog
-require less
-require lf
-require neovim
-require nnn
-require readline
-#require screen
-require vim
-
-# Galcore binaries
-linkbin core/galinst
-linkbin core/galconf
-
-[generic]
+# general
+linkbin util/galinst
 linkbin util/gale-sleep
 linkbin util/gale-shutdown
 linkbin util/gale-pid-start
 
-[bash]
+# bash
 link bash/bashrc .bashrc
 link bash/profile .bash_profile
+link bash/inputrc .inputrc
 
-[dialog]
+# dialog
 link dialog/dialogrc .dialogrc
 
-[less]
+# less
 link less/lesskey .lesskey
 
-[lf]
+# lf
 link lf/lfrc .config/lf/lfrc
 link lf/colors .config/lf/colors
 linkbin lf/gale-win-lf
 link lf/gale-win-lf.desktop .data/applications/gale-win-lf.desktop
 
-[neovim]
+# neovim
 link nvim/init.vim .config/nvim/init.vim
 
-[nnn]
+# nnn
 linkbin nnn/n3
 linkbin nnn/gale-win-n3
 link nnn/gale-win-n3.desktop .data/applications/gale-win-n3.desktop
-
 link nnn/plugins/terminal .config/nnn/plugins/terminal
 
-[readline]
-link bash/inputrc .inputrc
-
-[screen]
+# screen
 link screen/screenrc .screenrc
 
-[vim]
+# vim
 link vim/vimrc .vimrc
 linkbin vim/get-vim-plug
 
-[gui]
+# desktop
 linkbin util/term
 
-[wayland]
-require gui
+# wayland
 link foot/foot.ini .config/foot/foot.ini
 link alacritty/alacritty.yml .config/alacritty/alacritty.yml
 linkbin wayland/wautosleep
 
-[sway]
-require wayland
+# sway
 link sway/sway.conf .config/sway/config
 linkbin sway/gale-sway
 linkbin sway/swaystatus
 linkbin sway/sway-output-mode
 
-[hyprland]
-require wayland
+# hyprland
 link hyprland/hyprland.conf .config/hypr/hyprland.conf
 linkbin hyprland/gale-hyprland
 linkbin hyprland/gale-hyprland-waybar
 
-[cagebreak]
-require wayland
+# cagebreak
 link cagebreak/cagebreak.conf .config/cagebreak/config

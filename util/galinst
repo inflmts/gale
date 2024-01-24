@@ -1,0 +1,192 @@
+#!/usr/bin/env bash
+# Gale installer
+
+set -ue
+shopt -s nullglob
+
+echo() { printf '%s\n' "$*"; }
+diag() { printf >&2 '%s\n' "$*"; }
+warn() { printf >&2 'warning: %s\n' "$*"; }
+err() { printf >&2 'error: %s\n' "$*"; }
+
+usage() {
+  cat >&2 <<EOF
+usage: galinst [<options>...]
+
+Install Gale.
+
+Options:
+  -n, --dry-run   don't do anything, only show what would happen
+  -v, --verbose   be verbose
+  -h, --help      show this help
+EOF
+}
+
+dryrun=0
+verbose=0
+
+while (( $# > 0 )); do
+  case $1 in
+    -[!-][!-]*)
+      set -- "${1:0:2}" "-${1:2}"
+      continue
+      ;;
+    -n|--dry-run)
+      dryrun=1
+      ;;
+    -v|--verbose)
+      verbose=1
+      ;;
+    -h|--help)
+      usage
+      exit 0
+      ;;
+    *)
+      err "invalid option: $1"
+      diag "Try 'galinst --help' for usage."
+      exit 1
+      ;;
+  esac
+  shift
+done
+
+cd || exit 1
+
+gale_log_file=".data/gale/galinst.log"
+
+declare -A gale_entries=()
+gale_log_paths=()
+gale_install_paths=()
+gale_need_update_log=0
+
+is_normalized_path() {
+  case /$1/ in
+    *//*|*/./*|*/../*|*$'\n'*) return 1 ;;
+    *) return 0 ;;
+  esac
+}
+
+if [[ -e "$gale_log_file" ]]; then
+  mapfile -t gale_log_paths < "$gale_log_file"
+  for path in "${gale_log_paths[@]}"; do
+    if ! is_normalized_path "$path"; then
+      err "failed to load log: invalid path '$path'"
+      exit 1
+    fi
+    gale_entries[$path]=
+  done
+fi
+
+link() {
+  local target path
+  target=$1
+  path=$2
+  if ! is_normalized_path "$target"; then
+    err "invalid path '$target'"
+    exit 1
+  fi
+  if ! is_normalized_path "$path"; then
+    err "invalid path '$path'"
+    exit 1
+  fi
+  if [[ ! -v gale_entries[$path] ]]; then
+    gale_need_update_log=1
+  elif [[ ${gale_entries[$path]} ]]; then
+    err "duplicate path: $path"
+    exit 1
+  fi
+  gale_install_paths+=("$path")
+  gale_entries[$path]="$target"
+}
+
+linkbin() {
+  local target path
+  target=$1
+  if ! is_normalized_path "$target"; then
+    err "invalid path '$target'"
+    exit 1
+  fi
+  path=".local/bin/${target##*/}"
+  if [[ ! -v gale_entries[$path] ]]; then
+    gale_need_update_log=1
+  elif [[ ${gale_entries[$path]} ]]; then
+    err "duplicate path: $path"
+    exit 1
+  fi
+  gale_install_paths+=("$path")
+  gale_entries[$path]="$target"
+}
+
+source .gale/manifest.sh
+
+if (( ${#gale_install_paths[@]} == 0 )); then
+  err "no manifest entries defined"
+  exit 1
+fi
+
+# Delete paths in log that are no longer in the manifest
+for path in "${gale_log_paths[@]}"; do
+  if [[ ${gale_entries[$path]} ]]; then
+    continue
+  fi
+
+  if [[ -L "$path" ]]; then
+    echo "Removing $path"
+    if (( ! dryrun )); then
+      rm "$path" || :
+      # remove empty parent directories as well
+      if [[ $path = */* ]]; then
+        rmdir -p "${path%/*}" &>/dev/null || :
+      fi
+    fi
+  else
+    echo "Ignoring $path"
+  fi
+  gale_need_update_log=1
+done
+
+fail=0
+
+for path in "${gale_install_paths[@]}"; do
+  # Generate the target for the symlink.
+  # The symlink should be relative and point to a path in ~/.gale.
+  # For each directory level in the path, a '..' is prepended to the target.
+  target=".gale/${gale_entries[$path]}"
+  tmp=$path
+  while [[ $tmp = */* ]]; do
+    tmp=${tmp#*/}
+    target="../$target"
+  done
+
+  # Read the symlink and check if it has the right contents.
+  # If not, (re)create the symlink.
+  if real_target=$(readlink "$path"); then
+    if [[ "$real_target" = "$target" ]]; then
+      if (( verbose )); then
+        echo "Skipping: $path"
+      fi
+    else
+      echo "Correcting symlink: $path -> $target"
+      if (( ! dryrun )); then
+        ln -sfT "$target" "$path" || fail=1
+      fi
+    fi
+  else
+    echo "Creating symlink: $path -> $target"
+    if (( ! dryrun )); then
+      { [[ $path != */* ]] || mkdir -p "${path%/*}"; } \
+        && ln -sT "$target" "$path" || fail=1
+    fi
+  fi
+done
+
+if (( gale_need_update_log )); then
+  echo "Updating log..."
+  if (( ! dryrun )); then
+    mkdir -p "${gale_log_file%/*}"
+    printf '%s\n' "${gale_install_paths[@]}" > "$gale_log_file.tmp"
+    mv "$gale_log_file.tmp" "$gale_log_file"
+  fi
+fi
+
+exit $fail

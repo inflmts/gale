@@ -3,14 +3,6 @@
 #
 # This file is part of Gale.
 #
-# This script puts the system to sleep using the method specified in the galconf
-# variable `sleep-method`. These methods are available:
-#
-#   systemctl       systemctl suspend (systemd, default)
-#   loginctl        loginctl suspend (elogind)
-#   zzz             zzz (Void Linux)
-#   sudo-*          use sudo
-#
 
 set -u
 
@@ -24,28 +16,16 @@ if [ $# -gt 0 ]; then
   exit 1
 fi
 
-sudo=
-method=$(galconf get --default=systemctl sleep-method) || exit 127
+if ! id=$(. /etc/os-release && echo "$ID"); then
+  err "failed to determine operating system"
+  exit 1
+fi
 
-case $method in
-  sudo-*)
-    sudo=sudo
-    method=${method#sudo-}
-    ;;
-esac
-
-case $method in
-  systemctl)
-    exec systemctl suspend
-    ;;
-  loginctl)
-    exec loginctl suspend
-    ;;
-  zzz)
-    exec zzz
+case $id in
+  void)
+    exec sudo zzz
     ;;
   *)
-    err "invalid sleep method '$method'"
-    exit 127
+    exec systemctl suspend
     ;;
 esac

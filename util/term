@@ -11,14 +11,11 @@ err() { printf >&2 'error: %s\n' "$1"; }
 
 usage() {
   cat <<EOF
-usage: term [-w|-x] [<command> [<args>...]]
-options:
-  -w      force wayland selection
-  -x      force x11 selection
+usage: term [<command> [<args>...]]
+
+Start a terminal.
 EOF
 }
-
-termtype=
 
 while [ $# -gt 0 ]; do
   case $1 in
@@ -26,14 +23,7 @@ while [ $# -gt 0 ]; do
       shift
       break
       ;;
-    -w)
-      termtype=wayland
-      ;;
-    -x)
-      termtype=x11
-      ;;
     -*)
-      err "invalid option: -$1"
       usage >&2
       exit 1
       ;;
@@ -44,41 +34,13 @@ while [ $# -gt 0 ]; do
   shift
 done
 
-if [ -z "$termtype" ]; then
-  if [ -n "$WAYLAND_DISPLAY" ]; then
-    termtype=wayland
-  else
-    termtype=x11
-  fi
-fi
+is_wayland() {
+  [ -n "$WAYLAND_DISPLAY" ]
+}
 
 has_command() {
-  command -v "$1" >/dev/null 2>&1
+  command -v "$1" >/dev/null
 }
-
-is_wayland() {
-  [ "$termtype" = wayland ]
-}
-
-is_x11() {
-  [ "$termtype" = x11 ]
-}
-
-no_term=
-if is_wayland; then
-     termexec=$(galconf get term.wayland) \
-  || termexec=$(galconf get term) \
-  || no_term=1
-else
-     termexec=$(galconf get term.x) \
-  || termexec=$(galconf get term) \
-  || no_term=1
-fi
-
-# local configuration
-if [ -z "$no_term" ]; then
-  exec sh -c "$TERMEXEC ${1+-e \$@}" term "$@"
-fi
 
 # alacritty
 if has_command alacritty; then
@@ -91,7 +53,7 @@ if is_wayland && has_command foot; then
 fi
 
 # urxvt
-if is_x && has_command urxvt; then
+if has_command urxvt; then
   exec urxvt ${1+-e} "$@"
 fi
 

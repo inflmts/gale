@@ -87,11 +87,6 @@ case $oper in
     # we only need the exit status
     loadpid
     ;;
-  autostart)
-    if [ "$(galconf get --bool --default=no wautosleep.autostart)" = yes ]; then
-      start
-    fi
-    ;;
   *)
     usage
     exit 1
