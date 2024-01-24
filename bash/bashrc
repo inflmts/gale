@@ -13,8 +13,6 @@
 # apparently needed for rcp or scp or something
 [[ $- != *i* ]] && return
 
-GALE_ENABLE_BANNER=yes
-
 # +H    disable history substitution with '!'
 # -u    fail on undefined variable references
 set +H -u
@@ -24,22 +22,16 @@ if [[ -f ~/.config/gale/bashrc ]]; then
   . ~/.config/gale/bashrc
 fi
 
-echo() { command printf '%s\n' "$*"; }
-diag() { command printf >&2 '%s\n' "$*"; }
-warn() { command printf >&2 'warning: %s\n' "$*"; }
-err() { command printf >&2 'error: %s\n' "$*"; }
+echo() { printf '%s\n' "$*"; }
+diag() { printf >&2 '%s\n' "$*"; }
+warn() { printf >&2 '\033[1;33mwarning:\033[0m %s\n' "$*"; }
+err() { printf >&2 '\033[1;31merror:\033[0m %s\n' "$*"; }
 
-if [[ -z ${GALE_COLORS-} ]]; then
-  # try to figure out number of colors based on $TERM
-  case ${TERM-} in
-    # these terms support no colors
-    dumb) GALE_COLORS=0 ;;
-    # these terms support 8 colors
-    linux) GALE_COLORS=1 ;;
-    # go out on a whim and assume 256 color support
-    *) GALE_COLORS=2 ;;
-  esac
-fi
+# try to figure out 256 color support based on $TERM
+case ${TERM-} in
+  dumb|linux) __gale_256color= ;;
+  *) __gale_256color=1 ;;
+esac
 
 # setup colors for ls (and tree)
 if __gale_dircolors=$(dircolors 2>/dev/null); then
@@ -382,11 +374,7 @@ ffnw() {
 # BANNER
 #=============================================================================
 
-# Disable with `GALE_ENABLE_BANNER=no`.
-
-if [[ $GALE_ENABLE_BANNER = yes ]]; then
-  echo $'\033[7m'"  Bash $BASH_VERSION on ${TERM:-unknown} | Powered by Gale  "$'\033[0m'
-fi
+echo $'\033[7m'"  Bash $BASH_VERSION on ${TERM:-unknown} | Powered by Gale  "$'\033[0m'
 
 #=============================================================================
 # PROMPT
@@ -397,7 +385,7 @@ __gale_show_excode() {
   local code="$?"
   local esc=$'\033'
   if [[ $code -gt 0 ]]; then
-    if [[ $GALE_COLORS -ge 2 ]]; then
+    if [[ $__gale_256color ]]; then
       echo "$esc[0;38;5;203;48;5;88m exit $code $esc[0m"
     else
       echo "$esc[0;31m[exit $code]$esc[0m"
@@ -415,14 +403,14 @@ PS1+='\[\e[0;1m\]'
 
 # autodetect nnn
 if [[ ${NNNLVL-} ]]; then
-  if [[ $GALE_COLORS -ge 2 ]]; then
+  if [[ $__gale_256color ]]; then
     PS1+='\[\e[37;45m\] nnn($NNNLVL) '
   else
     PS1+='\[\e[35m\]nnn($NNNLVL) '
   fi
 fi
 
-if [[ $GALE_COLORS -ge 2 ]]; then
+if [[ $__gale_256color ]]; then
   PS1+='\[\e[37;48;5;196m\] \u@\h '
   PS1+='\[\e[48;5;124m\] \w '
   PS1+='\[\e[22;38;5;203;48;5;88m\]\$\[\e[0m\] '
@@ -448,7 +436,7 @@ __gale_readline_print_variable() {
   fi
 }
 
-bind -x '"\C-x\C-p": __gale_readline_print_variable'
+#bind -x '"\C-x\C-p": __gale_readline_print_variable'
 
 #=============================================================================
 # LATE HOOK
