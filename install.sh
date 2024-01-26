@@ -1,5 +1,6 @@
+linkbin galinst
+
 # general
-linkbin util/galinst
 linkbin util/gale-sleep
 linkbin util/gale-shutdown
 linkbin util/gale-pid-start

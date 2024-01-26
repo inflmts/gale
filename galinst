@@ -117,14 +117,14 @@ linkbin() {
   gale_entries[$path]="$target"
 }
 
-source .gale/manifest.sh
+source .gale/install.sh
 
 if (( ${#gale_install_paths[@]} == 0 )); then
-  err "no manifest entries defined"
+  err "no install entries defined"
   exit 1
 fi
 
-# Delete paths in log that are no longer in the manifest
+# Delete paths in log that are no longer in install.sh
 for path in "${gale_log_paths[@]}"; do
   if [[ ${gale_entries[$path]} ]]; then
     continue
