@@ -39,6 +39,7 @@ linkbin vim/get-vim-plug
 
 # desktop
 linkbin util/term
+linkbin util/gale-explorer
 
 # wayland
 link foot/foot.ini .config/foot/foot.ini

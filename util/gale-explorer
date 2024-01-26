@@ -1,0 +1,8 @@
+#!/bin/sh
+
+if command -v lf >/dev/null; then
+  exec gale-win-lf
+fi
+
+echo >&2 "error: unable to find suitable file explorer"
+exit 1
