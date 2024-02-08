@@ -4,28 +4,20 @@
 # This file is part of Gale.
 #
 
-set -u
-
-echo() { printf '%s\n' "$1"; }
-diag() { printf >&2 '%s\n' "$1"; }
-warn() { printf >&2 'warning: %s\n' "$1"; }
-err() { printf >&2 'error: %s\n' "$1"; }
+set -ue
 
 if [ $# -gt 0 ]; then
-  diag "usage: gale-sleep"
+  echo >&2 "usage: gale-sleep"
   exit 1
 fi
 
-if ! id=$(. /etc/os-release && echo "$ID"); then
-  err "failed to determine operating system"
+if command -v systemctl >/dev/null 2>&1; then
+  exec systemctl --no-ask-password suspend
+elif command -v loginctl >/dev/null 2>&1; then
+  exec loginctl --no-ask-password suspend
+elif command -v zzz >/dev/null 2>&1; then
+  exec sudo -n zzz
+else
+  echo >&2 "error: unable to determine sleep method"
   exit 1
 fi
-
-case $id in
-  void)
-    exec sudo zzz
-    ;;
-  *)
-    exec systemctl suspend
-    ;;
-esac

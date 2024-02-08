@@ -3,6 +3,7 @@ linkbin galinst
 # general
 linkbin util/gale-sleep
 linkbin util/gale-shutdown
+linkbin util/gale-reboot
 linkbin util/gale-pid-start
 
 # bash
