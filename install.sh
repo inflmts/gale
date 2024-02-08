@@ -43,9 +43,13 @@ linkbin vim/get-vim-plug
 linkbin util/term
 linkbin util/gale-explorer
 
-# wayland
+# foot
 link foot/foot.ini .config/foot/foot.ini
-link alacritty/alacritty.yml .config/alacritty/alacritty.yml
+
+# alacritty
+link alacritty/alacritty.toml .config/alacritty/alacritty.toml
+
+# wayland
 linkbin wayland/wautosleep
 
 # sway
