@@ -294,67 +294,6 @@ cdn3() {
   return "$excode"
 }
 
-__gale_mkscript_usage() {
-  cat >&2 <<\END
-usage: mkscript [options] <file> [<type>]
-
-Creates an executable script. By default, mkscript creates a shell script.
-
-Script types:
-  sh      shell script
-  bash    Bash script
-  node    Node.js script
-END
-}
-
-mkscript() {
-  local target type template_file
-
-  while [[ $# -gt 0 ]]; do
-    case $1 in
-      --)
-        shift
-        break
-        ;;
-      --help)
-        __gale_mkscript_usage
-        return 0
-        ;;
-      -*)
-        diag "mkscript: invalid option: $1"
-        return 1
-        ;;
-      *)
-        break
-        ;;
-    esac
-    shift
-  done
-
-  case $# in
-    1) target=$1; type=sh ;;
-    2) target=$1; type=$2 ;;
-    *) __gale_mkscript_usage; return 1 ;;
-  esac
-
-  case $type in
-    sh|bash|node)
-      template_file="$HOME/.gale/mkscript-templates/$type"
-      ;;
-    *)
-      diag "mkscript: invalid script type '$type'"
-      return 1
-      ;;
-  esac
-
-  if [[ -e "$target" ]]; then
-    diag "mkscript: target exists: $target"
-    return 1
-  fi
-
-  cp -- "$template_file" "$target" && chmod +x -- "$target"
-}
-
 # open files with xdg-open
 open() {
   __gale_spawn xdg-open "$@"

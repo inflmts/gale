@@ -1,8 +1,0 @@
-#!/usr/bin/env bash
-
-set -u
-
-echo() { printf '%s\n' "$1"; }
-diag() { printf >&2 '%s\n' "$1"; }
-warn() { printf >&2 'warning: %s\n' "$1"; }
-err() { printf >&2 'error: %s\n' "$1"; }
