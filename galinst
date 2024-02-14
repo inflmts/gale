@@ -1,11 +1,10 @@
-#!/usr/bin/env bash
+#!/bin/sh
 # Gale installer
 
-set -ue
-shopt -s nullglob
+set -u
 
 echo() { printf '%s\n' "$*"; }
-diag() { printf >&2 '%s\n' "$*"; }
+msg() { printf >&2 '%s\n' "$*"; }
 warn() { printf >&2 'warning: %s\n' "$*"; }
 err() { printf >&2 'error: %s\n' "$*"; }
 
@@ -22,13 +21,16 @@ Options:
 EOF
 }
 
-dryrun=0
-verbose=0
+dryrun=
+verbose=
 
-while (( $# > 0 )); do
+while [ $# -gt 0 ]; do
   case $1 in
-    -[!-][!-]*)
-      set -- "${1:0:2}" "-${1:2}"
+    -[!-]?*)
+      rest=${1#-?}
+      cur=${1%"$rest"}
+      shift
+      set -- "$cur" "-$rest" "$@"
       continue
       ;;
     -n|--dry-run)
@@ -43,148 +45,133 @@ while (( $# > 0 )); do
       ;;
     *)
       err "invalid option: $1"
-      diag "Try 'galinst --help' for usage."
+      msg "Run 'galinst --help' for more information."
       exit 1
       ;;
   esac
   shift
 done
 
+# everything is relative to the home directory
 cd || exit 1
 
 gale_log_file=".data/gale/galinst.log"
 
-declare -A gale_entries=()
-gale_log_paths=()
-gale_install_paths=()
-gale_need_update_log=0
+gale_log_paths=
+gale_install_paths=
+gale_install_specs=
+gale_need_update_log=
 
 is_normalized_path() {
   case /$1/ in
-    *//*|*/./*|*/../*|*$'\n'*) return 1 ;;
+    *//*|*/./*|*/../*) return 1 ;;
     *) return 0 ;;
   esac
 }
 
-if [[ -e "$gale_log_file" ]]; then
-  mapfile -t gale_log_paths < "$gale_log_file"
-  for path in "${gale_log_paths[@]}"; do
-    if ! is_normalized_path "$path"; then
-      err "failed to load log: invalid path '$path'"
-      exit 1
-    fi
-    gale_entries[$path]=
-  done
-fi
+str_contains() {
+  case $1 in
+    *"$2"*) return 0 ;;
+    *) return 1 ;;
+  esac
+}
 
 link() {
   local target path
   target=$1
   path=$2
-  if ! is_normalized_path "$target"; then
-    err "invalid path '$target'"
-    exit 1
-  fi
-  if ! is_normalized_path "$path"; then
-    err "invalid path '$path'"
-    exit 1
-  fi
-  if [[ ! -v gale_entries[$path] ]]; then
-    gale_need_update_log=1
-  elif [[ ${gale_entries[$path]} ]]; then
-    err "duplicate path: $path"
-    exit 1
-  fi
-  gale_install_paths+=("$path")
-  gale_entries[$path]="$target"
+  gale_install_paths="${gale_install_paths} ${path}"
+  gale_install_specs="${gale_install_specs} ${path}=${target}"
 }
 
 linkbin() {
   local target path
   target=$1
-  if ! is_normalized_path "$target"; then
-    err "invalid path '$target'"
-    exit 1
-  fi
   path=".local/bin/${target##*/}"
-  if [[ ! -v gale_entries[$path] ]]; then
-    gale_need_update_log=1
-  elif [[ ${gale_entries[$path]} ]]; then
-    err "duplicate path: $path"
-    exit 1
-  fi
-  gale_install_paths+=("$path")
-  gale_entries[$path]="$target"
+  gale_install_paths="${gale_install_paths} ${path}"
+  gale_install_specs="${gale_install_specs} ${path}=${target}"
 }
 
-source .gale/install.sh
+. .gale/install.sh
 
-if (( ${#gale_install_paths[@]} == 0 )); then
-  err "no install entries defined"
-  exit 1
+if [ -e "$gale_log_file" ]; then
+  while read -r path; do
+    gale_log_paths="${gale_log_paths} ${path}"
+  done < "$gale_log_file"
 fi
 
-# Delete paths in log that are no longer in install.sh
-for path in "${gale_log_paths[@]}"; do
-  if [[ ${gale_entries[$path]} ]]; then
-    continue
-  fi
+# delete paths in log that are no longer in install.sh
+for path in $gale_log_paths; do
+  # if the path is in install.sh, skip it
+  case " $gale_install_paths " in
+    *" $path "*) continue ;;
+  esac
 
-  if [[ -L "$path" ]]; then
-    echo "Removing $path"
-    if (( ! dryrun )); then
-      rm "$path" || :
-      # remove empty parent directories as well
-      if [[ $path = */* ]]; then
-        rmdir -p "${path%/*}" &>/dev/null || :
-      fi
+  if [ -L "$path" ]; then
+    msg "Removing $path"
+    if [ -z "$dryrun" ]; then
+      rm "$path"
+      # remove empty parent directories if necessary
+      case $path in
+        */*) rmdir -p "${path%/*}" >/dev/null 2>&1 ;;
+      esac
     fi
   else
-    echo "Ignoring $path"
+    msg "Ignoring $path"
   fi
   gale_need_update_log=1
 done
 
 fail=0
 
-for path in "${gale_install_paths[@]}"; do
-  # Generate the target for the symlink.
-  # The symlink should be relative and point to a path in ~/.gale.
-  # For each directory level in the path, a '..' is prepended to the target.
-  target=".gale/${gale_entries[$path]}"
+for spec in $gale_install_specs; do
+  path=${spec%%=*}
+  target=${spec#*=}
+
+  # generate the target for the symlink
+  # the symlink should be relative and point to a path in ~/.gale
+  target=".gale/$target"
   tmp=$path
-  while [[ $tmp = */* ]]; do
-    tmp=${tmp#*/}
+  while str_contains "$tmp" /; do
     target="../$target"
+    tmp=${tmp#*/}
   done
 
-  # Read the symlink and check if it has the right contents.
-  # If not, (re)create the symlink.
+  # compare the expected target to the actual target
   if real_target=$(readlink "$path"); then
-    if [[ "$real_target" = "$target" ]]; then
-      if (( verbose )); then
-        echo "Skipping: $path"
+    if [ "$real_target" = "$target" ]; then
+      if [ -n "$verbose" ]; then
+        msg "Skipping: $path"
       fi
     else
-      echo "Correcting symlink: $path -> $target"
-      if (( ! dryrun )); then
+      msg "Correcting symlink: $path -> $target"
+      if [ -z "$dryrun" ]; then
         ln -sfT "$target" "$path" || fail=1
       fi
     fi
   else
-    echo "Creating symlink: $path -> $target"
-    if (( ! dryrun )); then
-      { [[ $path != */* ]] || mkdir -p "${path%/*}"; } \
-        && ln -sT "$target" "$path" || fail=1
+    msg "Creating symlink: $path -> $target"
+    if [ -z "$dryrun" ]; then
+      if str_contains "$path" /; then
+        mkdir -p "${path%/*}"
+      fi
+      ln -sT "$target" "$path" || fail=1
     fi
   fi
+
+  case " $gale_log_paths " in
+    *" $path "*) ;;
+    *) gale_need_update_log=1 ;;
+  esac
 done
 
-if (( gale_need_update_log )); then
-  echo "Updating log..."
-  if (( ! dryrun )); then
-    mkdir -p "${gale_log_file%/*}"
-    printf '%s\n' "${gale_install_paths[@]}" > "$gale_log_file.tmp"
+if [ "$gale_need_update_log" ]; then
+  msg "Updating log..."
+  if [ -z "$dryrun" ]; then
+    if str_contains "$gale_log_file" /; then
+      mkdir -p "${gale_log_file%/*}"
+    fi
+    printf '%s\n' $gale_install_paths > "$gale_log_file.tmp"
     mv "$gale_log_file.tmp" "$gale_log_file"
   fi
 fi
