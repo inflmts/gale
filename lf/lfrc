@@ -36,9 +36,6 @@ set infotimefmtnew "Jan 02 15:04"
 set infotimefmtold "Jan 02, 2006"
 set timefmt "Mon 2006/01/02 03:04 PM"
 
-# statfmt is updated by the statfmt command below
-set statfmt ""
-
 # draw box around directory listing
 set drawbox
 set borderfmt "\033[38;5;240m"
@@ -73,6 +70,8 @@ map <space> page-down
 # use <tab> to select files
 map <tab> :toggle; down
 
+set statfmt "\033[1m%p\033[0m| %c| %u:%g| %s| %t| \033[36m-> %l\033[0m"
+
 # command to generate the status line
 cmd statfmt &{{
   fmt="\\033[1m%p\\033[0m| %c| %u:%g| %s| %t| \\033[36m-> %l\\033[0m"
@@ -83,7 +82,6 @@ cmd statfmt &{{
   [ -n "$mode" ] && fmt="\\033[7m$mode \\033[0m |$fmt"
   "$lf" -remote "send $id set statfmt \"$fmt\""
 }}
-statfmt
 
 # sort commands
 map O :set sortby natural; statfmt
@@ -103,6 +101,10 @@ cmd d delete
 
 # make <enter> an alias for l
 map <enter> open
+
+# dragon-drop
+map <c-x>d &dragon-drop -x $fx
+
 # open in firefox
 #map <c-x>ff &firefox $fx
 # open in audacity
