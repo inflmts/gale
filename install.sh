@@ -6,6 +6,9 @@ linkbin util/gale-shutdown
 linkbin util/gale-reboot
 linkbin util/gale-pid-start
 
+# sh
+link sh/profile.sh .profile
+
 # bash
 link bash/bashrc .bashrc
 link bash/profile .bash_profile
