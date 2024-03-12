@@ -3,65 +3,9 @@
 #
 # This file is part of Gale.
 #
-# Local changes should be made at:
-#
-#   ~/.config/gale/bash_profile
-#
 
-#=============================================================================
-# ENVIRONMENT VARIABLES
-#=============================================================================
+# source profile script
+. ~/.gale/sh/profile.sh
 
-if command -v nvim >/dev/null; then
-  export EDITOR=nvim
-elif command -v vim >/dev/null; then
-  export EDITOR=vim
-fi
-
-export XDG_CONFIG_HOME="$HOME/.config"
-export XDG_DATA_HOME="$HOME/.data"
-export XDG_STATE_HOME="$HOME/.state"
-export XDG_CACHE_HOME="$HOME/.cache"
-
-# options for man-db man(1)
-export MANOPT='--nj'
-
-export PATH
-
-# gale_add_path <entry>
-#
-#   Prepend <entry> to the $PATH environment variable if it isn't already
-#   there.
-#
-gale_add_path() {
-  if [[ :"$PATH": != *:"$1":* ]]; then
-    PATH="$1:$PATH"
-  fi
-}
-
-# add standard executable directory
-gale_add_path ~/.local/bin
-
-if [[ -s ~/.config/gale/bash_profile ]]; then
-  . ~/.config/gale/bash_profile
-fi
-
-systemctl --user import-environment &>/dev/null \
-  PATH \
-  EDITOR \
-  XDG_CONFIG_HOME \
-  XDG_DATA_HOME \
-  XDG_STATE_HOME \
-  XDG_CACHE_HOME
-
-# If the local configuration defines gale_late_hook, run that after everything
-# else.
-if declare -F gale_late_hook &>/dev/null; then
-  gale_late_hook
-  unset -f gale_late_hook
-fi
-
-# load ~/.bashrc
-. ~/.bashrc
-
-# vim:ft=bash
+# source bashrc
+. ~/.gale/bash/bashrc
