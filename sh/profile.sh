@@ -38,6 +38,17 @@ gale_add_path() {
 # add standard executable directory
 gale_add_path ~/.local/bin
 
+# autodetect nodenv
+if [ -d ~/.nodenv ]; then
+  gale_add_path ~/.nodenv/bin
+  gale_add_path ~/.nodenv/shims
+fi
+
+# autodetect pnpm
+if [ -d ~/.data/pnpm ]; then
+  gale_add_path ~/.data/pnpm
+fi
+
 # load local config file
 if [ -s ~/.config/gale/profile ]; then
   . ~/.config/gale/profile

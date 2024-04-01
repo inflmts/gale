@@ -1,4 +1,4 @@
-#=============================================================================
+#
 # ~/.bashrc
 #
 # This file is part of Gale.
@@ -7,7 +7,6 @@
 #
 #   ~/.config/gale/bashrc
 #
-#=============================================================================
 
 # quit unless interactive
 # apparently needed for rcp or scp or something
@@ -39,9 +38,8 @@ if __gale_dircolors=$(dircolors 2>/dev/null); then
 fi
 unset __gale_dircolors
 
-#=============================================================================
 # MENU
-#=============================================================================
+#=======================================
 
 gale_menu() {
   local tty is_vt options key
@@ -109,9 +107,8 @@ gale_confirm() {
 bind -x '"\e[15~": gale_menu'
 bind -x '"\e[[E": gale_menu'
 
-#=============================================================================
 # FUNCTIONS & ALIASES
-#=============================================================================
+#=======================================
 
 # __gale_spawn <command> [<args>...]
 #
@@ -124,7 +121,7 @@ __gale_spawn() {
     return 1
   fi
   shift
-  setsid -f -- "$path" "$@" <&- &>/dev/null
+  setsid -- "$path" "$@" <&- &>/dev/null & disown
 }
 
 alias grep='grep --color=auto'
@@ -169,7 +166,7 @@ argc() {
 
 f() {
   if [[ $# -eq 0 ]]; then
-    diag "f: expected command"
+    err "expected command"
     return 1
   fi
   __gale_spawn "$@"
@@ -177,7 +174,7 @@ f() {
 
 fx() {
   if [[ $# -eq 0 ]]; then
-    diag "fx: expected command"
+    err "expected command"
     return 1
   fi
   __gale_spawn "$@" && exit
@@ -309,15 +306,13 @@ ffnw() {
   __gale_spawn firefox --new-window "$@"
 }
 
-#=============================================================================
 # BANNER
-#=============================================================================
+#=======================================
 
 echo $'\033[7m'"  Bash $BASH_VERSION on ${TERM:-unknown} | Powered by Gale  "$'\033[0m'
 
-#=============================================================================
 # PROMPT
-#=============================================================================
+#=======================================
 
 # if the last command exited unsuccessfully, show the exit code
 __gale_show_excode() {
@@ -359,9 +354,8 @@ fi
 
 PROMPT_COMMAND=(__gale_show_excode __gale_update_title)
 
-#=============================================================================
 # KEYBINDINGS
-#=============================================================================
+#=======================================
 
 __gale_readline_print_variable() {
   set -- "${READLINE_LINE:0:$READLINE_POINT}"
@@ -377,9 +371,8 @@ __gale_readline_print_variable() {
 
 #bind -x '"\C-x\C-p": __gale_readline_print_variable'
 
-#=============================================================================
 # LATE HOOK
-#=============================================================================
+#=======================================
 
 # If the local configuration defines a gale_late_hook, run it after everything
 # else.
