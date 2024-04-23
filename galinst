@@ -16,7 +16,7 @@ Install Gale.
 
 Options:
   -n, --dry-run   don't do anything, only show what would happen
-  -v, --verbose   be verbose
+  -v, --verbose   show skipped files as well
   -h, --help      show this help
 EOF
 }
@@ -55,12 +55,15 @@ done
 # everything is relative to the home directory
 cd || exit 1
 
+gale_profile_file=".config/gale/profile"
 gale_log_file=".data/gale/galinst.log"
 
 gale_log_paths=
 gale_install_paths=
 gale_install_specs=
 gale_need_update_log=
+
+profile=$(cat "$gale_profile_file") || exit 1
 
 is_normalized_path() {
   case /$1/ in

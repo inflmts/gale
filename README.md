@@ -30,12 +30,26 @@ configuration file, which also works on Windows.
 
 ## Getting Started
 
-First create a symlink at `~/.gale` pointing to this repository. Then install
-using `galinst`:
+Create a symlink at `~/.gale` pointing to this repository:
+
+```
+ln -s path/to/gale ~/.gale
+```
+
+Set the host profile:
+
+```
+mkdir -p ~/.config/gale
+echo my-profile > ~/.config/gale/profile
+```
+
+Install Gale:
 
 ```
 ./galinst
 ```
+
+Log out and log back in to pick up environment variables.
 
 `galinst` will automatically install itself into `~/.local/bin`, which should be
 available in `$PATH`. Once installed, Gale can be updated simply by running
