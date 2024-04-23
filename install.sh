@@ -56,10 +56,13 @@ link alacritty/alacritty.toml .config/alacritty/alacritty.toml
 linkbin wayland/wautosleep
 
 # sway
-link sway/sway.conf .config/sway/config
+link sway/config .config/sway/config
 linkbin sway/gale-sway
-linkbin sway/swaystatus
-linkbin sway/sway-output-mode
+linkbin sway/gale-sway-outputs
+
+if [ "$profile" = archiplex ]; then
+  link archiplex/outputs .data/gale/outputs
+fi
 
 # hyprland
 link hyprland/hyprland.conf .config/hypr/hyprland.conf

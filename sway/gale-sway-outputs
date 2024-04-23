@@ -1,0 +1,105 @@
+#!/bin/sh
+# sway output configuration generator
+#
+# This file is part of Gale.
+#
+
+set -u
+
+echo() { printf '%s\n' "$*"; }
+msg() { printf >&2 '%s\n' "$*"; }
+warn() { printf >&2 'warning: %s\n' "$*"; }
+err() { printf >&2 'error: %s\n' "$*"; }
+
+generate_common() {
+  local mode
+  for mode in 1 2 3 4; do
+    if [ -e "$input_dir/$mode" ]; then
+      echo "mode \"outputs\" bindsym $mode exec gale-sway-outputs $mode; mode \"default\""
+    else
+      echo "mode \"outputs\" bindsym $mode nop"
+    fi
+  done
+}
+
+usage() {
+  cat <<EOF
+usage: gale-sway-outputs [<option>...] <num>
+
+Options:
+  --noreload    don't reload sway
+EOF
+}
+
+noreload=
+while [ "$#" -gt 0 ]; do
+  case $1 in
+    --)
+      shift
+      break
+      ;;
+    --noreload)
+      noreload=1
+      ;;
+    --help)
+      usage
+      exit
+      ;;
+    -*)
+      err "invalid option: $1"
+      exit 1
+      ;;
+    *)
+      break
+      ;;
+  esac
+  shift
+done
+
+if [ $# -ne 1 ]; then
+  usage >&2
+  exit 1
+fi
+
+mode=$1
+
+case $mode in
+  [1-4]) ;;
+  *) err "invalid output mode '$mode'" ;;
+esac
+
+if [ -z "$XDG_RUNTIME_DIR" ]; then
+  err '$XDG_RUNTIME_DIR is not set'
+  exit 1
+fi
+
+input_dir="$HOME/.data/gale/outputs"
+input_file="$input_dir/$mode"
+output_dir="$XDG_RUNTIME_DIR/gale"
+output_file="$output_dir/sway-outputs.conf"
+
+if [ -e "$input_file" ]; then
+  # if the mode is defined, use it
+  mkdir -p "$output_dir"
+  { generate_common
+    while read -r output status x y; do
+      case $status in
+        enable) echo "output $output pos $x $y" ;;
+        disable) echo "output $output disable" ;;
+        *) warn "invalid status '$status'" ;;
+      esac
+    done < "$input_file"
+  } > "$output_file"
+elif [ "$mode" = 1 ]; then
+  # otherwise, if the mode is 1, then supply an empty configuration
+  mkdir -p "$output_dir"
+  generate_common > "$output_file"
+else
+  # otherwise, fail with an error message
+  err "output mode $mode is not supported"
+  exit 1
+fi
+
+if [ -z "$noreload" ]; then
+  swaymsg reload
+fi
