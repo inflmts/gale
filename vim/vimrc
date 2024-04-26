@@ -3,20 +3,6 @@
 "
 " This file is part of Gale.
 "
-" Local configuration should be placed in:
-"
-"   ~/.config/gale/vimrc
-"
-" The following functions, if defined, affect the behavior of this file:
-"
-"   GalePlug()    run between plug#begin() and plug#end()
-"   GaleLate()    run after everything else
-"
-
-let s:config_file = $HOME .. "/.config/gale/vimrc"
-if filereadable(s:config_file)
-  exe "source " .. fnameescape(s:config_file)
-endif
 
 if exists($XDG_CACHE_HOME)
   let s:cache_dir = $XDG_CACHE_HOME .. "/vim"
@@ -49,11 +35,6 @@ silent! if plug#begin()
   let g:lsp_diagnostics_echo_cursor = 1
 
   hi LspErrorText ctermfg=203 ctermbg=233
-
-  " run plugin hooks
-  if exists("*GalePlug")
-    call GalePlug()
-  endif
 
   call plug#end()
 
@@ -336,12 +317,5 @@ command! GaleLf call GaleLf()
 command! -nargs=1 -complete=dir GaleLfSendDir call GaleLfSendDir(<q-args>)
 command! GaleLfSendCwd call GaleLfSendDir(getcwd())
 noremap <C-T> <Cmd>call GaleLf()<CR>
-
-" LATE HOOKS
-" ==============================================================================
-
-if exists("*GaleLate")
-  call GaleLate()
-endif
 
 " vim:ft=vim

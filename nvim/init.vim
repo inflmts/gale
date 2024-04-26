@@ -4,19 +4,6 @@
 " This file is part of Gale.
 "=============================================================================
 
-" Source local configuration from `~/.config/gale/nvim-init.vim`. Note that this
-" occurs _before_ options, mappings, etc. are configured.
-"
-" These functions can be defined to implement custom behavior:
-"
-"   GalePlug()    run between plug#begin() and plug#end()
-"   GaleLate()    run after everything else
-"
-let s:local_init_file = $HOME .. '/.config/gale/nvim-init.vim'
-if filereadable(s:local_init_file)
-  exe "source " .. fnameescape(s:local_init_file)
-endif
-
 "=============================================================================
 " VIM-PLUG
 "=============================================================================

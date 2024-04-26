@@ -3,10 +3,6 @@
 #
 # This file is part of Gale.
 #
-# Local changes should be made at:
-#
-#   ~/.config/gale/bashrc
-#
 
 # quit unless interactive
 # apparently needed for rcp or scp or something
@@ -15,11 +11,6 @@
 # +H    disable history substitution with '!'
 # -u    fail on undefined variable references
 set +H -u
-
-unset -f gale_late_hook
-if [[ -f ~/.config/gale/bashrc ]]; then
-  . ~/.config/gale/bashrc
-fi
 
 echo() { printf '%s\n' "$*"; }
 diag() { printf >&2 '%s\n' "$*"; }
@@ -370,14 +361,5 @@ __gale_readline_print_variable() {
 }
 
 #bind -x '"\C-x\C-p": __gale_readline_print_variable'
-
-# LATE HOOK
-#=======================================
-
-# If the local configuration defines a gale_late_hook, run it after everything
-# else.
-if declare -F gale_late_hook &>/dev/null; then
-  gale_late_hook
-fi
 
 # vim:ft=bash

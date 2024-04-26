@@ -49,11 +49,6 @@ if [ -d ~/.data/pnpm ]; then
   gale_add_path ~/.data/pnpm
 fi
 
-# load local config file
-if [ -s ~/.config/gale/profile ]; then
-  . ~/.config/gale/profile
-fi
-
 # if running in systemd, update the user manager environment
 systemctl --user import-environment >/dev/null 2>&1 \
   PATH \

@@ -1,7 +1,0 @@
-#!/bin/sh
-# windowed n3
-#
-# This file is part of Gale.
-#
-
-exec term n3 "$@"

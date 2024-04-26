@@ -29,12 +29,6 @@ link lf/gale-win-lf.desktop .data/applications/gale-win-lf.desktop
 # neovim
 link nvim/init.vim .config/nvim/init.vim
 
-# nnn
-linkbin nnn/n3
-linkbin nnn/gale-win-n3
-link nnn/gale-win-n3.desktop .data/applications/gale-win-n3.desktop
-link nnn/plugins/terminal .config/nnn/plugins/terminal
-
 # screen
 link screen/screenrc .screenrc
 
