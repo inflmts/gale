@@ -63,7 +63,7 @@ gale_install_paths=
 gale_install_specs=
 gale_need_update_log=
 
-profile=$(cat "$gale_profile_file") || exit 1
+read -r profile < "$gale_profile_file"
 
 is_normalized_path() {
   case /$1/ in

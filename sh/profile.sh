@@ -7,6 +7,9 @@
 # ENVIRONMENT VARIABLES
 #=======================================
 
+read -r gale_profile < ~/.config/gale/profile
+
+# autodetect $EDITOR
 if command -v nvim >/dev/null; then
   export EDITOR=nvim
 elif command -v vim >/dev/null; then
@@ -57,3 +60,8 @@ systemctl --user import-environment >/dev/null 2>&1 \
   XDG_DATA_HOME \
   XDG_STATE_HOME \
   XDG_CACHE_HOME
+
+# archiplex: start sway
+if [ "$gale_profile" = archiplex ]; then
+  gale-sway
+fi
