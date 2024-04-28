@@ -30,20 +30,15 @@ configuration file, which also works on Windows.
 
 ## Getting Started
 
-Create a symlink at `~/.gale` pointing to this repository:
+Run the setup script `galsetup`, which creates a symbolic link at `~/.gale`
+pointing to the current directory and writes the `<profile>` argument to
+`~/.config/gale/profile`:
 
 ```
-ln -s path/to/gale ~/.gale
+./galsetup <profile>
 ```
 
-Set the host profile:
-
-```
-mkdir -p ~/.config/gale
-echo my-profile > ~/.config/gale/profile
-```
-
-Install Gale:
+Install Gale using `galinst`:
 
 ```
 ./galinst
