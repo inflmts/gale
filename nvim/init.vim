@@ -1,15 +1,15 @@
-"=============================================================================
+"
 " Nvim initialization file
 "
 " This file is part of Gale.
-"=============================================================================
+"
 
-"=============================================================================
 " VIM-PLUG
-"=============================================================================
+"=======================================
 
 silent! if plug#begin()
   Plug 'sainnhe/sonokai'
+  Plug 'yuezk/vim-js'
 
   let g:sonokai_disable_italic_comment = 1
   let g:sonokai_transparent_background = 1
@@ -22,9 +22,8 @@ silent! if plug#begin()
   silent! colorscheme sonokai
 endif
 
-"=============================================================================
 " OPTIONS
-"=============================================================================
+"=======================================
 
 " indentation
 set et sw=2 sts=2 sta ai si
@@ -48,29 +47,27 @@ set nohidden
 " enable the mouse in all modes
 set mouse=a
 
-"=============================================================================
 " KEYBINDINGS
-"=============================================================================
+"=======================================
 "
 " TIP: See |map-table| to see all map modes in a convenient table.
 "
 " NOTE: As of now, the mappings below clobber Select mode. Use at your own risk.
 
-" In Normal mode, CTRL-X clears highlighting set with 'hlsearch'.
-" In Command-line mode, CTRL-X aborts the command.
-" In other modes, CTRL-X is a shortcut for Escape.
+" in normal mode, CTRL-X clears search highlighting (see :nohlsearch)
+" otherwise, CTRL-X acts as a general escape key
 nnoremap <C-X> <Cmd>noh<CR>
 inoremap <C-X> <Esc>
 cnoremap <C-X> <C-C>
 xnoremap <C-X> <Esc>
 onoremap <C-X> <Esc>
 
-" Make space and backspace scroll the window
+" space and backspace scroll the window
 noremap  <Space> <C-D>
 noremap  <BS> <C-U>
 
-" Make j and k operate in screen lines (see |gj| and |gk|), this is useful for
-" wrapped text. Not applied when using an operator.
+" make j and k operate in screen lines (gj and gk)
+" this is useful for wrapped text
 nnoremap j gj
 xnoremap j gj
 nnoremap k gk
@@ -83,10 +80,14 @@ noremap  <C-K> 5gk
 noremap  <C-N> 10gj
 noremap  <C-P> 10gk
 
+" CTRL-S saves the file
+noremap  <C-S> <Cmd>up<CR>
+
 noremap  H z<CR>
 noremap  M z.
 noremap  L z-
 
+" save a few keystrokes for (un)indenting
 nnoremap < <<
 nnoremap > >>
 xnoremap < <gv
@@ -113,9 +114,8 @@ cnoremap <M-b>  <S-Left>
 cnoremap <Esc>f <S-Right>
 cnoremap <M-f>  <S-Right>
 
-"=============================================================================
 " GUI
-"=============================================================================
+"=======================================
 
 if has('gui_running')
   if exists('g:neovide')
@@ -126,24 +126,22 @@ if has('gui_running')
   endif
 endif
 
-"=============================================================================
 " NEOVIDE
-"=============================================================================
+"=======================================
 
 if exists('g:neovide')
   let g:neovide_cursor_animation_length = 0.05
+  let g:neovide_cursor_trail_size = 0.5
   let g:neovide_transparency = 0.8
 endif
 
-"=============================================================================
 " AUTOCOMMANDS
-"=============================================================================
+"=======================================
 
 augroup init
-  " Clear previously defined autocommands
+  " clear previously defined autocommands
   auto!
 
-  auto FileType * setlocal tw=80
   auto FileType sh setlocal fo-=t
   auto FileType markdown setlocal et sw=2 sts=2 tw=80
   auto FileType make setlocal noet
@@ -153,17 +151,16 @@ augroup init
   auto WinNew * call s:gale_trailspace_match()
 augroup END
 
-"=============================================================================
-" GENERAL
-"=============================================================================
+" MISCELLANEOUS
+"=======================================
 
 hi LineNr ctermbg=233 guibg=#222226
 hi Error ctermfg=7 ctermbg=203
 hi ErrorText cterm=underline ctermfg=203
 hi! link SignColumn LineNr
 
-" Color trailing whitespace red, because trailing whitespace is bad for your
-" heart
+" color trailing whitespace red, because if you have trailing whitespace then
+" the code style witch will get you
 function s:gale_trailspace_match()
   if exists('w:gale_trailspace_match_id')
     call matchdelete(w:gale_trailspace_match_id)
