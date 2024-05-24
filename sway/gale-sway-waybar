@@ -1,0 +1,42 @@
+#!/bin/sh
+# gale-sway-waybar
+#
+# This file is part of Gale.
+#
+
+set -u
+
+echo() { printf '%s\n' "$*"; }
+msg() { printf >&2 '%s\n' "$*"; }
+warn() { printf >&2 'warning: %s\n' "$*"; }
+err() { printf >&2 'error: %s\n' "$*"; }
+
+usage() {
+  cat <<EOF
+usage: gale-sway-waybar [status|start|restart|stop|reload]
+EOF
+}
+
+if [ -z "${WAYLAND_DISPLAY-}" ]; then
+  err '$WAYLAND_DISPLAY is not set!'
+  exit 1
+fi
+
+wrapper() {
+  gale-pid "sway-waybar.$WAYLAND_DISPLAY" "$@"
+}
+
+op=${1-status}
+
+case $op in
+  status|start|restart|stop)
+    wrapper "$op" waybar -c ~/.gale/sway/waybar.json -s ~/.gale/sway/waybar.css
+    ;;
+  reload)
+    wrapper send USR2
+    ;;
+  *)
+    usage >&2
+    exit 1
+    ;;
+esac

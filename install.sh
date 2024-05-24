@@ -4,7 +4,7 @@ linkbin galinst
 linkbin util/gale-sleep
 linkbin util/gale-shutdown
 linkbin util/gale-reboot
-linkbin util/gale-pid-start
+linkbin util/gale-pid
 
 # sh
 link sh/profile.sh .profile
@@ -53,6 +53,7 @@ linkbin wayland/wautosleep
 link sway/config .config/sway/config
 linkbin sway/gale-sway
 linkbin sway/gale-sway-outputs
+linkbin sway/gale-sway-waybar
 
 if [ "$profile" = archiplex ]; then
   link archiplex/outputs .data/gale/outputs
