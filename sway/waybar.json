@@ -22,7 +22,7 @@
   },
   "custom/block": {
     "exec": "~/.gale/sway/waybar-block.sh",
-    "interval": 5,
+    "interval": 3,
     "format": "<span color=\"#808090\">usb</span> {}"
   },
   "cpu": {
@@ -30,7 +30,7 @@
     "format": "<span color=\"#808090\">cpu</span> {usage}%"
   },
   "memory": {
-    "interval": 5,
+    "interval": 3,
     "format": "<span color=\"#808090\">mem</span> {used} G<span color=\"#c0c0d8\">/{total} G</span>"
   },
   "pulseaudio": {

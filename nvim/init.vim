@@ -9,7 +9,8 @@
 
 silent! if plug#begin()
   Plug 'sainnhe/sonokai'
-  Plug 'yuezk/vim-js'
+  "Plug 'yuezk/vim-js'
+  Plug 'pangloss/vim-javascript'
 
   let g:sonokai_disable_italic_comment = 1
   let g:sonokai_transparent_background = 1
@@ -113,6 +114,9 @@ cnoremap <Esc>b <S-Left>
 cnoremap <M-b>  <S-Left>
 cnoremap <Esc>f <S-Right>
 cnoremap <M-f>  <S-Right>
+
+inoremap <C-V>  <C-R><C-O>+
+inoremap <C-A>  <C-V>
 
 " GUI
 "=======================================
