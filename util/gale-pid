@@ -96,6 +96,17 @@ case $op in
       pid_start "$@"
     fi
     ;;
+  toggle)
+    if [ $# -eq 0 ]; then
+      err "expected command"
+      exit 1
+    fi
+    if pid_load; then
+      kill "$pid"
+    else
+      pid_start "$@"
+    fi
+    ;;
   stop)
     if pid_load; then
       kill "$pid"

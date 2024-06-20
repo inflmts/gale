@@ -1,0 +1,42 @@
+#!/bin/sh
+# gale-autosleep
+#
+# This file is part of Gale.
+#
+# This is a simple front-end to swayidle that puts the computer to sleep after a
+# period of inactivity. It works for any compositor that swayidle supports, ie.
+# any compositor that supports the idle protocol.
+#
+# Dependencies:
+#   - swayidle <https://github.com/swaywm/swayidle>
+#
+
+set -u
+
+echo() { printf '%s\n' "$*"; }
+msg() { printf >&2 '%s\n' "$*"; }
+warn() { printf >&2 'warning: %s\n' "$*"; }
+err() { printf >&2 'error: %s\n' "$*"; }
+
+usage() {
+  cat <<EOF
+usage: gale-autosleep [status|start|restart|stop|toggle]
+EOF
+}
+
+if [ -z "${WAYLAND_DISPLAY-}" ]; then
+  err '$WAYLAND_DISPLAY is not set!'
+  exit 1
+fi
+
+op=${1-status}
+
+case $op in
+  status|start|restart|stop|toggle)
+    gale-pid "autosleep.$WAYLAND_DISPLAY" "$op" ~/gale/autosleep/gale-autosleep-service
+    ;;
+  *)
+    usage >&2
+    exit 1
+    ;;
+esac

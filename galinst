@@ -1,7 +1,7 @@
 #!/bin/sh
 # Gale installer
 
-set -u
+set -uf
 
 echo() { printf '%s\n' "$*"; }
 msg() { printf >&2 '%s\n' "$*"; }
@@ -55,21 +55,32 @@ done
 # everything is relative to the home directory
 cd || exit 1
 
+gale_install_file="gale/install.conf"
 gale_profile_file=".config/gale/profile"
-gale_log_file=".data/gale/galinst.log"
+gale_log_file=".data/gale/install.log"
 
-gale_log_paths=
-gale_install_paths=
-gale_install_specs=
-gale_need_update_log=
+install_paths=
+install_specs=
+need_update_log=
 
 read -r profile < "$gale_profile_file"
 
-is_normalized_path() {
-  case /$1/ in
-    *//*|*/./*|*/../*) return 1 ;;
-    *) return 0 ;;
-  esac
+is_valid_src_path() {
+  # the path may not have any empty, '.', or '..' components
+  case /$1/ in *//* | */./* | */../*) return 1 ;; esac
+  # the path may only contain characters in the allowed set
+  case $1 in *[!/0-9A-Za-z._-]*) return 1 ;; esac
+  return 0
+}
+
+is_valid_dest_path() {
+  # the path may not have any empty, '.', or '..' components
+  case /$1/ in *//* | */./* | */../*) return 1 ;; esac
+  # the path may only contain characters in the allowed set
+  case $1 in *[!/0-9A-Za-z._-]*) return 1 ;; esac
+  # the path must begin with a dot
+  case $1 in .*) ;; *) return 1 ;; esac
+  return 0
 }
 
 str_contains() {
@@ -79,102 +90,164 @@ str_contains() {
   esac
 }
 
-link() {
-  local target path
-  target=$1
-  path=$2
-  gale_install_paths="${gale_install_paths} ${path}"
-  gale_install_specs="${gale_install_specs} ${path}=${target}"
+add_spec() {
+  local src dest
+  src="$1"
+  dest="$2"
+  install_paths="${install_paths} ${dest}"
+  install_specs="${install_specs} ${src} ${dest}"
 }
 
-linkbin() {
-  local target path
-  target=$1
-  path=".local/bin/${target##*/}"
-  gale_install_paths="${gale_install_paths} ${path}"
-  gale_install_specs="${gale_install_specs} ${path}=${target}"
+# parse the config file
+
+parse_error() {
+  err "line $line_num: $1"
+  exit 1
 }
 
-. .gale/install.sh
+parse_exact_args() {
+  if [ $1 -ne $2 ]; then
+    parse_error "expected $2 argument(s)"
+  fi
+}
 
+parse_check_src_path() {
+  if ! is_valid_src_path "$1"; then
+    parse_error "invalid source path '$1'"
+  fi
+}
+
+parse_check_dest_path() {
+  if ! is_valid_dest_path "$1"; then
+    parse_error "invalid destination path '$1'"
+  fi
+}
+
+line_num=0
+log=
+manifest=
+
+while read -r line; do
+  line_num=$((line_num + 1))
+  set -- $line
+  # skip empty lines
+  if [ $# -eq 0 ]; then
+    continue
+  fi
+  command=$1
+  shift
+  case $command in
+    '#'*)
+      ;;
+    link)
+      parse_exact_args $# 2
+      src=$1
+      parse_check_src_path "$src"
+      dest=$2
+      parse_check_dest_path "$dest"
+      add_spec "$src" "$dest"
+      ;;
+    linkbin)
+      parse_exact_args $# 1
+      src=$1
+      parse_check_src_path "$src"
+      dest=".local/bin/${1##*/}"
+      add_spec "$src" "$dest"
+      ;;
+    *)
+      parse_error "unrecognized command: $command"
+      ;;
+  esac
+done < "$gale_install_file" || exit 1
+
+if [ -z "$install_paths" ]; then
+  err "manifest is empty"
+  exit 1
+fi
+
+# load log file
+gale_log_paths=
 if [ -e "$gale_log_file" ]; then
   while read -r path; do
-    gale_log_paths="${gale_log_paths} ${path}"
+    if is_valid_dest_path "$path"; then
+      gale_log_paths="${gale_log_paths} ${path}"
+    else
+      warn "invalid path in log: $path"
+    fi
   done < "$gale_log_file"
 fi
 
-# delete paths in log that are no longer in install.sh
+# delete paths in log that are no longer in the manifest
 for path in $gale_log_paths; do
-  # if the path is in install.sh, skip it
-  case " $gale_install_paths " in
-    *" $path "*) continue ;;
-  esac
-
+  if str_contains " $install_paths " " $path "; then
+    continue
+  fi
   if [ -L "$path" ]; then
     msg "Removing $path"
     if [ -z "$dryrun" ]; then
       rm "$path"
       # remove empty parent directories if necessary
-      case $path in
-        */*) rmdir -p "${path%/*}" >/dev/null 2>&1 ;;
-      esac
+      if str_contains "$path" /; then
+        rmdir -p "${path%/*}" >/dev/null 2>&1
+      fi
     fi
   else
     msg "Ignoring $path"
   fi
-  gale_need_update_log=1
+  need_update_log=1
 done
 
 fail=0
 
-for spec in $gale_install_specs; do
-  path=${spec%%=*}
-  target=${spec#*=}
+set -- $install_specs
+while [ $# -ge 2 ]; do
+  src=$1
+  dest=$2
+  shift 2
 
   # generate the target for the symlink
-  # the symlink should be relative and point to a path in ~/.gale
-  target=".gale/$target"
-  tmp=$path
+  # the symlink should be relative and point to a path in ~/gale
+  target="gale/$src"
+  tmp=$dest
   while str_contains "$tmp" /; do
     target="../$target"
     tmp=${tmp#*/}
   done
 
   # compare the expected target to the actual target
-  if real_target=$(readlink "$path"); then
+  if real_target=$(readlink "$dest"); then
     if [ "$real_target" = "$target" ]; then
       if [ -n "$verbose" ]; then
-        msg "Skipping: $path"
+        msg "Skipping: $dest"
       fi
     else
-      msg "Correcting symlink: $path -> $target"
+      msg "Correcting symlink: $dest -> $target"
       if [ -z "$dryrun" ]; then
-        ln -sfT "$target" "$path" || fail=1
+        ln -sfT "$target" "$dest" || fail=1
       fi
     fi
   else
-    msg "Creating symlink: $path -> $target"
+    msg "Creating symlink: $dest -> $target"
     if [ -z "$dryrun" ]; then
-      if str_contains "$path" /; then
-        mkdir -p "${path%/*}"
+      if str_contains "$dest" /; then
+        mkdir -p "${dest%/*}"
       fi
-      ln -sT "$target" "$path" || fail=1
+      ln -sT "$target" "$dest" || fail=1
     fi
   fi
 
-  case " $gale_log_paths " in
-    *" $path "*) ;;
-    *) gale_need_update_log=1 ;;
-  esac
+  if ! str_contains " $gale_log_paths " " $dest "; then
+    need_update_log=1
+  fi
 done
 
-if [ "$gale_need_update_log" ]; then
+if [ "$need_update_log" ]; then
   msg "Updating log..."
   if [ -z "$dryrun" ]; then
     if str_contains "$gale_log_file" /; then
       mkdir -p "${gale_log_file%/*}"
     fi
-    printf '%s\n' $gale_install_paths > "$gale_log_file.tmp"
+    printf '%s\n' $install_paths > "$gale_log_file.tmp"
     mv "$gale_log_file.tmp" "$gale_log_file"
   fi
 fi

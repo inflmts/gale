@@ -5,7 +5,7 @@
 #
 
 # source profile script
-. ~/.gale/sh/profile.sh
+. ~/.profile
 
 # source bashrc
-. ~/.gale/bash/bashrc
+. ~/.bashrc

@@ -236,7 +236,7 @@ function! GaleLf() abort
     endif
   else
     " start lf in a new window
-    topleft vertical let g:gale_lf_buf = term_start($HOME .. "/.gale/vim/lf", {
+    topleft vertical let g:gale_lf_buf = term_start($HOME .. "/gale/vim/lf", {
           \ "term_finish": "close",
           \ "term_cols": 30,
           \ "term_kill": "term",

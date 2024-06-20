@@ -73,7 +73,8 @@ if [ -z "$XDG_RUNTIME_DIR" ]; then
   exit 1
 fi
 
-input_dir="$HOME/.data/gale/outputs"
+read -r profile < ~/.config/gale/profile
+input_dir="$HOME/gale/outputs/$profile"
 input_file="$input_dir/$mode"
 output_dir="$XDG_RUNTIME_DIR/gale"
 output_file="$output_dir/sway-outputs.conf"

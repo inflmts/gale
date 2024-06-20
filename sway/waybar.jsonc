@@ -21,8 +21,7 @@
     "format-wifi": "<span color=\"#808090\">wifi</span> {ipaddr}"
   },
   "custom/block": {
-    "exec": "~/.gale/sway/waybar-block.sh",
-    "interval": 5,
+    "exec": "~/gale/sway/waybar-block.sh",
     "format": "<span color=\"#808090\">usb</span> {}"
   },
   "cpu": {

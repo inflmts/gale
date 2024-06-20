@@ -6,51 +6,59 @@ Daniel Li (InfiniteLimits) <inflmts@gmail.com>
 
 ## Overview
 
-**Gale** is my personal configuration system. The intention is for all my
-configuration files and scripts (my "dotfiles") to be stored in this repository,
-so that they can be managed and shared between computers using Git.
-
-The `galinst` script (the "Gale installer") is used to symlink files into the
-home directory. It loads the manifest defined in `install.sh` and does the
-minimal work necessary to ensure that the filesystem matches the manifest,
-including creating new symlinks, fixing incorrect symlinks, and deleting old
-symlinks that are no longer in the manifest. Using a scripted install has the
-benefit of being able to dynamically select which files to include, while using
-symlinks eliminates the edit-install cycle that would result from a regular
-installation.
-
-Host-specific configuration is achieved by adding conditional logic to `galinst`
-(and not by other methods, like having multiple Git branches). In addition, Gale
-is designed to have as little external configuration as possible; instead,
-host-specific configuration is added to Gale itself. The intention is to
-maximize reuse and redundancy.
+**Gale** is my personal configuration system. The purpose of Gale is to collect
+my configuration files and scripts (my "dotfiles") in a single repository to be
+shared between computers using Git.
 
 Gale is primarily targeted towards Linux systems. An exception is the Neovim
 configuration file, which also works on Windows.
 
+Gale uses a symlink approach to put files into the home directory. The `galinst`
+script (the "Gale installer") loads the manifest defined in `install.conf` and
+makes the filesystem match the manifest by creating new symlinks, fixing
+incorrect symlinks, and deleting old symlinks that are no longer in the manifest
+(and their empty parent directories). Currently, `install.conf` does not support
+any conditional logic, although this will likely be implemented in the future to
+dynamically alter the manifest based on the Gale profile and other
+characteristics of the running machine.
+
 ## Getting Started
 
-Run the setup script `galsetup`, which creates a symbolic link at `~/.gale`
-pointing to the current directory and writes the `<profile>` argument to
-`~/.config/gale/profile`:
+1. Clone this repository to `~/gale`.
 
-```
-./galsetup <profile>
-```
+2. Set `~/.config/gale/profile` to the profile you want to use.
 
-Install Gale using `galinst`:
+3. Install Gale using `galinst`.
 
-```
-./galinst
-```
-
-Log out and log back in to pick up environment variables.
+4. Log out and log back in to pick up environment variables.
 
 `galinst` will automatically install itself into `~/.local/bin`, which should be
 available in `$PATH`. Once installed, Gale can be updated simply by running
-`galinst`. See `galinst --help` for more options.
+`galinst`. `galinst` supports verbose and dry-run options; see `galinst --help`
+for more information.
 
 ## Details
+
+### Repository Location
+
+This repository must be placed at `~/gale`. Previously, it was located at
+`~/.gale` (with a dot), similar to how other programs store user files. However,
+since the purpose of Gale is to manage configuration files, placing Gale itself
+in a configuration-like location seemed inappropriate. Directories beginning
+with a dot are usually managed by the program; Gale on the other hand is
+entirely user-maintained, so it made sense to put it in a prominently visible
+location.
+
+### Host-Specific Configuration
+
+Although I try to use the same configuration across as many systems as possible,
+there will be cases where this is not possible. For these files, `galinst` can
+be instructed to install different symlinks based on the system.
+
+Every host is assigned a unique profile, a string identifier stored at
+`~/.config/gale/profile`. This is useful when autodetection would be difficult
+or unnecessarily complicated. Other than this, Gale has zero external
+configuration, eliminating the need to maintain a standard configuration format.
 
 ### XDG Base Directories
 

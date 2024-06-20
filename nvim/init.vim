@@ -9,6 +9,7 @@
 
 silent! if plug#begin()
   Plug 'sainnhe/sonokai'
+  Plug 'preservim/nerdtree'
   "Plug 'yuezk/vim-js'
   Plug 'pangloss/vim-javascript'
 
@@ -29,7 +30,7 @@ endif
 " indentation
 set et sw=2 sts=2 sta ai si
 " searching
-set is ic smartcase
+set is ic
 " editing
 set fo=tcqroj nojs
 " scrolling
@@ -40,6 +41,8 @@ set number title fillchars=vert:│
 set autoread
 " vsplit appears on right
 set splitright
+" insert mode completion
+set completeopt=menu,preview,longest
 " command line completion
 set wildmenu wildmode=longest:full,full
 " don't automatically hide windows
@@ -53,7 +56,6 @@ set mouse=a
 "
 " TIP: See |map-table| to see all map modes in a convenient table.
 "
-" NOTE: As of now, the mappings below clobber Select mode. Use at your own risk.
 
 " in normal mode, CTRL-X clears search highlighting (see :nohlsearch)
 " otherwise, CTRL-X acts as a general escape key
@@ -61,32 +63,35 @@ nnoremap <C-X> <Cmd>noh<CR>
 inoremap <C-X> <Esc>
 cnoremap <C-X> <C-C>
 xnoremap <C-X> <Esc>
+snoremap <C-X> <Esc>
 onoremap <C-X> <Esc>
 
-" space and backspace scroll the window
-noremap  <Space> <C-D>
-noremap  <BS> <C-U>
+" space and backspace scroll the window, like info
+nnoremap <Space> <C-D>
+xnoremap <Space> <C-D>
+nnoremap <BS> <C-U>
+xnoremap <BS> <C-U>
 
-" make j and k operate in screen lines (gj and gk)
+" j and k operate in screen lines (gj and gk)
 " this is useful for wrapped text
 nnoremap j gj
 xnoremap j gj
 nnoremap k gk
 xnoremap k gk
 
-" CTRL-J and CTRL-K move the cursor fast.
-" CTRL-N and CTRL-P move the cursor even faster.
-noremap  <C-J> 5gj
-noremap  <C-K> 5gk
-noremap  <C-N> 10gj
-noremap  <C-P> 10gk
-
 " CTRL-S saves the file
-noremap  <C-S> <Cmd>up<CR>
+nnoremap <C-S> <Cmd>up<CR>
+xnoremap <C-S> <Cmd>up<CR>
+inoremap <C-S> <Cmd>up<CR><Esc>
 
-noremap  H z<CR>
-noremap  M z.
-noremap  L z-
+" H, M, and L scroll the window so that the cursor is at the top, middle, or
+" bottom of the window, respectively
+nnoremap H zt
+xnoremap H zt
+nnoremap M zz
+xnoremap M zz
+nnoremap L zb
+xnoremap L zb
 
 " save a few keystrokes for (un)indenting
 nnoremap < <<
@@ -94,29 +99,17 @@ nnoremap > >>
 xnoremap < <gv
 xnoremap > >gv
 
-cnoremap <C-A>  <Home>
-cnoremap <C-E>  <End>
-cnoremap <C-D>  <Del>
-cnoremap <C-B>  <Left>
-cnoremap <C-F>  <Right>
-cnoremap <C-P>  <Up>
-cnoremap <C-N>  <Down>
+" readline key bindings for command-line mode
+cnoremap <C-A> <Home>
+cnoremap <C-E> <End>
+cnoremap <C-D> <Del>
+cnoremap <C-B> <Left>
+cnoremap <C-F> <Right>
+cnoremap <C-P> <Up>
+cnoremap <C-N> <Down>
 
-cnoremap <Esc>h <Left>
-cnoremap <M-h>  <Left>
-cnoremap <Esc>l <Right>
-cnoremap <M-l>  <Right>
-cnoremap <Esc>j <PageDown>
-cnoremap <M-j>  <PageDown>
-cnoremap <Esc>k <PageUp>
-cnoremap <M-k>  <PageUp>
-cnoremap <Esc>b <S-Left>
-cnoremap <M-b>  <S-Left>
-cnoremap <Esc>f <S-Right>
-cnoremap <M-f>  <S-Right>
-
-inoremap <C-V>  <C-R><C-O>+
-inoremap <C-A>  <C-V>
+" NERDTree bindings
+nnoremap <C-T> <Cmd>NERDTreeToggle<CR>
 
 " GUI
 "=======================================
@@ -143,6 +136,7 @@ endif
 "=======================================
 
 augroup init
+
   " clear previously defined autocommands
   auto!
 
@@ -152,7 +146,18 @@ augroup init
   auto FileType asciidoc setlocal nosi comments=fb:-,fb:*,fb://
   auto FileType cs,java setlocal sw=4 sts=4
 
-  auto WinNew * call s:gale_trailspace_match()
+  " color trailing whitespace red, because if you have trailing whitespace then
+  " the code style witch will get you
+  function s:gale_highlight_trailspace()
+    if !exists('w:gale_trailspace_match_id')
+      let w:gale_trailspace_match_id = matchadd('TrailSpace', '\s\+$', -1)
+    endif
+  endfunction
+
+  tabdo windo call s:gale_highlight_trailspace()
+  auto WinEnter * call s:gale_highlight_trailspace()
+  hi TrailSpace ctermbg=1 guibg=#ff0000
+
 augroup END
 
 " MISCELLANEOUS
@@ -163,24 +168,13 @@ hi Error ctermfg=7 ctermbg=203
 hi ErrorText cterm=underline ctermfg=203
 hi! link SignColumn LineNr
 
-" color trailing whitespace red, because if you have trailing whitespace then
-" the code style witch will get you
-function s:gale_trailspace_match()
-  if exists('w:gale_trailspace_match_id')
-    call matchdelete(w:gale_trailspace_match_id)
-  else
-    let w:gale_trailspace_match_id = -1
-  endif
-  let w:gale_trailspace_match_id = matchadd('TrailSpace', '\s\+$', 100, w:gale_trailspace_match_id)
-endfunction
-
-tabdo windo call s:gale_trailspace_match()
-hi TrailSpace ctermbg=1 guibg=#ff0000
 
 if $TERM ==# "linux"
   hi Visual cterm=reverse
 endif
 
-command! R echomsg "Reloading..." | execute "source " .. fnameescape(stdpath('config') .. "/init.vim")
+command! R execute "source " .. fnameescape($MYVIMRC)
+
+command! Galinst !galinst
 
 " vim:ft=vim

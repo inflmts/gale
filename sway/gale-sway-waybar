@@ -30,7 +30,7 @@ op=${1-status}
 
 case $op in
   status|start|restart|stop)
-    wrapper "$op" waybar -c ~/.gale/sway/waybar.json -s ~/.gale/sway/waybar.css
+    wrapper "$op" waybar -c ~/gale/sway/waybar.jsonc -s ~/gale/sway/waybar.css
     ;;
   reload)
     wrapper send USR2
