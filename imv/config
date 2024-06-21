@@ -1,0 +1,12 @@
+#
+# imv config file
+#
+# This file is part of Gale.
+#
+
+[options]
+overlay=true
+overlay_font=monospace:11
+overlay_text=$imv_current_file \(${imv_width}x${imv_height}\)
+
+# vim:ft=dosini
