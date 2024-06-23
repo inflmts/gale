@@ -62,6 +62,6 @@ systemctl --user import-environment >/dev/null 2>&1 \
   XDG_CACHE_HOME
 
 # archiplex: start sway
-if [ "$gale_profile" = archiplex ]; then
+if [ "$gale_profile" = archiplex ] && [ "$(tty)" = /dev/tty1 ]; then
   gale-sway
 fi

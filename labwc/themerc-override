@@ -1,0 +1,16 @@
+padding.height: 2
+
+window.active.border.color: #ffffff
+window.inactive.border.color: #101012
+
+window.active.title.bg.color: #202024
+window.inactive.title.bg.color: #101012
+
+window.active.label.text.color: #ffffff
+window.inactive.label.text.color: #c0c0c6
+
+window.active.button.unpressed.image.color: #ffffff
+window.inactive.button.unpressed.image.color: #c0c0c6
+
+osd.window-switcher.preview.border.width: 2
+osd.window-switcher.preview.border.color: #ff0055
