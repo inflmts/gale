@@ -20,7 +20,7 @@
   </theme>
 
   <windowRules>
-    <windowRule identifier="*">
+    <windowRule identifier="firefox">
       <action name="ToggleDecorations" />
     </windowRule>
   </windowRules>
@@ -29,14 +29,15 @@
     <repeatRate>25</repeatRate>
     <repeatDelay>300</repeatDelay>
 
-    <keybind key="W-q">
-      <action name="Close" />
+    <keybind key="W-S-Backspace">
+      <action name="Exit" />
     </keybind>
     <keybind key="W-r">
       <action name="Reconfigure" />
     </keybind>
-    <keybind key="W-Return">
-      <action name="Execute" command="term" />
+
+    <keybind key="W-q">
+      <action name="Close" />
     </keybind>
     <keybind key="W-Tab">
       <action name="NextWindow" />
@@ -44,6 +45,16 @@
     <keybind key="W-S-Tab">
       <action name="PreviousWindow" />
     </keybind>
+
+    <keybind key="W-S-d">
+      <action name="ToggleDecorations" />
+    </keybind>
+
+    <!--<keybind key="W-h"><action name="SnapToEdge" direction="left" /></keybind>
+    <keybind key="W-j"><action name="SnapToEdge" direction="down" /></keybind>
+    <keybind key="W-k"><action name="SnapToEdge" direction="up" /></keybind>
+    <keybind key="W-l"><action name="SnapToEdge" direction="right" /></keybind>-->
+
     <keybind key="W-Minus">
       <action name="Iconify" />
     </keybind>
@@ -53,23 +64,33 @@
     <keybind key="W-f">
       <action name="ToggleFullscreen" />
     </keybind>
-
-    <!--<keybind key="W-h"><action name="SnapToEdge" direction="left" /></keybind>
-    <keybind key="W-j"><action name="SnapToEdge" direction="down" /></keybind>
-    <keybind key="W-k"><action name="SnapToEdge" direction="up" /></keybind>
-    <keybind key="W-l"><action name="SnapToEdge" direction="right" /></keybind>-->
-
-    <keybind key="W-S-h">
+    <keybind key="W-s">
+      <action name="Maximize" />
+    </keybind>
+    <keybind key="W-a">
       <action name="SnapToEdge" direction="left" />
     </keybind>
-    <keybind key="W-S-j">
-      <action name="SnapToEdge" direction="down" />
-    </keybind>
-    <keybind key="W-S-k">
-      <action name="SnapToEdge" direction="up" />
-    </keybind>
-    <keybind key="W-S-l">
+    <keybind key="W-d">
       <action name="SnapToEdge" direction="right" />
+    </keybind>
+    <keybind key="W-bracketleft">
+      <action name="MoveToOutput" direction="left" />
+      <action name="Raise" />
+    </keybind>
+    <keybind key="W-bracketright">
+      <action name="MoveToOutput" direction="right" />
+      <action name="Raise" />
+    </keybind>
+
+    <keybind key="W-Return">
+      <action name="Execute" command="term" />
+    </keybind>
+    <keybind key="W-S-f">
+      <action name="Execute" command="firefox" />
+    </keybind>
+
+    <keybind key="W-S-s">
+      <action name="Execute" command="sh -c 'sleep 1 &amp;&amp; gale-sleep'" />
     </keybind>
   </keyboard>
 
@@ -81,60 +102,14 @@
     </context>
 
     <context name="Frame">
-      <mousebind button="W-Left" action="Press">
-        <action name="Focus" />
-        <action name="Raise" />
-      </mousebind>
       <mousebind button="W-Left" action="Drag">
         <action name="Move" />
-      </mousebind>
-      <mousebind button="W-Right" action="Press">
-        <action name="Focus" />
-        <action name="Raise" />
       </mousebind>
       <mousebind button="W-Right" action="Drag">
         <action name="Resize" />
       </mousebind>
-    </context>
-
-    <context name="Top">
-      <mousebind button="Left" action="Drag">
-        <action name="Resize" />
-      </mousebind>
-    </context>
-    <context name="Left">
-      <mousebind button="Left" action="Drag">
-        <action name="Resize" />
-      </mousebind>
-    </context>
-    <context name="Right">
-      <mousebind button="Left" action="Drag">
-        <action name="Resize" />
-      </mousebind>
-    </context>
-    <context name="Bottom">
-      <mousebind button="Left" action="Drag">
-        <action name="Resize" />
-      </mousebind>
-    </context>
-    <context name="TRCorner">
-      <mousebind button="Left" action="Drag">
-        <action name="Resize" />
-      </mousebind>
-    </context>
-    <context name="BRCorner">
-      <mousebind button="Left" action="Drag">
-        <action name="Resize" />
-      </mousebind>
-    </context>
-    <context name="TLCorner">
-      <mousebind button="Left" action="Drag">
-        <action name="Resize" />
-      </mousebind>
-    </context>
-    <context name="BLCorner">
-      <mousebind button="Left" action="Drag">
-        <action name="Resize" />
+      <mousebind button="W-Middle" action="Press">
+        <action name="Iconify" />
       </mousebind>
     </context>
 
@@ -166,19 +141,17 @@
         <action name="Iconify" />
       </mousebind>
     </context>
-    -->
-
     <context name="Maximize">
       <mousebind button="Left" action="Click">
         <action name="ToggleMaximize" />
       </mousebind>
     </context>
-
     <context name="Close">
       <mousebind button="Left" action="Click">
         <action name="Close" />
       </mousebind>
     </context>
+    -->
 
     <context name="Client">
       <mousebind button="Left" action="Press">

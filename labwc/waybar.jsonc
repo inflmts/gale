@@ -2,30 +2,19 @@
   "position": "bottom",
   "height": 30,
   "modules-left": [
-    "wlr/taskbar"
   ],
   "modules-right": [
     "network",
-    "custom/block",
     "cpu",
     "memory",
     "battery",
     "pulseaudio",
-    "tray",
     "clock"
   ],
-  "wlr/taskbar": {
-    "all-outputs": true,
-    "on-click": "activate"
-  },
   "network": {
     "format": "<span color=\"#808090\">{ifname}</span> {ipaddr}",
     "format-ethernet": "<span color=\"#808090\">eth</span> {ipaddr}",
     "format-wifi": "<span color=\"#808090\">wifi</span> {ipaddr}"
-  },
-  "custom/block": {
-    "exec": "~/gale/sway/waybar-block.sh",
-    "format": "<span color=\"#808090\">usb</span> {}"
   },
   "cpu": {
     "interval": 1,

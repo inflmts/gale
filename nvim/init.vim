@@ -13,15 +13,7 @@ silent! if plug#begin()
   "Plug 'yuezk/vim-js'
   Plug 'pangloss/vim-javascript'
 
-  let g:sonokai_disable_italic_comment = 1
-  let g:sonokai_transparent_background = 1
-  let g:sonokai_spell_foreground = 'colored'
-  let g:sonokai_disable_terminal_colors = 1
-  let g:sonokai_better_performance = 1
-
   call plug#end()
-
-  silent! colorscheme sonokai
 endif
 
 " OPTIONS
@@ -111,27 +103,6 @@ cnoremap <C-N> <Down>
 " NERDTree bindings
 nnoremap <C-T> <Cmd>NERDTreeToggle<CR>
 
-" GUI
-"=======================================
-
-if has('gui_running')
-  if exists('g:neovide')
-    " Neovide supports ligatures
-    set guifont=Cascadia\ Code:h10
-  else
-    set guifont=Cascadia\ Mono:h10
-  endif
-endif
-
-" NEOVIDE
-"=======================================
-
-if exists('g:neovide')
-  let g:neovide_cursor_animation_length = 0.05
-  let g:neovide_cursor_trail_size = 0.5
-  let g:neovide_transparency = 0.8
-endif
-
 " AUTOCOMMANDS
 "=======================================
 
@@ -160,10 +131,36 @@ augroup init
 
 augroup END
 
-" MISCELLANEOUS
+" GUI
 "=======================================
 
-hi LineNr ctermbg=233 guibg=#222226
+if has('gui_running')
+  if exists('g:neovide')
+    " Neovide supports ligatures
+    set guifont=Cascadia\ Code:h10
+  else
+    set guifont=Cascadia\ Mono:h10
+  endif
+endif
+
+" NEOVIDE
+"=======================================
+
+if exists('g:neovide')
+  let g:neovide_cursor_animation_length = 0.05
+  let g:neovide_cursor_trail_size = 0.5
+endif
+
+" COLORS
+"=======================================
+
+let g:sonokai_disable_italic_comment = 1
+let g:sonokai_transparent_background = !has('gui_running')
+let g:sonokai_spell_foreground = 'colored'
+let g:sonokai_disable_terminal_colors = 1
+let g:sonokai_better_performance = 1
+silent! colorscheme sonokai
+
 hi Error ctermfg=7 ctermbg=203
 hi ErrorText cterm=underline ctermfg=203
 hi! link SignColumn LineNr
@@ -172,6 +169,9 @@ hi! link SignColumn LineNr
 if $TERM ==# "linux"
   hi Visual cterm=reverse
 endif
+
+" MISCELLANEOUS
+"=======================================
 
 command! R execute "source " .. fnameescape($MYVIMRC)
 

@@ -12,9 +12,9 @@
 #
 
 [window]
-opacity = 0.8
 padding.x = 10
 padding.y = 10
+startup_mode = "Maximized"
 
 [font]
 size = 10
@@ -30,7 +30,7 @@ background = "#000000"
 
 [colors.selection]
 foreground = "#ffffff"
-background = "#002a3b"
+background = "#0055ff"
 
 [colors.bright]
 black = "#444444"

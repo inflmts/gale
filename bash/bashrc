@@ -288,6 +288,11 @@ ffnw() {
   __gale_spawn firefox --new-window "$@"
 }
 
+cdcode() {
+  local name
+  name=$(ls ~/code | fzf) && cd ~/code/"$name"
+}
+
 # BANNER
 #=======================================
 

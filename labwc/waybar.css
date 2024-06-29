@@ -60,8 +60,7 @@ button {
 
 #taskbar button {
 /*  background-color: #50505a;
-  padding: 5px;
-  min-width: 20px;*/
+  padding: 0 10px;*/
 }
 
 #taskbar button.active {
