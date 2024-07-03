@@ -117,17 +117,7 @@ augroup init
   auto FileType asciidoc setlocal nosi comments=fb:-,fb:*,fb://
   auto FileType cs,java setlocal sw=4 sts=4
 
-  " color trailing whitespace red, because if you have trailing whitespace then
-  " the code style witch will get you
-  function s:gale_highlight_trailspace()
-    if !exists('w:gale_trailspace_match_id')
-      let w:gale_trailspace_match_id = matchadd('TrailSpace', '\s\+$', -1)
-    endif
-  endfunction
-
-  tabdo windo call s:gale_highlight_trailspace()
   auto WinEnter * call s:gale_highlight_trailspace()
-  hi TrailSpace ctermbg=1 guibg=#ff0000
 
 augroup END
 
@@ -165,6 +155,16 @@ hi Error ctermfg=7 ctermbg=203
 hi ErrorText cterm=underline ctermfg=203
 hi! link SignColumn LineNr
 
+" color trailing whitespace red, because if you have trailing whitespace then
+" the code style witch will get you
+function s:gale_highlight_trailspace()
+  if !exists('w:gale_trailspace_match_id')
+    let w:gale_trailspace_match_id = matchadd('TrailSpace', '\s\+$', -1)
+  endif
+endfunction
+
+tabdo windo call s:gale_highlight_trailspace()
+hi TrailSpace ctermbg=1 guibg=#ff0000
 
 if $TERM ==# "linux"
   hi Visual cterm=reverse
