@@ -45,6 +45,7 @@ exec gale-sway-waybar start
 input type:keyboard {
   repeat_delay 300
   repeat_rate 25
+  xkb_numlock enabled
 }
 
 floating_modifier $mod
