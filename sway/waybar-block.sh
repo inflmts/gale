@@ -12,7 +12,7 @@ set -u
 
 fifo=$(mktemp -u)
 mkfifo "$fifo"
-udevadm monitor -k -s block > "$fifo" & udevadm_pid=$!
+udevadm monitor -u -s block > "$fifo" & udevadm_pid=$!
 findmnt --poll=mount,umount -nro action > "$fifo" & findmnt_pid=$!
 exec < "$fifo"
 rm "$fifo"
