@@ -65,7 +65,7 @@ output * bg ~/bg/neocity-red.png fill
 # GENERAL
 #-----------------------------
 
-# close any window
+# close the focused window
 bindsym $mod+q kill
 
 # reload the configuration file
@@ -76,6 +76,19 @@ bindsym $mod+Return exec term
 
 # start a file explorer
 bindsym $mod+e exec gale-explorer
+
+# start firefox
+bindsym $mod+Shift+f exec firefox
+
+# start htop
+bindsym $mod+Shift+t exec term htop
+
+# start radeontop
+bindsym $mod+Shift+r exec term radeontop
+
+# put the computer to sleep
+bindsym $mod+Shift+s nop
+bindsym --release $mod+Shift+s exec gale-sleep
 
 # CONTAINERS
 #-----------------------------
@@ -131,6 +144,7 @@ bindsym $mod+period workspace next_on_output
 
 # focus empty workspace
 bindsym $mod+Tab exec ~/gale/sway/empty-workspace.sh focus
+
 # move focused container to empty workspace
 bindsym $mod+Shift+Tab exec ~/gale/sway/empty-workspace.sh move
 
@@ -146,6 +160,7 @@ bindsym $mod+Shift+bracketleft move workspace to output left
 bindsym $mod+Shift+bracketright move workspace to output right
 
 bindsym $mod+o mode "outputs"
+
 mode "outputs" {
   bindsym q mode "default"
   bindsym Escape mode "default"
@@ -159,8 +174,6 @@ bindsym $mod+b splith
 bindsym $mod+v splitv
 
 # switch the current container between different layout styles
-bindsym $mod+Shift+s layout stacking
-bindsym $mod+Shift+t layout tabbed
 bindsym $mod+Shift+b layout splith
 bindsym $mod+Shift+v layout splitv
 
@@ -182,24 +195,6 @@ bindsym XF86AudioRaiseVolume exec pamixer -i 5
 bindsym XF86AudioMute exec pamixer -t
 bindsym Shift+XF86AudioLowerVolume exec pamixer --set-volume 0
 bindsym Shift+XF86AudioRaiseVolume exec pamixer --set-volume 100
-
-# COMMAND MODE
-#-----------------------------
-
-bindsym $mod+Shift+c mode "command"
-
-mode "command" {
-  bindsym q mode "default"
-  bindsym Escape mode "default"
-
-  bindsym e exit
-  bindsym s nop wait for suspend
-  bindsym o nop wait for poweroff
-  bindsym r nop wait for reboot
-  bindsym --release s mode "default"; exec systemctl suspend
-  bindsym --release o mode "default"; exec systemctl poweroff
-  bindsym --release r mode "default"; exec systemctl reboot
-}
 
 # RESIZE MODE
 #-----------------------------
@@ -223,20 +218,17 @@ mode "resize" {
   bindsym Shift+l resize shrink left 10px
 }
 
-# MISC MODE
+# DANGER ZONE
 #-----------------------------
 
-bindsym $mod+x mode "misc"
+# exit sway
+bindsym $mod+Ctrl+Shift+e exit
 
-mode "misc" {
-  bindsym q mode "default"
-  bindsym Escape mode "default"
+# shutdown the computer
+bindsym $mod+Ctrl+Shift+o exec gale-shutdown
 
-  bindsym f exec firefox; mode "default"
-  bindsym m exec multimc; mode "default"
-  bindsym t exec term htop; mode "default"
-  bindsym Shift+r exec term radeontop; mode "default"
-}
+# reboot the computer
+bindsym $mod+Ctrl+Shift+r exec gale-reboot
 
 # INITIALIZATION
 #=======================================
