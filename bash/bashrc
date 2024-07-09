@@ -293,6 +293,10 @@ cdcode() {
   name=$(ls ~/code | fzf) && cd ~/code/"$name"
 }
 
+adate() {
+  date +%Y%m%d-%H%M%S "$@"
+}
+
 # BANNER
 #=======================================
 
