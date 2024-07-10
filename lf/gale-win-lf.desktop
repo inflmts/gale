@@ -8,4 +8,4 @@ Type=Application
 Name=Gale lf
 GenericName=File Manager
 Exec=gale-win-lf -- %f
-Type=inode/directory
+MimeType=inode/directory
