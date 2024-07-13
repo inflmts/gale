@@ -20,6 +20,9 @@ generate_common() {
       echo "mode \"outputs\" bindsym $mode nop"
     fi
   done
+  if [ -e ~/.config/gale/wallpaper ]; then
+    echo "output * bg ~/.config/gale/wallpaper fill"
+  fi
 }
 
 usage() {
