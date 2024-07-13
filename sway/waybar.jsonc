@@ -32,6 +32,10 @@
     "interval": 5,
     "format": "<span color=\"#808090\">mem</span> {used} G<span color=\"#c0c0d8\">/{total} G</span>"
   },
+  "battery": {
+    "interval": 60,
+    "format": "<span color=\"#808090\">bat</span> {capacity}%"
+  },
   "pulseaudio": {
     "format": "<span color=\"#808090\">vol</span> {volume}%",
     "format-muted": "<span color=\"#998700\">vol</span> <s>{volume}%</s>"
