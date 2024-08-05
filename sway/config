@@ -79,6 +79,9 @@ bindsym $mod+Return exec term
 # start a file explorer
 bindsym $mod+e exec gale-explorer
 
+# start a menu
+bindsym $mod+m exec fuzzel
+
 # start firefox
 bindsym $mod+Shift+f exec firefox
 
