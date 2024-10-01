@@ -1,23 +1,39 @@
+"###############################################################################
 "
-" Nvim initialization file
+"   -------------------------------------
+"   init.vim - neovim initialization file
+"   -------------------------------------
 "
-" This file is part of Gale.
+"   This file is part of Gale.
 "
+"   This works on both Linux and Windows.
+"
+"###############################################################################
 
-" VIM-PLUG
-"=======================================
-
-silent! if plug#begin()
-  Plug 'sainnhe/sonokai'
-  Plug 'preservim/nerdtree'
-  "Plug 'yuezk/vim-js'
-  Plug 'pangloss/vim-javascript'
-
-  call plug#end()
+" identify the Gale root directory
+if !exists('g:gale_root')
+  if isdirectory($HOME .. '/.gale')
+    let g:gale_root = $HOME .. '/.gale'
+  else
+    echoerr "Failed to locate Gale root directory"
+  endif
 endif
 
-" OPTIONS
 "=======================================
+" PLUGINS
+
+" load vim-plug if available
+if exists('g:gale_root')
+  runtime autoload/plug.vim
+  if exists('*plug#begin')
+    call plug#begin()
+    execute 'source ' .. fnameescape(g:gale_root .. '/nvim/plug.vim')
+    call plug#end()
+  endif
+endif
+
+"=======================================
+" OPTIONS
 
 " indentation
 set et sw=2 sts=2 sta ai si
@@ -39,14 +55,13 @@ set completeopt=menu,preview,longest
 set wildmenu wildmode=longest:full,full
 " don't automatically hide windows
 set nohidden
-
 " enable the mouse in all modes
 set mouse=a
 
-" KEYBINDINGS
 "=======================================
+" KEYBINDINGS
 "
-" TIP: See |map-table| to see all map modes in a convenient table.
+" TIP: See |map-table| for all map modes in a convenient table.
 "
 
 " in normal mode, CTRL-X clears search highlighting (see :nohlsearch)
@@ -64,17 +79,23 @@ xnoremap <Space> <C-D>
 nnoremap <BS> <C-U>
 xnoremap <BS> <C-U>
 
-" j and k operate in screen lines (gj and gk)
+" j and k operate in screen lines (gj and gk),
+" while CTRL-J and CTRL-K do this but faster
 " this is useful for wrapped text
 nnoremap j gj
 xnoremap j gj
 nnoremap k gk
 xnoremap k gk
+nnoremap <C-J> 10gj
+xnoremap <C-J> 10gj
+nnoremap <C-K> 10gk
+xnoremap <C-K> 10gk
 
 " CTRL-S saves the file
 nnoremap <C-S> <Cmd>up<CR>
 xnoremap <C-S> <Cmd>up<CR>
 inoremap <C-S> <Cmd>up<CR><Esc>
+cnoremap <C-S> <Cmd>up<CR><C-C>
 
 " H, M, and L scroll the window so that the cursor is at the top, middle, or
 " bottom of the window, respectively
@@ -103,8 +124,8 @@ cnoremap <C-N> <Down>
 " NERDTree bindings
 nnoremap <C-T> <Cmd>NERDTreeToggle<CR>
 
-" AUTOCOMMANDS
 "=======================================
+" AUTOCOMMANDS
 
 augroup init
 
@@ -121,8 +142,8 @@ augroup init
 
 augroup END
 
-" GUI
 "=======================================
+" GUI
 
 if has('gui_running')
   if exists('g:neovide')
@@ -133,20 +154,22 @@ if has('gui_running')
   endif
 endif
 
-" NEOVIDE
 "=======================================
+" NEOVIDE
 
 if exists('g:neovide')
   let g:neovide_cursor_animation_length = 0.05
   let g:neovide_cursor_trail_size = 0.5
 endif
 
-" COLORS
 "=======================================
+" COLORS
 
 let g:sonokai_disable_italic_comment = 1
-let g:sonokai_transparent_background = !has('gui_running')
-let g:sonokai_spell_foreground = 'colored'
+if !has('gui_running')
+  let g:sonokai_transparent_background = 1
+  let g:sonokai_spell_foreground = 'colored'
+endif
 let g:sonokai_disable_terminal_colors = 1
 let g:sonokai_better_performance = 1
 silent! colorscheme sonokai
@@ -170,11 +193,46 @@ if $TERM ==# "linux"
   hi Visual cterm=reverse
 endif
 
-" MISCELLANEOUS
 "=======================================
+" LSP
 
-command! R execute "source " .. fnameescape($MYVIMRC)
+lua <<EOF
+lspconfig = require 'lspconfig'
+lspconfig.ts_ls.setup {}
+EOF
 
-command! Galinst !galinst
+"=======================================
+" RESTART
+"
+" This provides basic functionality to make restarting easier.
+"
 
-" vim:ft=vim
+let s:restart_session_file = stdpath('state') .. '/restart-session.vim'
+
+function s:restart() abort
+  execute 'mksession! ' .. fnameescape(s:restart_session_file)
+  qall
+endfunction
+
+function s:resume() abort
+  execute 'source ' .. fnameescape(s:restart_session_file)
+endfunction
+
+" The :Restart command writes the session file and exits Nvim.
+command! Restart call s:restart()
+
+" The :Resume command loads the session file.
+command! Resume call s:resume()
+
+"=======================================
+" GALE
+
+function GaleEdit() abort
+  if exists('g:gale_root')
+    execute 'edit ' .. fnameescape(g:gale_root .. '/nvim/init.vim')
+  endif
+endfunction
+
+" The :GaleEdit command edits this file.
+command! GaleEdit call GaleEdit()
+
