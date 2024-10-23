@@ -124,6 +124,10 @@ cnoremap <C-N> <Down>
 " NERDTree bindings
 nnoremap <C-T> <Cmd>NERDTreeToggle<CR>
 
+" omni completion
+inoremap <expr> <C-N> !pumvisible() && !empty(&omnifunc) ? "\<C-X>\<C-O>" : "\<C-N>"
+inoremap <expr> <C-P> !pumvisible() && !empty(&omnifunc) ? "\<C-X>\<C-O>" : "\<C-P>"
+
 "=======================================
 " AUTOCOMMANDS
 
