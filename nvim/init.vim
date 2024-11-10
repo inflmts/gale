@@ -57,6 +57,8 @@ set wildmenu wildmode=longest:full,full
 set nohidden
 " enable the mouse in all modes
 set mouse=a
+" always use unix line endings
+set fileformats=unix,dos
 
 "=======================================
 " KEYBINDINGS
