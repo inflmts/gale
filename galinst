@@ -21,8 +21,8 @@ Options:
 EOF
 }
 
-dryrun=
-verbose=
+_dryrun=
+_verbose=
 
 while [ $# -gt 0 ]; do
   case $1 in
@@ -34,10 +34,10 @@ while [ $# -gt 0 ]; do
       continue
       ;;
     -n|--dry-run)
-      dryrun=1
+      _dryrun=1
       ;;
     -v|--verbose)
-      verbose=1
+      _verbose=1
       ;;
     -h|--help)
       usage
@@ -55,15 +55,32 @@ done
 # everything is relative to the home directory
 cd || exit 1
 
-gale_install_file="gale/install.conf"
-gale_profile_file=".config/gale/profile"
+hostname=$(hostname) || exit 1
+
+gale_install_file=".gale/install.conf"
 gale_log_file=".data/gale/install.log"
 
 install_paths=
 install_specs=
 need_update_log=
 
-read -r profile < "$gale_profile_file"
+# Utility Functions
+# -----------------
+
+dryrun() {
+  [ "$_dryrun" ]
+}
+
+verbose() {
+  [ "$_verbose" ]
+}
+
+contains() {
+  case $1 in
+    *"$2"*) return 0 ;;
+    *) return 1 ;;
+  esac
+}
 
 is_valid_src_path() {
   # the path may not have any empty, '.', or '..' components
@@ -80,17 +97,20 @@ is_valid_dest_path() {
   case $1 in *[!/0-9A-Za-z._-]*) return 1 ;; esac
   # the path must begin with a dot
   case $1 in .*) ;; *) return 1 ;; esac
+  # the path must not begin with '.gale'
+  case $1/ in .gale/*) return 1 ;; esac
   return 0
 }
 
-str_contains() {
-  case $1 in
-    *"$2"*) return 0 ;;
-    *) return 1 ;;
-  esac
-}
+# Config File
+# -----------
 
-add_spec() {
+line_num=0
+log=
+manifest=
+active=1
+
+parse_add_spec() {
   local src dest
   src="$1"
   dest="$2"
@@ -98,16 +118,14 @@ add_spec() {
   install_specs="${install_specs} ${src} ${dest}"
 }
 
-# parse the config file
-
 parse_error() {
-  err "line $line_num: $1"
+  err "config file: line $line_num: $1"
   exit 1
 }
 
 parse_exact_args() {
   if [ $1 -ne $2 ]; then
-    parse_error "expected $2 argument(s)"
+    parse_error "${3+$3: }expected $2 argument(s)"
   fi
 }
 
@@ -123,9 +141,30 @@ parse_check_dest_path() {
   fi
 }
 
-line_num=0
-log=
-manifest=
+parse_condition() {
+  local condition
+  if [ $# -eq 0 ]; then
+    parse_error "expected condition"
+  fi
+  condition=$1
+  shift
+  case $condition in
+    not)
+      ! parse_condition "$@"
+      ;;
+    host)
+      parse_exact_args $# 1 host
+      [ "$hostname" = "$1" ]
+      ;;
+    *)
+      parse_error "invalid condition '$condition'"
+      ;;
+  esac
+}
+
+parse_active() {
+  [ "$active" ]
+}
 
 while read -r line; do
   line_num=$((line_num + 1))
@@ -145,14 +184,30 @@ while read -r line; do
       parse_check_src_path "$src"
       dest=$2
       parse_check_dest_path "$dest"
-      add_spec "$src" "$dest"
+      if parse_active; then
+        parse_add_spec "$src" "$dest"
+      fi
       ;;
     linkbin)
       parse_exact_args $# 1
       src=$1
       parse_check_src_path "$src"
       dest=".local/bin/${1##*/}"
-      add_spec "$src" "$dest"
+      if parse_active; then
+        parse_add_spec "$src" "$dest"
+      fi
+      ;;
+    if)
+      if parse_condition "$@"; then active=1; else active=; fi
+      ;;
+    include)
+      if parse_condition "$@"; then active=1; fi
+      ;;
+    exclude)
+      if parse_condition "$@"; then active=; fi
+      ;;
+    all)
+      active=1
       ;;
     *)
       parse_error "unrecognized command: $command"
@@ -165,7 +220,10 @@ if [ -z "$install_paths" ]; then
   exit 1
 fi
 
-# load log file
+# Install
+# -------
+
+# load log
 gale_log_paths=
 if [ -e "$gale_log_file" ]; then
   while read -r path; do
@@ -177,17 +235,17 @@ if [ -e "$gale_log_file" ]; then
   done < "$gale_log_file"
 fi
 
-# delete paths in log that are no longer in the manifest
+# remove old paths no longer in the manifest
 for path in $gale_log_paths; do
-  if str_contains " $install_paths " " $path "; then
+  if contains " $install_paths " " $path "; then
     continue
   fi
   if [ -L "$path" ]; then
     msg "Removing $path"
-    if [ -z "$dryrun" ]; then
+    if ! dryrun; then
       rm "$path"
       # remove empty parent directories if necessary
-      if str_contains "$path" /; then
+      if contains "$path" /; then
         rmdir -p "${path%/*}" >/dev/null 2>&1
       fi
     fi
@@ -199,6 +257,7 @@ done
 
 fail=0
 
+# update symlinks
 set -- $install_specs
 while [ $# -ge 2 ]; do
   src=$1
@@ -206,10 +265,10 @@ while [ $# -ge 2 ]; do
   shift 2
 
   # generate the target for the symlink
-  # the symlink should be relative and point to a path in ~/gale
-  target="gale/$src"
+  # the symlink should be relative and point to a path in ~/.gale
+  target=".gale/$src"
   tmp=$dest
-  while str_contains "$tmp" /; do
+  while contains "$tmp" /; do
     target="../$target"
     tmp=${tmp#*/}
   done
@@ -217,36 +276,35 @@ while [ $# -ge 2 ]; do
   # compare the expected target to the actual target
   if real_target=$(readlink "$dest"); then
     if [ "$real_target" = "$target" ]; then
-      if [ -n "$verbose" ]; then
+      if verbose; then
         msg "Skipping: $dest"
       fi
     else
       msg "Correcting symlink: $dest -> $target"
-      if [ -z "$dryrun" ]; then
+      if ! dryrun; then
         ln -sfT "$target" "$dest" || fail=1
       fi
     fi
   else
     msg "Creating symlink: $dest -> $target"
-    if [ -z "$dryrun" ]; then
-      if str_contains "$dest" /; then
+    if ! dryrun; then
+      if contains "$dest" /; then
         mkdir -p "${dest%/*}"
       fi
       ln -sT "$target" "$dest" || fail=1
     fi
   fi
 
-  if ! str_contains " $gale_log_paths " " $dest "; then
+  if ! contains " $gale_log_paths " " $dest "; then
     need_update_log=1
   fi
 done
 
+# update log if necessary
 if [ "$need_update_log" ]; then
   msg "Updating log..."
-  if [ -z "$dryrun" ]; then
-    if str_contains "$gale_log_file" /; then
-      mkdir -p "${gale_log_file%/*}"
-    fi
+  if ! dryrun; then
+    mkdir -p "$(dirname "$gale_log_file")"
     printf '%s\n' $install_paths > "$gale_log_file.tmp"
     mv "$gale_log_file.tmp" "$gale_log_file"
   fi
