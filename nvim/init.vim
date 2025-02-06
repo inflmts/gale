@@ -130,6 +130,9 @@ nnoremap <C-T> <Cmd>NERDTreeToggle<CR>
 inoremap <expr> <C-N> !pumvisible() && !empty(&omnifunc) ? "\<C-X>\<C-O>" : "\<C-N>"
 inoremap <expr> <C-P> !pumvisible() && !empty(&omnifunc) ? "\<C-X>\<C-O>" : "\<C-P>"
 
+" nvim diagnostics
+nnoremap # <Cmd>lua vim.diagnostic.open_float()<CR>
+
 "=======================================
 " AUTOCOMMANDS
 
