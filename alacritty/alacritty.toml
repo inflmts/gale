@@ -1,7 +1,5 @@
 #
-# Alacritty configuration file
-#
-# This file is part of Gale.
+# gale::link ~/.config/alacritty/alacritty.toml
 #
 # Alacritty is a fast, cross-platform, OpenGL terminal emulator.
 #

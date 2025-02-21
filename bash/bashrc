@@ -1,8 +1,6 @@
 #
 # gale::link ~/.bashrc
 #
-# This file is part of Gale.
-#
 
 # quit unless interactive
 # apparently needed for rcp or scp or something
@@ -17,10 +15,14 @@ msg() { printf >&2 '%s\n' "$*"; }
 warn() { printf >&2 '\033[1;33mwarning:\033[0m %s\n' "$*"; }
 err() { printf >&2 '\033[1;31merror:\033[0m %s\n' "$*"; }
 
-# try to figure out 256 color support based on $TERM
+# assume anything that isn't lame has 256 color support
 case ${TERM-} in
-  dumb|linux) gale_256color= ;;
-  *) gale_256color=1 ;;
+  linux|dumb|"")
+    gale_colorful=
+    ;;
+  *)
+    gale_colorful=1
+    ;;
 esac
 
 # setup colors for ls (and tree)
@@ -29,8 +31,9 @@ if gale_dircolors=$(dircolors 2>/dev/null); then
 fi
 unset gale_dircolors
 
+################################################################################
 # MENU
-#=======================================
+################################################################################
 
 gale_menu() {
   local tty is_vt options key
@@ -103,14 +106,15 @@ gale_menu_confirm() {
 bind -x '"\e[15~": gale_menu'
 bind -x '"\e[[E": gale_menu'
 
+################################################################################
 # FUNCTIONS & ALIASES
-#=======================================
+################################################################################
 
-# __gale_spawn <command> [<args>...]
+# gale_spawn <command> [<args>...]
 #
 #   Fork a command using setsid(1).
 #
-__gale_spawn() {
+gale_spawn() {
   local path
   if ! path=$(type -P "$1") &>/dev/null; then
     err "command not found: $1"
@@ -123,26 +127,26 @@ __gale_spawn() {
 alias grep='grep --color=auto'
 alias md='mkdir -pv'
 
-__gale_ls() {
-  LC_COLLATE=C command ls -h --group-directories-first --color=auto "$@"
+gale_ls() {
+  LC_COLLATE=C command ls -hv --group-directories-first --color=auto "$@"
 }
 
-alias ls='__gale_ls'
-alias lsa='__gale_ls -A'
-alias ll='__gale_ls -l'
-alias lla='__gale_ls -lA'
+alias ls='gale_ls'
+alias lsa='gale_ls -A'
+alias ll='gale_ls -l'
+alias lla='gale_ls -lA'
 
-__gale_tree() {
+gale_tree() {
   LC_COLLATE=C command tree --dirsfirst "$@"
 }
 
-alias tree='__gale_tree'
-alias treea='__gale_tree -a'
-alias treed='__gale_tree -d'
-alias treeda='__gale_tree -da'
+alias tree='gale_tree'
+alias treea='gale_tree -a'
+alias treed='gale_tree -d'
+alias treeda='gale_tree -da'
 
 clock() {
-  date +$'\n    %a %Y/%m/%d \033[1m%I:%M %p\033[0m %Z\n'
+  printf '%(%a %m/%d/%Y)T \033[1m%(%I:%M %p)T\033[0m\n'
 }
 
 bind -x '"\C-t": clock'
@@ -165,7 +169,7 @@ f() {
     err "expected command"
     return 1
   fi
-  __gale_spawn "$@"
+  gale_spawn "$@"
 }
 
 fx() {
@@ -173,7 +177,7 @@ fx() {
     err "expected command"
     return 1
   fi
-  __gale_spawn "$@" && exit
+  gale_spawn "$@" && exit
 }
 
 ## BLOCK DEVIES
@@ -201,7 +205,7 @@ cdnew() {
   fi
 }
 
-__gale_resolve_block_device() {
+gale_resolve_block_device() {
   case $1 in
     l=*)
       echo "/dev/disk/by-label/${1#*=}"
@@ -229,7 +233,7 @@ udmount() {
     msg 'usage: udmount <source>'
     return 1
   fi
-  source=$(__gale_resolve_block_device "$1") || return
+  source=$(gale_resolve_block_device "$1") || return
   udisksctl mount -b "$source"
 }
 
@@ -243,7 +247,7 @@ udumount() {
     msg 'usage: udeject <source>'
     return 1
   fi
-  source=$(__gale_resolve_block_device "$1") || return
+  source=$(gale_resolve_block_device "$1") || return
   udisksctl unmount -b "$source"
 }
 
@@ -268,24 +272,22 @@ lspath() {
 #   Sorts and lists exported environment variables.
 #
 lsenv() {
-  env \
-      | LC_ALL=C sort -t '=' -k 1 \
-      | sed $'s/^/\033[1m/; s/=/=\033[0m/'
+  env | LC_ALL=C sort -t '=' -k 1
 }
 
 # open files with xdg-open
 open() {
-  __gale_spawn xdg-open "$@"
+  gale_spawn xdg-open "$@"
 }
 
 # open firefox
 ff() {
-  __gale_spawn firefox "$@"
+  gale_spawn firefox "$@"
 }
 
 # open a new window in firefox
 ffnw() {
-  __gale_spawn firefox --new-window "$@"
+  gale_spawn firefox --new-window "$@"
 }
 
 cdcode() {
@@ -297,52 +299,40 @@ adate() {
   date +%Y%m%d-%H%M%S "$@"
 }
 
-# BANNER
-#=======================================
-
-echo $'\033[7m'"  Bash $BASH_VERSION on ${TERM:-unknown} | Powered by Gale  "$'\033[0m'
-
-# PROMPT
-#=======================================
-
-# if the last command exited unsuccessfully, show the exit code
-__gale_show_excode() {
-  local code="$?"
-  local esc=$'\033'
-  if [[ $code -gt 0 ]]; then
-    if [[ $gale_256color ]]; then
-      echo "$esc[0;38;5;203;48;5;88m exit $code $esc[0m"
-    else
-      echo "$esc[0;31m[exit $code]$esc[0m"
-    fi
-  fi
+r() {
+  echo "Reloading initialization script..."
+  source ~/.bashrc
 }
 
-# update the terminal title
-__gale_update_title() {
+################################################################################
+# PROMPT
+################################################################################
+
+before_prompt() {
+  local status=$?
+  if [[ $status -ne 0 ]]; then
+    gale_exit_status=" $status "
+  else
+    gale_exit_status=""
+  fi
+  # get ourselves on a new line
+  printf '\e[7m%%\e[0m%'$((COLUMNS-1))'s\r'
+  # update terminal title
   printf '\033]2;%s\007' "${USER}@${HOSTNAME%%.*} ${PWD/#$HOME/\~}"
 }
 
-PS1=
-PS1+='\[\e[0;1m\]'
+PROMPT_COMMAND=before_prompt
 
-# autodetect nnn
-if [[ ${NNNLVL-} ]]; then
-  if [[ $gale_256color ]]; then
-    PS1+='\[\e[37;45m\] nnn($NNNLVL) '
-  else
-    PS1+='\[\e[35m\]nnn($NNNLVL) '
-  fi
-fi
-
-if [[ $gale_256color ]]; then
-  PS1+='\[\e[37;48;5;196m\] \u@\h '
-  PS1+='\[\e[48;5;124m\] \w '
-  PS1+='\[\e[22;38;5;203;48;5;88m\]\$\[\e[0m\] '
+if [[ $gale_colorful ]]; then
+  PS1='\[\e[0;1;37;48;5;196m\] \u@\h '
+  PS1=$PS1'\[\e[48;5;124m\] \w '
+  PS1=$PS1'\[\e[22;38;5;203;48;5;88m\]$gale_exit_status\[\e[0m\]'
+  PS1=$PS1'\n\[\e[38;5;167m\]\$\[\e[0m\] '
 else
-  PS1+='\[\e[31m\]\u@\h \[\e[34m\]\w \[\e[0m\]\$ '
+  PS1='\[\e[0;1;41m\] \u@\h '
+  PS1=$PS1'\[\e[44m\] \w '
+  PS1=$PS1'\[\e[0;47;31m\]$gale_exit_status\[\e[0m\]'
+  PS1=$PS1'\n\$ '
 fi
-
-PROMPT_COMMAND=(__gale_show_excode __gale_update_title)
 
 # vim:ft=bash
