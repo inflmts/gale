@@ -1,35 +1,20 @@
 "###############################################################################
 "
-"   -------------------------------------
-"   init.vim - neovim initialization file
-"   -------------------------------------
-"
-"   This file is part of Gale.
+"   gale::link .config/nvim/init.vim
 "
 "   This works on both Linux and Windows.
 "
 "###############################################################################
 
-" identify the Gale root directory
-if !exists('g:gale_root')
-  if isdirectory($HOME .. '/.gale')
-    let g:gale_root = $HOME .. '/.gale'
-  else
-    echoerr "Failed to locate Gale root directory"
-  endif
-endif
-
 "=======================================
 " PLUGINS
 
 " load vim-plug if available
-if exists('g:gale_root')
-  runtime autoload/plug.vim
-  if exists('*plug#begin')
-    call plug#begin()
-    execute 'source ' .. fnameescape(g:gale_root .. '/nvim/plug.vim')
-    call plug#end()
-  endif
+runtime autoload/plug.vim
+if exists('*plug#begin')
+  call plug#begin()
+  source ~/.config/nvim/plug.vim
+  call plug#end()
 endif
 
 "=======================================

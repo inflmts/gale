@@ -20,8 +20,10 @@
 /*** LOGGING *********************************************************** {{{1 */
 
 #ifdef __GNUC__
+# define UNUSED __attribute__((unused))
 # define PRINTF(i, j) __attribute__((format(printf, i, j)))
 #else
+# define UNUSED
 # define PRINTF(i, j)
 #endif
 
@@ -30,7 +32,7 @@ static void msg(const char *prefix, const char *format, ...)
 {
   va_list ap;
   va_start(ap, format);
-  fputs(prefix, stderr);
+  if (prefix) fputs(prefix, stderr);
   vfprintf(stderr, format, ap);
   putc('\n', stderr);
   va_end(ap);
@@ -41,29 +43,38 @@ static void msg_sys(const char *prefix, const char *format, ...)
 {
   va_list ap;
   va_start(ap, format);
-  fputs(prefix, stderr);
+  if (prefix) fputs(prefix, stderr);
   vfprintf(stderr, format, ap);
   fprintf(stderr, ": %s\n", strerror(errno));
   va_end(ap);
 }
 
-static const char *warnprefix = "warning: ";
-static const char *errprefix = "error: ";
-static const char *debugprefix = "debug: ";
+static const char *prefix_warn = "warning: ";
+static const char *prefix_err = "error: ";
+static const char *prefix_debug = "debug: ";
+static const char *prefix_creating_symlink = "creating symlink: ";
 
-#define MSG(...) msg("", __VA_ARGS__)
-#define WARN(...) msg(warnprefix, __VA_ARGS__)
-#define ERR(...) msg(errprefix, __VA_ARGS__)
-#define ERR_SYS(...) msg_sys(errprefix, __VA_ARGS__)
-#define DIE(n, ...) (msg(errprefix, __VA_ARGS__), exit(n))
-#define DIE_SYS(n, ...) (msg_sys(errprefix, __VA_ARGS__), exit(n))
+static void enable_colors(void)
+{
+  prefix_warn = "\033[1;33mwarning:\033[0m ";
+  prefix_err = "\033[1;31merror:\033[0m ";
+  prefix_debug = "\033[1;36mdebug:\033[0m ";
+  prefix_creating_symlink = "\033[1;32mcreating symlink:\033[0m ";
+}
+
+#define MSG(...) msg(NULL, __VA_ARGS__)
+#define WARN(...) msg(prefix_warn, __VA_ARGS__)
+#define ERR(...) msg(prefix_err, __VA_ARGS__)
+#define ERR_SYS(...) msg_sys(prefix_err, __VA_ARGS__)
+#define DIE(n, ...) (msg(prefix_err, __VA_ARGS__), exit(n))
+#define DIE_SYS(n, ...) (msg_sys(prefix_err, __VA_ARGS__), exit(n))
 #ifndef NDEBUG
-# define DEBUG(...) msg(debugprefix, __VA_ARGS__)
+# define DEBUG(...) msg(prefix_debug, __VA_ARGS__)
 #else
 # define DEBUG(...) (void)0
 #endif
 
-PRINTF(3, 4)
+UNUSED PRINTF(3, 4)
 static void indentf(FILE *f, unsigned int indent, const char *format, ...)
 {
   va_list ap;
@@ -104,10 +115,11 @@ static void *xrealloc(void *p, size_t size)
 
 /*** AVL *************************************************************** {{{1 */
 
-// Simple AVL Tree
+// Simple AVL tree implementation
 
 struct avl_data
 {
+  const char *key;
   void *left;
   void *right;
   int bf;
@@ -116,41 +128,40 @@ struct avl_data
 struct avl
 {
   void *head;
-  ptrdiff_t koff;
-  ptrdiff_t doff;
+  ptrdiff_t offset;
   void **stack;
   unsigned int stksize;
   unsigned int stkcap;
 };
 
-static void avl_init_data(struct avl_data *ad)
+static void avl_init_data(struct avl_data *ad, const char *key)
 {
+  ad->key = key;
   ad->left = NULL;
   ad->right = NULL;
   ad->bf = 0;
 }
 
-static void avl_init_values(struct avl *avl, ptrdiff_t koff, ptrdiff_t doff)
+static void avl_init_impl(struct avl *avl, ptrdiff_t offset)
 {
   avl->head = NULL;
-  avl->koff = koff;
-  avl->doff = doff;
+  avl->offset = offset;
   avl->stack = xnewv(32, void*);
   avl->stksize = 0;
   avl->stkcap = 32;
 }
 
-#define avl_init(avl, T, K, D) \
-  avl_init_values(avl, offsetof(T, K), offsetof(T, D))
+#define avl_init(avl, type, ad) avl_init_impl(avl, offsetof(type, ad))
 
-#define AVL_KEY(avl, node) (*(const char**)((char*)(node) + (avl)->koff))
-#define AVL_DATA(avl, node) ((struct avl_data*)((char*)(node) + (avl)->doff))
+#define AVL_DATA(avl, node) ((struct avl_data*)((char*)(node) + (avl)->offset))
+#define AVL_KEY(avl, node) AVL_DATA(avl, node)->key
 #define AVL_LEFT(avl, node) AVL_DATA(avl, node)->left
 #define AVL_RIGHT(avl, node) AVL_DATA(avl, node)->right
 #define AVL_BF(avl, node) AVL_DATA(avl, node)->bf
-#define AVL_STKPUSH(avl, node) ((avl)->stksize == (avl)->stkcap \
-    && xresize((avl)->stack, (avl)->stkcap *= 2, void*), \
-  (avl)->stack[(avl)->stksize++] = node)
+#define AVL_STKPUSH(avl, node) do { \
+  if ((avl)->stksize == (avl)->stkcap) \
+    xresize((avl)->stack, (avl)->stkcap *= 2, void*); \
+  (avl)->stack[(avl)->stksize++] = node; } while (0)
 #define AVL_STKPOP(avl) avl->stack[--avl->stksize]
 
 static void *avl_iter_helper(struct avl *avl, void *node)
@@ -166,25 +177,28 @@ static void *avl_iter_helper(struct avl *avl, void *node)
   return NULL;
 }
 
-#define AVL_ITER(avl, T, node) \
-  for (T *node = ((avl)->stksize = 0, (avl)->head); \
-       node = avl_iter_helper(avl, node); \
+#define AVL_ITER(avl, type, node) \
+  for (type *node = ((avl)->stksize = 0, (avl)->head); \
+       (node = avl_iter_helper(avl, node)); \
        node = AVL_RIGHT(avl, node))
 
-static void *avl_get(struct avl *avl, const char *key)
-{
-  void *node = avl->head;
-  while (node) {
-    int diff = strcmp(key, AVL_KEY(avl, node));
-    if (diff == 0)
-      return node;
-    if (diff < 0)
-      node = AVL_LEFT(avl, node);
-    else
-      node = AVL_RIGHT(avl, node);
-  }
-  return NULL;
-}
+// TODO: post-order traversal
+#define AVL_DESTROY(avl, type, node) if (0)
+
+//static void *avl_get(struct avl *avl, const char *key)
+//{
+//  void *node = avl->head;
+//  while (node) {
+//    int diff = strcmp(key, AVL_KEY(avl, node));
+//    if (diff == 0)
+//      return node;
+//    if (diff < 0)
+//      node = AVL_LEFT(avl, node);
+//    else
+//      node = AVL_RIGHT(avl, node);
+//  }
+//  return NULL;
+//}
 
 static void **avl_insert(struct avl *avl, const char *key)
 {
@@ -426,7 +440,8 @@ static void **avl_insert(struct avl *avl, const char *key)
 
 /*** CF TYPES ********************************************************** {{{1 */
 
-enum {
+enum cf_command_type
+{
   CF_LINK
 };
 
@@ -439,52 +454,58 @@ struct cf_block
   unsigned int cmdcap;
 };
 
-struct cf
+struct cf_command_header
 {
-  struct cf_block block;
+  enum cf_command_type type;
+  unsigned int lineno;
 };
 
-struct cf_link_command
+struct cf_command_link
 {
-  int type;
+  struct cf_command_header h;
   char *path;
 };
 
 union cf_command
 {
-  int type;
-  struct cf_link_command link;
+  struct cf_command_header h;
+  struct cf_command_link link;
 };
 
-/*** CF FUNCTIONS ****************************************************** {{{1 */
+struct cf
+{
+  struct cf_block block;
+};
+
+/*** CF UTILITIES ****************************************************** {{{1 */
 
 static void cf_init_block(struct cf_block *block)
 {
-  block->cmds = xnewv(4, union cf_command*);
+  block->cmds = NULL;
   block->cmdcnt = 0;
-  block->cmdcap = 4;
+  block->cmdcap = 0;
 }
 
 static void cf_free_block(struct cf_block *block)
 {
+  while (block->cmdcnt) {
+    union cf_command *cmd = block->cmds[--block->cmdcnt];
+    switch (cmd->h.type) {
+      case CF_LINK:
+        free(cmd->link.path);
+        break;
+    }
+  }
   free(block->cmds);
 }
 
 static void cf_add_command(struct cf_block *block, union cf_command *cmd)
 {
   if (block->cmdcnt >= block->cmdcap) {
-    block->cmdcap <<= 1;
+    block->cmdcap = block->cmdcap ? block->cmdcap * 2 : 4;
     xresize(block->cmds, block->cmdcap, union cf_command*);
   }
   block->cmds[block->cmdcnt++] = cmd;
-}
-
-static void cf_add_link(struct cf_block *block, char *path)
-{
-  xdefine(cmd, struct cf_link_command);
-  cmd->type = CF_LINK;
-  cmd->path = path;
-  cf_add_command(block, (union cf_command*)cmd);
 }
 
 static struct cf *cf_new()
@@ -510,19 +531,19 @@ static void cf_destroy(struct cf *cf)
 #define ISDIRECTIVE(c) ISLOWER(c)
 #define ISPATH(c) (ISALNUM(c) || (c) == '.' || (c) == '-' || (c) == '_')
 
-//#define CF_ERR(fmt, ...) ERR("line %u: " fmt, cf_lineno, ##__VA_ARGS__)
-
 struct cf_parser
 {
-  const char *cur;
-  const char *end;
+  struct cf *cf;
   unsigned int lineno;
   struct cf_block *block;
+  const char *errmsg;
+  const char *cur;
+  const char *end;
 };
 
 #define s ps->cur
 
-static int cf_expect_path(struct cf_parser *ps, const char **path, size_t *len)
+static int cf_parse_path(struct cf_parser *ps, const char **path, size_t *len)
 {
   *path = s;
   do {
@@ -537,7 +558,7 @@ static int cf_expect_path(struct cf_parser *ps, const char **path, size_t *len)
   return 0;
 }
 
-static int cf_expect_space(struct cf_parser *ps)
+static int cf_parse_space(struct cf_parser *ps)
 {
   if (!ISSPACE(*s)) return -1;
   do ++s;
@@ -545,18 +566,22 @@ static int cf_expect_space(struct cf_parser *ps)
   return 0;
 }
 
-static int cf_expect_eol(struct cf_parser *ps)
+static int cf_parse_eol(struct cf_parser *ps)
 {
   while (ISSPACE(*s))
     ++s;
   if (*s == '\n')
-    return 0;
+    goto newline;
   if (*s == '#') {
     do ++s;
     while (*s != '\n');
-    return 0;
+    goto newline;
   }
   return -1;
+newline:
+  ++s;
+  ++ps->lineno;
+  return 0;
 }
 
 static int cf_parse_link_nospace(struct cf_parser *ps)
@@ -566,18 +591,22 @@ static int cf_parse_link_nospace(struct cf_parser *ps)
 
   const char *path;
   size_t pathlen;
-  if (cf_expect_path(ps, &path, &pathlen)) return -1;
-  if (cf_expect_eol(ps)) return -1;
+  if (cf_parse_path(ps, &path, &pathlen)) return -1;
+  if (cf_parse_eol(ps)) return -1;
 
   char *pathcopy = memcpy(xmalloc(pathlen + 1), path, pathlen);
   pathcopy[pathlen] = '\0';
-  cf_add_link(ps->block, pathcopy);
+  xdefine(cmd, struct cf_command_link);
+  cmd->h.type = CF_LINK;
+  cmd->h.lineno = ps->lineno;
+  cmd->path = pathcopy;
+  cf_add_command(ps->block, (union cf_command *)cmd);
   return 0;
 }
 
 static int cf_parse_link(struct cf_parser *ps)
 {
-  return cf_expect_space(ps) || cf_parse_link_nospace(ps);
+  return cf_parse_space(ps) || cf_parse_link_nospace(ps);
 }
 
 static int cf_parse_command(struct cf_parser *ps)
@@ -599,109 +628,70 @@ static int cf_parse_command(struct cf_parser *ps)
   if (len == 4 && !memcmp(name, "link", 4))
     return cf_parse_link(ps);
 
+  ps->errmsg = "invalid command";
   return -1;
 }
 
 static int cf_parse_main(struct cf_parser *ps)
 {
-newline:
-  ++s;
+begin:
   ++ps->lineno;
   if (s >= ps->end)
     return 0;
 
-body:
-  if (*s == '\n') goto newline;
+mid:
+  if (*s == '\n') {
+    ++s;
+    goto begin;
+  }
 
   // find command string
-  if (*(s++) != 'g') goto body;
-  if (*s     != 'a') goto body;
-  if (*(++s) != 'l') goto body;
-  if (*(++s) != 'e') goto body;
-  if (*(++s) != ':') goto body;
-  if (*(++s) != ':') goto body;
+  if (*(s++) != 'g') goto mid;
+  if (*s     != 'a') goto mid;
+  if (*(++s) != 'l') goto mid;
+  if (*(++s) != 'e') goto mid;
+  if (*(++s) != ':') goto mid;
+  if (*(++s) != ':') goto mid;
   ++s;
 
-  if (cf_parse_command(ps)) return -1;
-  goto newline;
+  if (cf_parse_command(ps))
+    return -1;
+  goto begin;
 }
 
-static struct cf *cf_parse(const char *filename, const char *buf, size_t len)
+static void cf_parse_init(struct cf_parser *ps)
 {
-  struct cf *cf = cf_new();
-  struct cf_parser ps;
-  ps.cur = buf - 1;
-  ps.end = buf + len;
-  ps.lineno = 0;
-  ps.block = &cf->block;
+  ps->cf = cf_new();
+  ps->lineno = 0;
+  ps->block = &ps->cf->block;
+  ps->errmsg = "syntax error";
+}
 
-  if (cf_parse_main(&ps)) {
-    ERR("%s: line %u: syntax error", filename, ps.lineno);
-    cf_destroy(cf);
-    return NULL;
+static void cf_parse_abort(struct cf_parser *ps)
+{
+  cf_destroy(ps->cf);
+}
+
+static int cf_parse(struct cf_parser *ps, const char *buf, size_t len)
+{
+  ps->cur = buf;
+  ps->end = buf + len;
+
+  if (cf_parse_main(ps)) {
+    ERR("line %u: %s", ps->lineno, ps->errmsg);
+    return -1;
   }
-  return cf;
+  return 0;
+}
+
+static struct cf *cf_parse_end(struct cf_parser *ps)
+{
+  return ps->cf;
 }
 
 #undef s
 
-/*** CF RESOLVER ******************************************************* {{{1 */
-
-struct action
-{
-  char *path;
-  struct avl_data ad;
-};
-
-struct plan
-{
-  struct avl actions;
-};
-
-static void cf_resolve(struct cf_block *block)
-{
-  for (unsigned int i = 0; i < block->cmdcnt; i++) {
-    union cf_command *cmd = block->cmds[i];
-    switch (cmd->type) {
-      case CF_LINK:
-        break;
-    }
-  }
-}
-
-/*** CF DEBUG ********************************************************** {{{1 */
-
-static void cf_dump_command(union cf_command *cmd, FILE *f, int indent)
-{
-  switch (cmd->type) {
-    case CF_LINK:
-      indentf(f, indent, "link ~/%s", cmd->link.path);
-      break;
-  }
-}
-
-static void cf_dump_block(struct cf_block *block, FILE *f, int indent)
-{
-  if (block->cmdcnt) {
-    indentf(f, indent, "---");
-    for (unsigned int i = 0; i < block->cmdcnt; i++)
-      cf_dump_command(block->cmds[i], f, indent);
-    indentf(f, indent, "---");
-  } else {
-    indentf(f, indent, "(none)");
-  }
-}
-
-static void cf_dump(struct cf *cf, FILE *f, int indent)
-{
-  cf_dump_block(&cf->block, f, indent);
-}
-
-/*** CONFIG ************************************************************ {{{1 */
-
-#define CONFIG_MTIME_NONE 0
-
-/*-- conffile --*/
+/*** CONFIG TYPES ****************************************************** {{{1 */
 
 struct conffile
 {
@@ -710,35 +700,7 @@ struct conffile
   struct cf *cf;
 };
 
-static void conffile_init(struct conffile *file)
-{
-  file->size = 0;
-  file->mtime = CONFIG_MTIME_NONE;
-  file->cf = NULL;
-}
-
-static void conffile_free(struct conffile *file)
-{
-  if (file->cf)
-    cf_destroy(file->cf);
-}
-
-static void conffile_dump(struct conffile *file, FILE *f, int indent, const char *name)
-{
-  indentf(f, indent, "%s", name);
-  if (file->cf)
-    cf_dump(file->cf, f, indent + 2);
-}
-
-/*-- confdir --*/
-
 #define CONFDIR_ROOT 0x1
-
-enum {
-  CONFENT_NONE,
-  CONFENT_FILE,
-  CONFENT_DIR
-};
 
 struct confdir
 {
@@ -747,10 +709,16 @@ struct confdir
   struct avl entries;
 };
 
+enum confent_type
+{
+  CONFENT_NONE,
+  CONFENT_FILE,
+  CONFENT_DIR
+};
+
 struct confent
 {
-  int type;
-  //int fresh;
+  enum confent_type type;
   char *name;
   struct avl_data ad;
   union {
@@ -759,11 +727,26 @@ struct confent
   };
 };
 
+struct config
+{
+  struct confdir root;
+  int bad;
+  int need_update_cache;
+};
+
+/*** CONFIG UTILITIES ************************************************** {{{1 */
+
+static void conffile_free(struct conffile *file)
+{
+  if (file->cf)
+    cf_destroy(file->cf);
+}
+
 static void confdir_init(struct confdir *dir)
 {
-  dir->mtime = CONFIG_MTIME_NONE;
+  dir->mtime = 0;
   dir->flags = 0;
-  avl_init(&dir->entries, struct confent, name, ad);
+  avl_init(&dir->entries, struct confent, ad);
 }
 
 static void confdir_free(struct confdir *dir)
@@ -771,6 +754,8 @@ static void confdir_free(struct confdir *dir)
   AVL_ITER(&dir->entries, struct confent, ent) {
     free(ent->name);
     switch (ent->type) {
+      case CONFENT_NONE:
+        break;
       case CONFENT_FILE:
         conffile_free(&ent->file);
         break;
@@ -781,34 +766,6 @@ static void confdir_free(struct confdir *dir)
   }
 }
 
-static void confdir_dump(struct confdir *dir, FILE *f, int indent, const char *name)
-{
-  indentf(f, indent, "%s/", name);
-  indent += 2;
-  AVL_ITER(&dir->entries, struct confent, ent) {
-    switch (ent->type) {
-      case CONFENT_NONE:
-        indentf(f, indent, "%s (unknown)", ent->name);
-        break;
-      case CONFENT_FILE:
-        conffile_dump(&ent->file, f, indent, ent->name);
-        break;
-      case CONFENT_DIR:
-        confdir_dump(&ent->dir, f, indent, ent->name);
-        break;
-    }
-  }
-}
-
-/*-- config --*/
-
-struct config
-{
-  struct confdir root;
-  int bad;
-  int need_update_cache;
-};
-
 static void config_init(struct config *conf)
 {
   confdir_init(&conf->root);
@@ -817,14 +774,12 @@ static void config_init(struct config *conf)
   conf->bad = 0;
 }
 
-//static void config_free(struct config *conf);
+//static void config_free(struct config *conf)
+//{
+//  confdir_free(&conf->root);
+//}
 
-static void config_dump(struct config *conf, FILE *f)
-{
-  return confdir_dump(&conf->root, f, 0, ".gale");
-}
-
-/*** LOADER ************************************************************ {{{1 */
+/*** CONFIG LOADER ***************************************************** {{{1 */
 
 struct load_state
 {
@@ -835,55 +790,83 @@ struct load_state
   size_t pathcap;
 };
 
-static int load_file(struct load_state *ls, struct conffile *file, struct stat *st)
+static struct cf *load_file(const char *path, size_t len)
 {
-  if (file->size == st->st_size && file->mtime == st->st_mtime && file->cf)
-    // nothing changed, the version in cache is correct
-    return 0;
+  DEBUG("loading file: %s", path);
 
-  DEBUG("reading file: %s", ls->path);
+  int fd = open(path, O_RDONLY);
+  if (fd < 0) {
+    ERR_SYS("failed to open '%s'", path);
+    return NULL;
+  }
+
+  struct cf *cf = NULL;
+  char *buf = xmalloc(len + 1);
+  char *p = buf;
+  while (p < buf + len) {
+    ssize_t readsize = read(fd, p, buf + len - p);
+    if (readsize < 0) {
+      ERR_SYS("failed to read '%s'", path);
+      goto finish;
+    }
+    if (readsize == 0) {
+      ERR("'%s' shrank", path);
+      goto finish;
+    }
+    p += readsize;
+  }
+
+  close(fd);
+  fd = -1;
+
+  if (buf[len - 1] != '\n')
+    buf[len++] = '\n';
+
+  struct cf_parser ps;
+  cf_parse_init(&ps);
+  if (cf_parse(&ps, buf, len)) {
+    cf_parse_abort(&ps);
+    goto finish;
+  }
+
+  cf = cf_parse_end(&ps);
+
+finish:
+  free(buf);
+  if (fd >= 0)
+    close(fd);
+  return cf;
+}
+
+static int update_file(struct load_state *ls, struct conffile *file,
+                       struct stat *st, enum confent_type old_type)
+{
+  if (old_type == CONFENT_FILE) {
+    if (file->size == st->st_size && file->mtime == st->st_mtime) {
+      // nothing changed, the data in cache is correct
+      // ...although if the file is bad still cause the install to abort
+      if (!file->cf)
+        ls->conf->bad = 1;
+      return 0;
+    }
+    if (file->cf)
+      cf_destroy(file->cf);
+  }
+
   file->size = st->st_size;
   file->mtime = st->st_mtime;
-  if (file->cf) {
-    cf_destroy(file->cf);
-    file->cf = NULL;
-  }
-  ls->conf->need_update_cache = 1;
-
-  int fd = open(ls->path, O_RDONLY);
-  if (fd < 0) {
-    ERR_SYS("failed to open '%s'", ls->path);
-    return -1;
-  }
-
-  size_t size = file->size;
-  char *buf = xmalloc(size + 1);
-  char *s = buf;
-  while (s < buf + size) {
-    ssize_t readsize = read(fd, s, buf + size - s);
-    if (readsize < 0) {
-      ERR_SYS("read");
-      close(fd);
-      free(buf);
-      return -1;
-    }
-    s += readsize;
-  }
-  close(fd);
-
-  // append a trailing newline if necessary
-  if (buf[size - 1] != '\n')
-    buf[size++] = '\n';
-
-  file->cf = cf_parse(ls->pathbase, buf, size);
+  file->cf = load_file(ls->path, st->st_size);
+  if (file->cf || old_type != CONFENT_NONE)
+    ls->conf->need_update_cache = 1;
   if (!file->cf)
     ls->conf->bad = 1;
-  free(buf);
   return 0;
 }
 
-static int scan_dir(struct confdir *dir, const char *path)
+static int load_dir(struct confdir *dir, const char *path)
 {
+  DEBUG("reading directory: %s", path);
+
   struct dirent *dent;
   DIR *d = opendir(path);
   if (!d) {
@@ -911,16 +894,9 @@ static int scan_dir(struct confdir *dir, const char *path)
     xdefine(ent, struct confent);
     ent->type = CONFENT_NONE;
     ent->name = strdup(name);
-    avl_init_data(&ent->ad);
-    //ent->fresh = 1;
+    avl_init_data(&ent->ad, ent->name);
     *slot = ent;
   }
-
-  // find deleted entries
-  //for (struct node *node = dir->entries.head; node; node = node->next) {
-  //  struct confent *ent = container_of(node, struct confent, node);
-  //  if (!ent.fresh)
-  //}
 
   if (errno) {
     ERR_SYS("readdir");
@@ -932,18 +908,18 @@ static int scan_dir(struct confdir *dir, const char *path)
   return 0;
 }
 
-static int load_dir(struct load_state *ls, struct confdir *dir, struct stat *st)
+static int update_dir(struct load_state *ls, struct confdir *dir,
+                      struct stat *st, enum confent_type old_type)
 {
-  if (dir->mtime != st->st_mtime) {
+  if (old_type != CONFENT_DIR || dir->mtime != st->st_mtime) {
     // update directory listing
-    DEBUG("reading directory: %s", ls->path);
-    if (scan_dir(dir, ls->path))
-      return -1;
     dir->mtime = st->st_mtime;
     ls->conf->need_update_cache = 1;
+    if (load_dir(dir, ls->path))
+      return -1;
   }
 
-  int ret = -1;
+  int ret = 0;
   size_t pathlen = ls->pathlen;
   ls->path[pathlen] = '/';
 
@@ -957,41 +933,66 @@ static int load_dir(struct load_state *ls, struct confdir *dir, struct stat *st)
     struct stat st;
     if (stat(ls->path, &st)) {
       ERR_SYS("failed to stat '%s'", ls->path);
-      goto finish;
+      ret = -1;
+      continue;
     }
 
     if (S_ISREG(st.st_mode)) {
-      // conffile
-      if (ent->type == CONFENT_DIR)
-        confdir_free(&ent->dir);
-      if (ent->type != CONFENT_FILE) {
-        ent->type = CONFENT_FILE;
-        conffile_init(&ent->file);
+      switch (ent->type) {
+        case CONFENT_NONE:
+          break;
+        case CONFENT_FILE:
+          break;
+        case CONFENT_DIR:
+          confdir_free(&ent->dir);
+          break;
       }
-      if (load_file(ls, &ent->file, &st))
-        goto finish;
-    } else if (S_ISDIR(st.st_mode)) {
-      // confdir
-      if (ent->type == CONFENT_FILE)
-        conffile_free(&ent->file);
-      if (ent->type != CONFENT_DIR) {
-        ent->type = CONFENT_DIR;
-        confdir_init(&ent->dir);
-      }
-      if (load_dir(ls, &ent->dir, &st))
-        goto finish;
+
+      if (update_file(ls, &ent->file, &st, ent->type))
+        ret = -1;
+      ent->type = CONFENT_FILE;
+      continue;
     }
+
+    if (S_ISDIR(st.st_mode)) {
+      switch (ent->type) {
+        case CONFENT_NONE:
+          confdir_init(&ent->dir);
+          break;
+        case CONFENT_FILE:
+          conffile_free(&ent->file);
+          confdir_init(&ent->dir);
+          break;
+        case CONFENT_DIR:
+          break;
+      }
+
+      if (update_dir(ls, &ent->dir, &st, ent->type))
+        ret = -1;
+      ent->type = CONFENT_DIR;
+      continue;
+    }
+
+    // the file is some other type that we should ignore
+    switch (ent->type) {
+      case CONFENT_NONE:
+        break;
+      case CONFENT_FILE:
+        conffile_free(&ent->file);
+        break;
+      case CONFENT_DIR:
+        confdir_free(&ent->file);
+        break;
+    }
+    ent->type = CONFENT_NONE;
   }
 
-  ret = 0;
-
-finish:
   ls->path[pathlen] = '\0';
   ls->pathlen = pathlen;
   return ret;
 }
 
-static int load_config(struct config *conf)
+static int update_config(struct config *conf)
 {
   struct stat st;
   if (stat(".gale", &st)) {
@@ -1006,51 +1007,44 @@ static int load_config(struct config *conf)
   ls.pathlen = 5;
   ls.pathcap = 256;
 
-  int ret = load_dir(&ls, &conf->root, &st);
+  int ret = update_dir(&ls, &conf->root, &st, 1);
   free(ls.path);
   return ret;
 }
 
 /*** CACHE PARSER ****************************************************** {{{1 */
 
-struct cache_parse_state
+struct cache_parser
 {
   struct config *conf;
   const char *cur;
   const char *end;
   unsigned int lineno;
+  const char *errmsg;
 };
 
 #define s ps->cur
-#define PARSE_ERR(...) (fprintf(stderr, "error: cache: line %u: ", ps->lineno), \
-                        fprintf(stderr, __VA_ARGS__), \
-                        putc('\n', stderr))
 
-static int cache_skip_eol(struct cache_parse_state *ps, int noteol)
+static int cache_parse_eol(struct cache_parser *ps)
 {
-  if (*s != '\n')
-    return noteol;
-newline:
-  ++s;
-  ++ps->lineno;
-  if (s >= ps->end)
-    return -1;
-  if (*s == '\n')
-    goto newline;
-  if (*s == '#') {
-    while (*s != '\n')
-      ++s;
-    goto newline;
+  // skip trailing space
+  while (ISSPACE(*s))
+    ++s;
+  if (*s == '\n') {
+    ++s;
+    return 0;
   }
-  return 0;
+  if (*s == '#') {
+    // comment
+    do ++s;
+    while (*s != '\n');
+    ++s;
+    return 0;
+  }
+  return -1;
 }
 
-static inline int cache_parse_eol(struct cache_parse_state *ps)
-{
-  return cache_skip_eol(ps, -1);
-}
-
-static int cache_parse_space(struct cache_parse_state *ps)
+static int cache_parse_space(struct cache_parser *ps)
 {
   if (!ISSPACE(*s))
     return -1;
@@ -1059,35 +1053,23 @@ static int cache_parse_space(struct cache_parse_state *ps)
   return 0;
 }
 
-static int cache_parse_component(struct cache_parse_state *ps, const char **name, size_t *len)
+static int cache_parse_name(struct cache_parser *ps, char **namep)
 {
-  *name = s;
+  const char *begin = s;
   while (*s == '.')
     ++s;
   if (!ISPATH(*s))
     return -1;
   do ++s;
   while (ISPATH(*s));
-  *len = s - *name;
+  size_t len = s - begin;
+  char *name = memcpy(xmalloc(len + 1), begin, len);
+  name[len] = '\0';
+  *namep = name;
   return 0;
 }
 
-static int cache_parse_path(struct cache_parse_state *ps, const char **path, size_t *len)
-{
-  *path = s;
-  do {
-    while (*s == '.')
-      ++s;
-    if (!ISPATH(*s))
-      return -1;
-    do ++s;
-    while (ISPATH(*s));
-  } while (*s == '/');
-  *len = s - *path;
-  return 0;
-}
-
-static int cache_parse_size(struct cache_parse_state *ps, size_t *sizep)
+static int cache_parse_size(struct cache_parser *ps, size_t *sizep)
 {
   size_t size = 0;
   if (!ISDIGIT(*s))
@@ -1098,7 +1080,7 @@ static int cache_parse_size(struct cache_parse_state *ps, size_t *sizep)
   return 0;
 }
 
-static int cache_parse_mtime(struct cache_parse_state *ps, long long *mtimep)
+static int cache_parse_mtime(struct cache_parser *ps, long long *mtimep)
 {
   int neg = *s == '-';
   long long mtime = 0;
@@ -1114,130 +1096,188 @@ static int cache_parse_mtime(struct cache_parse_state *ps, long long *mtimep)
   return 0;
 }
 
-static int cache_parse_cf_block(struct cache_parse_state *ps, struct cf_block *block)
+static int cache_parse_cf(struct cache_parser *ps, struct cf **cfp)
 {
-  const char *path;
-  char *pathcopy;
-  size_t pathlen;
+  size_t cf_lineno;
+  struct cf_parser cps;
+  cf_parse_init(&cps);
 
-begin:
-  if (*s == 'l') { ++s; goto l; }
-  if (*s == ';') { ++s; return cache_parse_eol(ps); }
+next:
+  if (cache_parse_size(ps, &cf_lineno)) goto done;
+  ++ps->lineno;
+  if (cache_parse_space(ps)) goto fail;
+
+  // synchronize parsers
+  cps.cur = s;
+  cps.end = ps->end;
+  cps.lineno = cf_lineno;
+  if (cf_parse_command(&cps)) {
+    s = cps.cur;
+    ps->errmsg = cps.errmsg;
+    goto fail;
+  }
+
+  s = cps.cur;
+  goto next;
+
+done:
+  if (!(*cfp = cf_parse_end(&cps)))
+    return -1;
+  return 0;
+
+fail:
+  cf_parse_abort(&cps);
   return -1;
-
-l:
-  if (cache_parse_space(ps)) return -1;
-  if (cache_parse_path(ps, &path, &pathlen)) return -1;
-  if (cache_parse_eol(ps)) return -1;
-
-  pathcopy = memcpy(xmalloc(pathlen + 1), path, pathlen);
-  pathcopy[pathlen] = '\0';
-  cf_add_link(block, pathcopy);
-  goto begin;
 }
 
-static int cache_parse_file(struct cache_parse_state *ps, struct conffile *file)
+static int cache_parse_main(struct cache_parser *ps)
 {
-  file->cf = cf_new();
-  return cache_parse_cf_block(ps, &file->cf->block);
-}
-
-static int cache_parse_dir(struct cache_parse_state *ps, struct confdir *dir)
-{
-  const char *name;
-  size_t namelen;
+  int ret = -1;
+  char *name = NULL;
   size_t size;
   long long mtime;
-  char *namecopy;
-  struct confent *ent, **slot;
+  struct confent **slot, *ent;
 
-begin:
-  if (*s == 'f') { ++s; goto f; }
-  if (*s == 'd') { ++s; goto d; }
-  if (*s == '.') { ++s; return cache_parse_eol(ps) && !(dir->flags & CONFDIR_ROOT); }
-  return -1;
+  struct confdir **dirstack = xnewv(8, struct confdir*);
+  unsigned int dircnt = 0;
+  unsigned int dircap = 8;
 
-f:
-  if (cache_parse_space(ps)) return -1;
-  if (cache_parse_component(ps, &name, &namelen)) return -1;
-  if (cache_parse_space(ps)) return -1;
-  if (cache_parse_size(ps, &size)) return -1;
-  if (cache_parse_space(ps)) return -1;
-  if (cache_parse_mtime(ps, &mtime)) return -1;
-  if (cache_parse_eol(ps)) return -1;
+next:
+  ++ps->lineno;
+  if (s >= ps->end) {
+    ps->errmsg = "unexpected end of file";
+    goto fail;
+  }
+  if (dircnt) switch (*s) {
+    case '?': ++s; goto none;
+    case 'f': ++s; goto file;
+    case 'd': ++s; goto dir;
+    case '.': ++s; goto up;
+  } else switch (*s) {
+    case 'r': ++s; goto root;
+  }
+  if (cache_parse_eol(ps)) {
+    ps->errmsg = "invalid command";
+    goto fail;
+  }
+  goto next;
 
-  namecopy = memcpy(xmalloc(namelen + 1), name, namelen);
-  namecopy[namelen] = '\0';
-  slot = (struct confent**)avl_insert(&dir->entries, namecopy);
+root:
+  dirstack[dircnt++] = &ps->conf->root;
+
+  if (cache_parse_space(ps)) goto fail;
+  if (cache_parse_mtime(ps, &ps->conf->root.mtime)) goto fail;
+  if (cache_parse_eol(ps)) goto fail;
+  goto next;
+
+none:
+  if (cache_parse_space(ps)) goto fail;
+  if (cache_parse_name(ps, &name)) goto fail;
+  if (cache_parse_eol(ps)) goto fail;
+
+  slot = (struct confent**)avl_insert(&dirstack[dircnt - 1]->entries, name);
   if (*slot) {
-    free(namecopy);
-    return -1;
+    ps->errmsg = "duplicate entry";
+    goto fail;
+  }
+
+  ent = xnew(struct confent);
+  ent->type = CONFENT_NONE;
+  ent->name = name;
+  avl_init_data(&ent->ad, name);
+  *slot = ent;
+  name = NULL;
+  goto next;
+
+file:
+  if (cache_parse_space(ps)) goto fail;
+  if (cache_parse_name(ps, &name)) goto fail;
+  if (cache_parse_space(ps)) goto fail;
+  if (cache_parse_size(ps, &size)) goto fail;
+  if (cache_parse_space(ps)) goto fail;
+  if (cache_parse_mtime(ps, &mtime)) goto fail;
+  if (cache_parse_eol(ps)) goto fail;
+
+  slot = (struct confent**)avl_insert(&dirstack[dircnt - 1]->entries, name);
+  if (*slot) {
+    ps->errmsg = "duplicate entry";
+    goto fail;
   }
 
   ent = xnew(struct confent);
   ent->type = CONFENT_FILE;
-  ent->name = namecopy;
-  avl_init_data(&ent->ad);
-  conffile_init(&ent->file);
+  ent->name = name;
+  avl_init_data(&ent->ad, name);
+  *slot = ent;
+  name = NULL;
+
   ent->file.size = size;
   ent->file.mtime = mtime;
-  *slot = ent;
-  //DEBUG("cache: added file %s", ent->name);
+  ent->file.cf = NULL;
 
-  if (cache_parse_file(ps, &ent->file)) return -1;
-  goto begin;
+  if (cache_parse_cf(ps, &ent->file.cf))
+    goto fail;
+  goto next;
 
-d:
-  if (cache_parse_space(ps)) return -1;
-  if (cache_parse_component(ps, &name, &namelen)) return -1;
-  if (cache_parse_space(ps)) return -1;
-  if (cache_parse_mtime(ps, &mtime)) return -1;
-  if (cache_parse_eol(ps)) return -1;
+dir:
+  if (cache_parse_space(ps)) goto fail;
+  if (cache_parse_name(ps, &name)) goto fail;
+  if (cache_parse_space(ps)) goto fail;
+  if (cache_parse_mtime(ps, &mtime)) goto fail;
+  if (cache_parse_eol(ps)) goto fail;
 
-  namecopy = memcpy(xmalloc(namelen + 1), name, namelen);
-  namecopy[namelen] = '\0';
-  slot = (struct confent**)avl_insert(&dir->entries, namecopy);
+  slot = (struct confent**)avl_insert(&dirstack[dircnt - 1]->entries, name);
   if (*slot) {
-    free(namecopy);
-    return -1;
+    ps->errmsg = "duplicate entry";
+    goto fail;
   }
 
   ent = xnew(struct confent);
   ent->type = CONFENT_DIR;
-  ent->name = namecopy;
-  avl_init_data(&ent->ad);
+  ent->name = name;
+  avl_init_data(&ent->ad, name);
+  *slot = ent;
+  name = NULL;
+
   confdir_init(&ent->dir);
   ent->dir.mtime = mtime;
-  *slot = ent;
-  //DEBUG("cache: added directory %s", ent->name);
 
-  if (cache_parse_dir(ps, &ent->dir)) return -1;
-  goto begin;
-}
+  // push directory
+  if (dircnt == dircap)
+    xresize(dirstack, dircap *= 2, struct confdir*);
+  dirstack[dircnt++] = &ent->dir;
+  goto next;
 
-static int cache_parse_main(struct cache_parse_state *ps)
-{
-  if (cache_skip_eol(ps, 0)) return -1;
-  if (*s != 'r') return -1;
-  ++s;
-  if (cache_parse_space(ps)) return -1;
-  if (cache_parse_mtime(ps, &ps->conf->root.mtime)) return -1;
-  if (cache_parse_eol(ps)) return -1;
-  if (cache_parse_dir(ps, &ps->conf->root)) return -1;
-  if (s < ps->end) return -1;
-  return 0;
+up:
+  if (cache_parse_eol(ps)) goto fail;
+
+  // pop directory
+  if (--dircnt)
+    goto next;
+
+  // that was the root
+  if (s < ps->end)
+    ps->errmsg = "expected end of file";
+  else
+    ret = 0;
+
+fail:
+  free(name);
+  free(dirstack);
+  return ret;
 }
 
 static int cache_parse(struct config *conf, const char *buf, size_t len)
 {
-  struct cache_parse_state ps;
+  struct cache_parser ps;
   ps.conf = conf;
   ps.cur = buf;
   ps.end = buf + len;
-  ps.lineno = 1;
+  ps.lineno = 0;
+  ps.errmsg = "invalid value";
 
   if (cache_parse_main(&ps)) {
-    ERR("cache: syntax error at line %u", ps.lineno);
+    ERR("cache: line %u: %s", ps.lineno, ps.errmsg);
     return -1;
   }
   return 0;
@@ -1245,35 +1285,26 @@ static int cache_parse(struct config *conf, const char *buf, size_t len)
 
 static int cache_load(struct config *conf, const char *filename)
 {
-  int ret = -1;
-  char *buf = NULL;
-  int fd = open(filename, O_RDONLY);
-
-  if (fd < 0) {
+  struct stat st;
+  if (stat(filename, &st)) {
     if (errno == ENOENT)
-      ret = 0;
-    else
-      ERR_SYS("failed to open '%s'", filename);
-    goto finish;
+      return 0;
+    ERR_SYS("failed to stat '%s'", filename);
+    return -1;
   }
 
-  off_t len = lseek(fd, 0, SEEK_END);
-  if (len < 0) {
-    ERR_SYS("lseek");
-    goto finish;
-  }
-  if (len == 0) {
-    WARN("empty cache file");
-    ret = 0;
-    goto finish;
+  size_t len = st.st_size;
+  if (len == 0)
+    return 0;
+
+  int fd = open(filename, O_RDONLY);
+  if (fd < 0) {
+    ERR_SYS("failed to open '%s'", filename);
+    return -1;
   }
 
-  if (lseek(fd, 0, SEEK_SET) < 0) {
-    ERR_SYS("lseek");
-    goto finish;
-  }
-
-  buf = xmalloc(len + 1);
+  int ret = -1;
+  char *buf = xmalloc(len + 1);
   char *p = buf;
   while (p < buf + len) {
     ssize_t readsize = read(fd, p, buf + len - p);
@@ -1282,7 +1313,7 @@ static int cache_load(struct config *conf, const char *filename)
       goto finish;
     }
     if (readsize == 0) {
-      ERR_SYS("read returned 0");
+      ERR("cache file shrank");
       goto finish;
     }
     p += readsize;
@@ -1305,28 +1336,34 @@ finish:
 
 /*** CACHE WRITER ****************************************************** {{{1 */
 
-static void cache_write_cf(FILE *f, struct cf_block *block)
+static void cache_write_file(FILE *f, struct conffile *file, struct cf_block *block)
 {
   for (unsigned int i = 0; i < block->cmdcnt; i++) {
     union cf_command *cmd = block->cmds[i];
-    switch (cmd->type) {
+    fprintf(f, "%u ", cmd->h.lineno);
+    switch (cmd->h.type) {
       case CF_LINK:
-        fprintf(f, "l %s\n", cmd->link.path);
+        fprintf(f, "link %s\n", cmd->link.path);
         break;
     }
   }
-  fputs(";\n", f);
 }
 
 static void cache_write_dir(FILE *f, struct confdir *dir)
 {
   AVL_ITER(&dir->entries, struct confent, ent) {
     switch (ent->type) {
+      case CONFENT_NONE:
+        // ignore
+        break;
       case CONFENT_FILE:
-        if (!ent->file.cf)
-          break;
-        fprintf(f, "f %s %zu %lld\n", ent->name, ent->file.size, ent->file.mtime);
-        cache_write_cf(f, &ent->file.cf->block);
+        if (ent->file.cf) {
+          fprintf(f, "f %s %zu %lld\n", ent->name, ent->file.size, ent->file.mtime);
+          cache_write_file(f, &ent->file, &ent->file.cf->block);
+        } else {
+          // this will force update_file to read it again
+          fprintf(f, "? %s\n", ent->name);
+        }
         break;
       case CONFENT_DIR:
         fprintf(f, "d %s %lld\n", ent->name, ent->dir.mtime);
@@ -1382,10 +1419,171 @@ static int cache_save(struct config *conf, const char *filename)
 
 #undef s
 
-/*** LOG *************************************************************** {{{1 */
+/*** PLAN TYPES ******************************************************** {{{1 */
 
-//static int log_load(struct config *conf, const char *filename);
-//static int log_write(struct config *conf, const char *filename);
+enum action_type {
+  PLAN_LINK
+};
+
+struct action
+{
+  enum action_type type;
+  char *path;
+  struct avl_data ad;
+  struct {
+    char *target;
+  } link;
+};
+
+struct plan
+{
+  struct avl actions;
+};
+
+/*** PLAN UTILITIES **************************************************** {{{1 */
+
+static void plan_init(struct plan *plan)
+{
+  avl_init(&plan->actions, struct action, ad);
+}
+
+/*** PLAN RESOLVER ***************************************************** {{{1 */
+
+static int resolve_cf_link(struct plan *plan, union cf_command *cmd)
+{
+  char *path = cmd->link.path;
+  struct action **slot = (struct action **)avl_insert(&plan->actions, path);
+  if (*slot) {
+    ERR("multiple actions for '%s'", path);
+    return -1;
+  }
+  path = strdup(path);
+  xdefine(act, struct action);
+  act->type = PLAN_LINK;
+  act->path = path;
+  avl_init_data(&act->ad, path);
+  act->link.target = "something";
+  *slot = act;
+  return 0;
+}
+
+static int resolve_cf(struct plan *plan, struct cf_block *block)
+{
+  for (unsigned int i = 0; i < block->cmdcnt; i++) {
+    union cf_command *cmd = block->cmds[i];
+    switch (cmd->h.type) {
+      case CF_LINK:
+        if (resolve_cf_link(plan, cmd)) return -1;
+        break;
+    }
+  }
+  return 0;
+}
+
+static int resolve_dir(struct plan *plan, struct confdir *dir)
+{
+  int ret = 0;
+  AVL_ITER(&dir->entries, struct confent, ent) {
+    switch (ent->type) {
+      case CONFENT_NONE:
+        break;
+      case CONFENT_FILE:
+        if (resolve_cf(plan, &ent->file.cf->block))
+          ret = -1;
+        break;
+      case CONFENT_DIR:
+        if (resolve_dir(plan, &ent->dir))
+          ret = -1;
+        break;
+    }
+  }
+  return ret;
+}
+
+static int resolve(struct plan *plan, struct config *conf)
+{
+  return resolve_dir(plan, &conf->root);
+}
+
+/*** PLAN EXECUTOR ***************************************************** {{{1 */
+
+static int create_parent_directories(char *path)
+{
+  char *slash = path;
+  while ((slash = strchr(slash, '/'))) {
+    *slash = '\0';
+    if (mkdir(path, 0777) && errno != EEXIST) {
+      ERR_SYS("failed to mkdir '%s'", path);
+      *slash = '/';
+      return -1;
+    }
+    *slash = '/';
+  }
+  return 0;
+}
+
+static int execute_link(struct action *act, int real)
+{
+  char target[256];
+  size_t target_len = strlen(act->link.target);
+  if (target_len >= sizeof(target)) {
+    ERR("target too long: %s", act->link.target);
+    return -1;
+  }
+  memcpy(target, act->link.target, target_len + 1);
+
+  char existing[256+1];
+  ssize_t existing_len = readlink(act->path, existing, sizeof(existing));
+  if (existing_len < 0) {
+    if (errno == EINVAL) {
+      ERR("refusing to replace %s -> %s", act->path, target);
+      return -1;
+    }
+    if (errno != ENOENT) {
+      ERR_SYS("failed to readlink '%s'", act->path);
+      return -1;
+    }
+  } else if (existing_len == (ssize_t)target_len && !memcmp(existing, target, target_len)) {
+    // nothing to do
+    return 0;
+  }
+
+  msg(prefix_creating_symlink, "%s -> %s", act->path, target);
+
+  if (!real)
+    return 0;
+
+  if (!symlink(target, act->path))
+    return 0;
+
+  if (errno != ENOENT)
+    goto symlink_failed;
+
+  // create parent directories
+  if (create_parent_directories(act->path))
+    return -1;
+
+  // try again
+  if (!symlink(target, act->path))
+    return 0;
+
+symlink_failed:
+  ERR_SYS("symlink failed");
+  return -1;
+}
+
+static int execute(struct plan *plan, int real)
+{
+  int ret = 0;
+  AVL_ITER(&plan->actions, struct action, act) {
+    switch (act->type) {
+      case PLAN_LINK:
+        ret |= execute_link(act, real);
+        break;
+    }
+  }
+  return ret;
+}
 
 /*** GALEOPT *********************************************************** {{{1 */
 
@@ -1429,18 +1627,15 @@ Options:\n\
 
 int main(int argc, char **argv)
 {
-  if (isatty(2)) {
-    warnprefix = "\033[1;33mwarning:\033[0m ";
-    errprefix = "\033[1;31merror:\033[0m ";
-    debugprefix = "\033[1;36mdebug:\033[0m ";
-  }
+  if (isatty(2))
+    enable_colors();
 
-  int dry = 0;
-  int verbose = 0;
+  UNUSED int real = 1;
+  UNUSED int verbose = 0;
 
   GALEOPT(argv + 1) {
     OPT('h', "help", help(stdout, 0));
-    OPT('n', "dry-run", dry = 1);
+    OPT('n', "dry-run", real = 0);
     OPT('v', "verbose", verbose = 1);
   }
 
@@ -1469,8 +1664,7 @@ int main(int argc, char **argv)
   // 2. Load the config. The cache is used to skip reading files and
   //    directories that haven't changed based on their stat() information.
   //
-  if (load_config(&conf)) return 1;
-  //config_dump(&conf, stdout);
+  if (update_config(&conf)) return 1;
 
   //
   // 3. If anything changed, write the updated cache.
@@ -1487,9 +1681,11 @@ int main(int argc, char **argv)
   if (conf.bad) return 1;
 
   //
-  // 5. Resolve the config.
+  // 5. Resolve the config into a plan.
   //
-  //if (resolve(&conf)) return 1;
+  struct plan plan;
+  plan_init(&plan);
+  if (resolve(&plan, &conf)) return 1;
 
   //
   // 6. Delete files that are no longer produced by any config file.
@@ -1504,7 +1700,7 @@ int main(int argc, char **argv)
   //
   // 8. Update the home directory.
   //
-  //if (update(&conf)) return 1;
+  if (execute(&plan, /* TODO: real */0)) return 1;
 
   return 0;
 }
