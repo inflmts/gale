@@ -1,6 +1,6 @@
 "###############################################################################
 "
-"   gale::link .config/nvim/init.vim
+"   gale::link ~/.config/nvim/init.vim
 "
 "   This works on both Linux and Windows.
 "
