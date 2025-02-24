@@ -19,6 +19,9 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
+#define containerof(p, type, member) \
+  ((type *)((char *)(p) - offsetof(type, member)))
+
 /*** LOGGING *********************************************************** {{{1 */
 
 #ifdef __GNUC__
@@ -116,109 +119,86 @@ static void *xrealloc(void *p, size_t size)
 
 /*** AVL *************************************************************** {{{1 */
 
-// Simple AVL tree implementation
-
-struct avl_data
+struct avl
 {
   const char *key;
-  void *left;
-  void *right;
+  struct avl *parent;
+  struct avl *left;
+  struct avl *right;
   int bf;
 };
 
-struct avl
+/*
+ * Returns the minimum element of the tree rooted at the specified node.
+ */
+static struct avl *avl_min(struct avl *node)
 {
-  void *head;
-  ptrdiff_t offset;
-  size_t size;
-  void **stack;
-  unsigned int stksize;
-  unsigned int stkcap;
-};
-
-static void avl_init_impl(struct avl *avl, ptrdiff_t offset, size_t size)
-{
-  avl->head = NULL;
-  avl->offset = offset;
-  avl->size = size;
-  avl->stack = xnewv(4, void*);
-  avl->stksize = 0;
-  avl->stkcap = 4;
+  if (!node)
+    return NULL;
+  while (node->left)
+    node = node->left;
+  return node;
 }
 
-#define avl_init(avl, T, ad) avl_init_impl(avl, offsetof(T, ad), sizeof(T))
-
-#define AVL_DATA(avl, node) ((struct avl_data*)((char*)(node) + (avl)->offset))
-#define AVL_KEY(avl, node) AVL_DATA(avl, node)->key
-#define AVL_LEFT(avl, node) AVL_DATA(avl, node)->left
-#define AVL_RIGHT(avl, node) AVL_DATA(avl, node)->right
-#define AVL_BF(avl, node) AVL_DATA(avl, node)->bf
-#define AVL_STKPUSH(avl, node) do { \
-  if ((avl)->stksize == (avl)->stkcap) \
-    xresizev((avl)->stack, (avl)->stkcap *= 2, void*); \
-  (avl)->stack[(avl)->stksize++] = node; } while (0)
-#define AVL_STKPOP(avl) avl->stack[--avl->stksize]
-
-static void *avl_iter_helper(struct avl *avl, void *node)
+/*
+ * Returns the inorder successor of the specified node.
+ */
+static struct avl *avl_next(struct avl *node)
 {
-  // https://en.wikipedia.org/wiki/Tree_traversal#In-order_implementation
-  while (node) {
-    AVL_STKPUSH(avl, node);
-    node = AVL_LEFT(avl, node);
+  if (node->right)
+    return avl_min(node->right);
+  while (node->parent) {
+    if (node->parent->left == node) {
+      // coming in from left
+      return node->parent;
+    }
+    node = node->parent;
   }
-  if (avl->stksize)
-    return AVL_STKPOP(avl);
   return NULL;
 }
 
-#define AVL_ITER(avl, T, node) \
-  for (T *node = ((avl)->stksize = 0, (avl)->head); \
-       (node = avl_iter_helper(avl, node)); \
-       node = AVL_RIGHT(avl, node))
-
-// TODO: post-order traversal
-#define AVL_DESTROY(avl, T, node) if (0)
-
-//static void *avl_get(struct avl *avl, const char *key)
-//{
-//  void *node = avl->head;
-//  while (node) {
-//    int diff = strcmp(key, AVL_KEY(avl, node));
-//    if (diff == 0)
-//      return node;
-//    if (diff < 0)
-//      node = AVL_LEFT(avl, node);
-//    else
-//      node = AVL_RIGHT(avl, node);
-//  }
-//  return NULL;
-//}
-
-static void *avl_insert(struct avl *avl, const char *key)
+/*
+ * Returns the slot containing the node with the specified key,
+ * or the slot where a new node would be inserted if the key is not found.
+ * In any case, this never returns NULL.
+ * If `pp` is not NULL, it will be set to the parent.
+ */
+static struct avl **avl_slot(struct avl **root, const char *key, struct avl **pp)
 {
-  // https://en.wikipedia.org/wiki/AVL_tree#Insert
-  void **slot = &avl->head;
-  //avl->stack[0] = slot;
-  //avl->stksize = 1;
-  while (*slot) {
-    int diff = strcmp(key, AVL_KEY(avl, *slot));
-    if (diff == 0)
-      return *slot;
+  struct avl *node;
+  if (pp)
+    *pp = NULL;
+  while ((node = *root)) {
+    int diff = strcmp(key, node->key);
+    if (!diff)
+      return root;
+    if (pp)
+      *pp = node;
     if (diff < 0)
-      slot = &AVL_LEFT(avl, *slot);
+      root = &node->left;
     else
-      slot = &AVL_RIGHT(avl, *slot);
-    //AVL_STKPUSH(avl, slot);
+      root = &node->right;
   }
+  return root;
+}
 
-  void *node = xmalloc(avl->size);
-  AVL_KEY(avl, node) = key;
-  AVL_LEFT(avl, node) = NULL;
-  AVL_RIGHT(avl, node) = NULL;
-  AVL_BF(avl, node) = 0;
-  *slot = node;
-
+/*
+ * Inserts a node into the tree. `node->key` must be set by the caller.
+ * Returns `node` if it is successfully inserted or NULL if a node with this
+ * key already exists.
+ */
+static struct avl *avl_insert(struct avl **root, struct avl *node)
+{
+  struct avl *parent;
+  struct avl **slot = avl_slot(root, node->key, &parent);
+  if (*slot)
+    return NULL;
+  node->parent = parent;
+  node->left = NULL;
+  node->right = NULL;
+  node->bf = 0;
   // TODO: rebalance
+  *slot = node;
   return node;
 }
 
@@ -488,7 +468,7 @@ struct confdir
 {
   unsigned long long mtime;
   int flags;
-  struct avl entries;
+  struct avl *entries;
 };
 
 enum confent_type
@@ -503,7 +483,7 @@ struct confent
   enum confent_type type;
   char *path;
   char *name;
-  struct avl_data ad;
+  struct avl node;
   union {
     struct conffile file;
     struct confdir dir;
@@ -518,7 +498,7 @@ struct action
 {
   enum action_type type;
   char *path;
-  struct avl_data ad;
+  struct avl node;
   struct {
     char *target;
   } link;
@@ -531,7 +511,7 @@ struct config
   int verbose;
   int bad;
   int need_update_cache;
-  struct avl actions;
+  struct avl *actions;
   char *buf;
   size_t bufsize;
 };
@@ -548,17 +528,33 @@ static void confdir_init(struct confdir *dir)
 {
   dir->mtime = 0;
   dir->flags = 0;
-  avl_init(&dir->entries, struct confent, ad);
+  dir->entries = NULL;
 }
+
+static struct confent *confdir_add(struct confdir *dir, const char *name)
+{
+  xdefine(ent, struct confent);
+  ent->node.key = name;
+  if (avl_insert(&dir->entries, &ent->node))
+    return ent;
+  free(ent);
+  return NULL;
+}
+
+static inline struct confent *confent_from_node(struct avl *node)
+{
+  return node ? containerof(node, struct confent, node) : NULL;
+}
+
+#define CONFDIR_ITER(dir, ent) \
+  for (struct confent *ent = confent_from_node(avl_min((dir)->entries)); \
+       ent; ent = confent_from_node(avl_next(&ent->node)))
 
 static void confent_free_data(struct confent *ent);
 
 static void confdir_free(struct confdir *dir)
 {
-  AVL_ITER(&dir->entries, struct confent, ent) {
-    free(ent->path);
-    confent_free_data(ent);
-  }
+  // TODO
 }
 
 static void confent_free_data(struct confent *ent)
@@ -583,10 +579,29 @@ static void config_init(struct config *conf, int real, int verbose)
   conf->verbose = verbose;
   conf->need_update_cache = 0;
   conf->bad = 0;
-  avl_init(&conf->actions, struct action, ad);
+  conf->actions = NULL;
   conf->buf = xmalloc(4096);
   conf->bufsize = 4096;
 }
+
+static struct action *config_add_action(struct config *conf, const char *path)
+{
+  xdefine(act, struct action);
+  act->node.key = path;
+  if (avl_insert(&conf->actions, &act->node))
+    return act;
+  free(act);
+  return NULL;
+}
+
+static inline struct action *action_from_node(struct avl *node)
+{
+  return node ? containerof(node, struct action, node) : NULL;
+}
+
+#define ACTION_ITER(conf, act) \
+  for (struct action *act = action_from_node(avl_min((conf)->actions)); \
+       act; act = action_from_node(avl_next(&act->node)))
 
 //static void config_free(struct config *conf)
 //{
@@ -696,8 +711,8 @@ static int load_dir(struct config *conf, struct confdir *dir, const char *path)
         && (dir->flags & CONFDIR_ROOT || dent->d_type != DT_REG))
       continue;
 
-    struct confent *ent = avl_insert(&dir->entries, name);
-    if (ent->ad.key != name)
+    struct confent *ent = confdir_add(dir, name);
+    if (!ent)
       continue;
 
     // construct the full path
@@ -710,7 +725,7 @@ static int load_dir(struct config *conf, struct confdir *dir, const char *path)
       ent->path = memcpy(xmalloc(namelen + 1), name, namelen + 1);
       ent->name = ent->path;
     }
-    ent->ad.key = ent->name;
+    ent->node.key = ent->name;
   }
 
   if (errno) {
@@ -740,7 +755,7 @@ static int update_dir(struct config *conf, struct confdir *dir,
   }
 
   int ret = 0;
-  AVL_ITER(&dir->entries, struct confent, ent) {
+  CONFDIR_ITER(dir, ent) {
     if (update_ent(conf, ent))
       ret = -1;
   }
@@ -928,9 +943,10 @@ static struct confent *cache_prepare_entry(
     struct cache_parser *ps, struct confent *dir,
     enum confent_type type, char *name)
 {
-  struct confent *ent = avl_insert(dir ? &dir->dir.entries : &ps->conf->root.entries, name);
-  if (ent->ad.key != name) {
+  struct confent *ent = confdir_add(dir ? &dir->dir : &ps->conf->root, name);
+  if (!ent) {
     ps->errmsg = "duplicate entry";
+    free(name);
     return NULL;
   }
 
@@ -950,7 +966,7 @@ static struct confent *cache_prepare_entry(
   ent->type = type;
   ent->path = path;
   ent->name = name;
-  ent->ad.key = name;
+  ent->node.key = name;
   return ent;
 }
 
@@ -1148,7 +1164,7 @@ static void cache_write_cf(FILE *f, struct cf_block *block)
 
 static void cache_write_dir(FILE *f, struct confdir *dir)
 {
-  AVL_ITER(&dir->entries, struct confent, ent) {
+  CONFDIR_ITER(dir, ent) {
     switch (ent->type) {
       case CONFENT_NONE:
         // ignore
@@ -1229,15 +1245,15 @@ finish:
 static int resolve_cf_link(struct config *conf, struct confent *ent, union cf_command *cmd)
 {
   char *path = cmd->link.path;
-  struct action *act = avl_insert(&conf->actions, path);
-  if (act->ad.key != path) {
+  struct action *act = config_add_action(conf, path);
+  if (!act) {
     ERR("multiple actions for '%s'", path);
     return -1;
   }
   path = strdup(path);
   act->type = ACTION_LINK;
   act->path = path;
-  act->ad.key = path;
+  act->node.key = path;
   act->link.target = ent->path;
   return 0;
 }
@@ -1258,7 +1274,7 @@ static int resolve_cf(struct config *conf, struct confent *ent, struct cf_block 
 static int resolve_dir(struct config *conf, struct confdir *dir)
 {
   int ret = 0;
-  AVL_ITER(&dir->entries, struct confent, ent) {
+  CONFDIR_ITER(dir, ent) {
     switch (ent->type) {
       case CONFENT_NONE:
         break;
@@ -1377,7 +1393,7 @@ symlink_failed:
 static int execute(struct config *conf)
 {
   int ret = 0;
-  AVL_ITER(&conf->actions, struct action, act) {
+  ACTION_ITER(conf, act) {
     switch (act->type) {
       case ACTION_LINK:
         ret |= execute_link(conf, act);
@@ -1387,9 +1403,9 @@ static int execute(struct config *conf)
   return ret;
 }
 
-/*** AUTOCOMPILE ******************************************************* {{{1 */
+/*** RECOMPILE ********************************************************* {{{1 */
 
-static void autocompile(char **argv)
+static void recompile(void)
 {
   static char *const srcfile = ".gale/gallade.c";
   static char *const tmpfile = ".local/bin/gallade.tmp";
@@ -1415,7 +1431,7 @@ static void autocompile(char **argv)
     exetime = st.st_mtime;
   }
   if (srctime <= exetime)
-    return;
+    exit(0);
 
   MSG("Recompiling...");
 
@@ -1440,9 +1456,7 @@ static void autocompile(char **argv)
     ERR_SYS("failed to rename '%s' to '%s'", tmpfile, exefile);
     exit(1);
   }
-  execv(exefile, argv);
-  ERR_SYS("execv");
-  exit(-1);
+  exit(0);
 }
 
 /*** GALEOPT *********************************************************** {{{1 */
@@ -1455,7 +1469,7 @@ static void autocompile(char **argv)
       _arg[0] != '-' || _arg[1] == '\0' \
       ? DIE(2, "invalid argument: '%s'", _arg) \
       : *(++_arg) == '-' \
-      ? (_s = 0, ++_argv, 1) \
+      ? (_s = 0, ++_arg, ++_argv, 1) \
       : (_s = *_arg, *(_arg++) = '-', *_arg ? (++(*_argv), 1) : (++_argv, 1)) \
     ), _n = 1); \
     _n && (_s ? (DIE(2, "invalid option: -%c", _s), 1) \
@@ -1478,6 +1492,7 @@ Options:\n\
   -h, --help        show this help and exit\n\
   -n, --dry-run     don't do anything, only show what would happen\n\
   -v, --verbose     be verbose\n\
+  -R, --recompile   recompile gallade\n\
       --no-cache    don't read the cache\n\
 ";
   fputs(usage, f);
@@ -1489,17 +1504,6 @@ int main(int argc, char **argv)
   if (isatty(2))
     enable_colors();
 
-  UNUSED int real = 1;
-  UNUSED int verbose = 0;
-  int use_cache = 1;
-
-  GALEOPT(argv + 1) {
-    OPT('h', "help", help(stdout, 0));
-    OPT('n', "dry-run", real = 0);
-    OPT('v', "verbose", verbose = 1);
-    OPTLONG( "no-cache", use_cache = 0);
-  }
-
   const char *home = getenv("HOME");
   if (!home) {
     ERR("$HOME is not set");
@@ -1510,7 +1514,17 @@ int main(int argc, char **argv)
     return 1;
   }
 
-  autocompile(argv);
+  int real = 1;
+  int verbose = 0;
+  int use_cache = 1;
+
+  GALEOPT(argv + 1) {
+    OPT('h', "help", help(stdout, 0));
+    OPT('n', "dry-run", real = 0);
+    OPT('v', "verbose", verbose = 1);
+    OPT('R', "recompile", recompile());
+    OPTLONG( "no-cache", use_cache = 0);
+  }
 
   // General Architecture
   // --------------------
