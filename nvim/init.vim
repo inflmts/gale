@@ -182,13 +182,15 @@ let g:sonokai_better_performance = 1
 silent! colorscheme sonokai
 
 hi Normal ctermbg=NONE guibg=#181824
+hi NormalNC ctermbg=NONE guibg=#202030
+
 hi Error ctermfg=7 ctermbg=203
 hi ErrorText cterm=underline ctermfg=203
 hi! link SignColumn LineNr
+hi Whitespace ctermfg=NONE ctermbg=1 guibg=#ff0000
 
 if $TERM ==# "linux"
   hi Visual cterm=reverse ctermfg=NONE ctermbg=NONE
-  hi Whitespace cterm=reverse ctermfg=NONE ctermbg=NONE
 endif
 
 "=======================================

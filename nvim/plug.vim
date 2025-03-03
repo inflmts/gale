@@ -8,6 +8,7 @@
 "
 "###############################################################################
 
+Plug 'sainnhe/sonokai'
 Plug 'preservim/nerdtree'
 Plug 'neovim/nvim-lspconfig'
 Plug 'pangloss/vim-javascript'

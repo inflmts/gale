@@ -5,10 +5,11 @@
 * {
   font-family: system;
   font-size: 11pt;
+  transition: none;
 }
 
 #waybar {
-  background-color: #101018;
+  background-image: linear-gradient(to right, #200030, #101018, #200030);
   color: #ffffff;
 }
 

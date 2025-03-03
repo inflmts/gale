@@ -4,6 +4,9 @@
 {
   "position": "bottom",
   "height": 25,
+  "modules-left": [
+    "custom/hostname"
+  ],
   "modules-center": [
     "network",
     "cpu",
@@ -16,6 +19,10 @@
   "modules-right": [
     "clock"
   ],
+  "custom/hostname": {
+    "exec": "echo \"$USER<span color=\\\"#e080ff\\\">@$(hostname)</span>\"",
+    "interval": "once"
+  },
   "network": {
     "format": "<span color=\"#808090\">{ifname}</span> {ipaddr}"
   },
