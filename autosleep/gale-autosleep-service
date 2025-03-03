@@ -1,4 +1,0 @@
-#!/bin/sh
-
-# go to sleep after 10 minutes of inactivity
-exec swayidle timeout 600 'gale-sleep'

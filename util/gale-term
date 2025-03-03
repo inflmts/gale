@@ -1,0 +1,55 @@
+#!/bin/sh
+# gale::link ~/.local/bin/gale-term
+
+set -ue
+
+usage() {
+  cat <<EOF
+usage: gale-term [options] [COMMAND [ARG...]]
+
+Options:
+  -t TITLE    set terminal title
+EOF
+}
+
+unset title
+
+while getopts :t: opt; do
+  case $opt in
+    t)
+      title=$OPTARG
+      ;;
+    *)
+      usage >&2
+      exit 2
+      ;;
+  esac
+done
+shift $((OPTIND-1))
+
+is_wayland() {
+  [ -n "$WAYLAND_DISPLAY" ]
+}
+
+has_command() {
+  command -v "$1" >/dev/null
+}
+
+# alacritty
+if has_command alacritty; then
+  exec alacritty ${1+-e} "$@"
+fi
+
+# foot
+if is_wayland && has_command foot; then
+  exec foot ${title+-T "$title"} -- "$@"
+fi
+
+# urxvt
+if has_command urxvt; then
+  exec urxvt ${1+-e} "$@"
+fi
+
+# not found
+echo >&2 "error: could not find viable terminal"
+exit 127

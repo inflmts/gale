@@ -1,7 +1,22 @@
 #!/bin/sh
+# gale::link ~/.local/bin/gale-explorer
+
+usage() {
+  echo 'usage: gale-explorer [DIR]'
+}
+
+while getopts : opt; do
+  case $opt in
+    *)
+      usage >&2
+      exit 2
+      ;;
+  esac
+done
+shift $((OPTIND-1))
 
 if command -v lf >/dev/null; then
-  exec gale-win-lf
+  exec gale-term -t lf lf -- "$@"
 fi
 
 echo >&2 "error: unable to find suitable file explorer"

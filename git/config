@@ -1,0 +1,19 @@
+#
+# gale::link ~/.config/git/config.shared
+#
+
+[alias]
+  s = status
+  ac = !git add -A && git commit
+
+[init]
+  defaultBranch = main
+
+[push]
+  default = current
+
+[user]
+  name = Daniel Li
+  email = inflmts@gmail.com
+
+# vim:ft=gitconfig

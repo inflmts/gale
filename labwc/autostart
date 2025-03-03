@@ -1,7 +1,7 @@
 #!/bin/sh
-# labwc autostart file
-#
-# This file is part of Gale.
-#
+# gale::link ~/.config/labwc/autostart
 
-gale-labwc-waybar start
+gale-svc start kanshi
+gale-svc start pipewire
+gale-svc start autosleep
+gale-svc start labwc-waybar

@@ -1,8 +1,5 @@
 #!/bin/sh
-# gale-sleep - put the system to sleep
-#
-# This file is part of Gale.
-#
+# gale::link ~/.local/bin/gale-sleep
 
 set -ue
 

@@ -1,7 +1,5 @@
 #
-# ~/.lesskey
-#
-# This file is part of Gale.
+# gale::link ~/.lesskey
 #
 # Documentation:
 #   - lesskey(1)

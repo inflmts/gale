@@ -1,0 +1,4 @@
+#!/bin/sh
+# gale::link ~/.config/gale-svc/labwc-waybar
+
+exec waybar -c ~/.config/labwc/waybar.jsonc -s ~/.config/labwc/waybar.css

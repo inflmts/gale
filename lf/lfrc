@@ -1,7 +1,5 @@
 #
-# lf configuration file
-#
-# This file is part of Gale.
+# gale::link ~/.config/lf/lfrc
 #
 # Documentation:
 #   - lf(1)

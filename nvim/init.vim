@@ -17,6 +17,15 @@ if exists('*plug#begin')
   call plug#end()
 endif
 
+function s:install_vim_plug()
+  " https://github.com/junegunn/vim-plug
+  let path = stdpath('data') .. '/site/autoload/plug.vim'
+  execute '!curl -Lf -o' shellescape(path, 1) '--create-dirs'
+        \ '"https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim"'
+endfunction
+
+command! PlugSetup call s:install_vim_plug()
+
 "=======================================
 " OPTIONS
 
@@ -29,7 +38,7 @@ set fo=tcqroj nojs
 " scrolling
 set nowrap so=5 ss=10 siso=10
 " display
-set number title fillchars=vert:│
+set number fillchars=vert:│
 " automatically re-read a file if it's changed externally
 set autoread
 " vsplit appears on right
@@ -44,6 +53,12 @@ set nohidden
 set mouse=a
 " always use unix line endings
 set fileformats=unix,dos
+" show various types of whitespace
+set list listchars=trail:\ ,tab:-->
+" show title if the terminal supports it
+if $TERM !=# "linux"
+  set title
+endif
 
 "=======================================
 " KEYBINDINGS
@@ -132,8 +147,6 @@ augroup init
   auto FileType asciidoc setlocal nosi comments=fb:-,fb:*,fb://
   auto FileType cs,java setlocal sw=4 sts=4
 
-  auto WinEnter * call s:gale_highlight_trailspace()
-
 augroup END
 
 "=======================================
@@ -168,32 +181,15 @@ let g:sonokai_disable_terminal_colors = 1
 let g:sonokai_better_performance = 1
 silent! colorscheme sonokai
 
+hi Normal ctermbg=NONE guibg=#181824
 hi Error ctermfg=7 ctermbg=203
 hi ErrorText cterm=underline ctermfg=203
 hi! link SignColumn LineNr
 
-" color trailing whitespace red, because if you have trailing whitespace then
-" the code style witch will get you
-function s:gale_highlight_trailspace()
-  if !exists('w:gale_trailspace_match_id')
-    let w:gale_trailspace_match_id = matchadd('TrailSpace', '\s\+$', -1)
-  endif
-endfunction
-
-tabdo windo call s:gale_highlight_trailspace()
-hi TrailSpace ctermbg=1 guibg=#ff0000
-
 if $TERM ==# "linux"
-  hi Visual cterm=reverse
+  hi Visual cterm=reverse ctermfg=NONE ctermbg=NONE
+  hi Whitespace cterm=reverse ctermfg=NONE ctermbg=NONE
 endif
-
-"=======================================
-" LSP
-
-lua <<EOF
-lspconfig = require 'lspconfig'
-lspconfig.ts_ls.setup {}
-EOF
 
 "=======================================
 " RESTART
@@ -230,3 +226,13 @@ endfunction
 " The :GaleEdit command edits this file.
 command! GaleEdit call GaleEdit()
 
+"=======================================
+" LSP
+
+lua << EOF
+local ok
+ok, lspconfig = pcall(require, 'lspconfig')
+if ok then
+  lspconfig.ts_ls.setup {}
+end
+EOF

@@ -1,7 +1,5 @@
 #
-# imv config file
-#
-# This file is part of Gale.
+# gale::link ~/.config/imv/config
 #
 
 [options]

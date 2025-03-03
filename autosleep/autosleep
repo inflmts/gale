@@ -1,0 +1,13 @@
+#!/bin/sh
+# gale::link ~/.config/gale-svc/autosleep
+#
+# This is a simple front-end to swayidle that puts the computer to sleep after a
+# period of inactivity. It works for any compositor that swayidle supports, ie.
+# any compositor that supports the ext-idle-notify protocol.
+#
+# Dependencies:
+#   - swayidle <https://github.com/swaywm/swayidle>
+#
+
+# sleep after 10 minutes of inactivity
+exec swayidle timeout 600 'gale-sleep'

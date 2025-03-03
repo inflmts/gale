@@ -1,8 +1,6 @@
 <?xml version="1.0"?>
 <!--
-  labwc config file
-
-  This file is part of Gale.
+  gale::link ~/.config/labwc/rc.xml
 -->
 <labwc_config>
 
@@ -10,24 +8,26 @@
     <decoration>server</decoration>
   </core>
 
-  <focus>
-    <followMouse>yes</followMouse>
-  </focus>
+  <windowSwitcher>
+    <fields>
+      <field content="type_short" width="5%" />
+      <field content="trimmed_identifier" width="15%" />
+      <field content="title" width="80%" />
+    </fields>
+  </windowSwitcher>
 
   <theme>
+    <titlebar layout=":" />
     <cornerRadius>0</cornerRadius>
-    <font name="sans" size="10" />
+    <keepBorder>no</keepBorder>
+    <font name="system" size="10" />
   </theme>
-
-  <windowRules>
-    <windowRule identifier="firefox">
-      <action name="ToggleDecorations" />
-    </windowRule>
-  </windowRules>
 
   <keyboard>
     <repeatRate>25</repeatRate>
     <repeatDelay>300</repeatDelay>
+
+    <!-- compositor control -->
 
     <keybind key="W-S-Backspace">
       <action name="Exit" />
@@ -35,6 +35,8 @@
     <keybind key="W-r">
       <action name="Reconfigure" />
     </keybind>
+
+    <!-- windows -->
 
     <keybind key="W-q">
       <action name="Close" />
@@ -45,15 +47,29 @@
     <keybind key="W-S-Tab">
       <action name="PreviousWindow" />
     </keybind>
+    <keybind key="A-Tab">
+      <action name="NextWindow" />
+    </keybind>
+    <keybind key="A-S-Tab">
+      <action name="PreviousWindow" />
+    </keybind>
 
     <keybind key="W-S-d">
       <action name="ToggleDecorations" />
     </keybind>
 
-    <!--<keybind key="W-h"><action name="SnapToEdge" direction="left" /></keybind>
-    <keybind key="W-j"><action name="SnapToEdge" direction="down" /></keybind>
-    <keybind key="W-k"><action name="SnapToEdge" direction="up" /></keybind>
-    <keybind key="W-l"><action name="SnapToEdge" direction="right" /></keybind>-->
+    <keybind key="W-S-h">
+      <action name="SnapToEdge" direction="left" />
+    </keybind>
+    <keybind key="W-S-j">
+      <action name="SnapToEdge" direction="down" />
+    </keybind>
+    <keybind key="W-S-k">
+      <action name="SnapToEdge" direction="up" />
+    </keybind>
+    <keybind key="W-S-l">
+      <action name="SnapToEdge" direction="right" />
+    </keybind>
 
     <keybind key="W-Minus">
       <action name="Iconify" />
@@ -73,46 +89,94 @@
     <keybind key="W-d">
       <action name="SnapToEdge" direction="right" />
     </keybind>
+
+    <!-- outputs -->
+
     <keybind key="W-bracketleft">
-      <action name="MoveToOutput" direction="left" />
-      <action name="Raise" />
+      <action name="FocusOutput" direction="left" />
     </keybind>
     <keybind key="W-bracketright">
+      <action name="FocusOutput" direction="right" />
+    </keybind>
+    <keybind key="W-S-bracketleft">
+      <action name="MoveToOutput" direction="left" />
+    </keybind>
+    <keybind key="W-S-bracketright">
       <action name="MoveToOutput" direction="right" />
-      <action name="Raise" />
     </keybind>
 
+    <!-- programs -->
+
     <keybind key="W-Return">
-      <action name="Execute" command="term" />
+      <action name="Execute" command="gale-term" />
+    </keybind>
+    <keybind key="W-e">
+      <action name="Execute" command="gale-explorer" />
     </keybind>
     <keybind key="W-S-f">
       <action name="Execute" command="firefox" />
     </keybind>
+    <keybind key="W-S-c">
+      <action name="Execute" command="chromium" />
+    </keybind>
+    <keybind key="W-t">
+      <action name="Execute" command="gale-term -t top top" />
+    </keybind>
+    <keybind key="W-S-b">
+      <action name="Execute" command="gale-term -t bluetoothctl bluetoothctl" />
+    </keybind>
+
+    <!-- power management -->
 
     <keybind key="W-S-s">
-      <action name="Execute" command="sh -c 'sleep 1 &amp;&amp; gale-sleep'" />
+      <action name="Execute" command="gale-sleep" />
+    </keybind>
+
+    <!-- volume control -->
+
+    <keybind key="XF86AudioLowerVolume">
+      <action name="Execute" command="pamixer -d 5" />
+    </keybind>
+    <keybind key="XF86AudioRaiseVolume">
+      <action name="Execute" command="pamixer -i 5" />
+    </keybind>
+    <keybind key="XF86AudioMute">
+      <action name="Execute" command="pamixer -t" />
     </keybind>
   </keyboard>
 
   <mouse>
-    <context name="Root">
+    <!-- desktop -->
+    <context name="Desktop">
       <mousebind button="Right" action="Press">
         <action name="ShowMenu" menu="root-menu" />
       </mousebind>
     </context>
 
+    <!-- "Frame" bindings aren't sent to the client -->
     <context name="Frame">
+      <mousebind button="W-Left" action="Press">
+        <action name="Focus" />
+        <action name="Raise" />
+      </mousebind>
+      <mousebind button="W-Left" action="DoubleClick">
+        <action name="ToggleMaximize" />
+      </mousebind>
       <mousebind button="W-Left" action="Drag">
         <action name="Move" />
+      </mousebind>
+      <mousebind button="W-S-Left" action="Drag">
+        <action name="Resize" />
+      </mousebind>
+      <mousebind button="W-Right" action="Press">
+        <action name="Iconify" />
       </mousebind>
       <mousebind button="W-Right" action="Drag">
         <action name="Resize" />
       </mousebind>
-      <mousebind button="W-Middle" action="Press">
-        <action name="Iconify" />
-      </mousebind>
     </context>
 
+    <!-- space between the buttons on the titlebar -->
     <context name="Title">
       <mousebind button="Left" action="Press">
         <action name="Focus" />
@@ -124,35 +188,12 @@
       <mousebind button="Left" action="DoubleClick">
         <action name="ToggleMaximize" />
       </mousebind>
-    </context>
-
-    <context name="WindowMenu">
-      <mousebind button="Left" action="Click">
-        <action name="ShowMenu" menu="client-menu" />
-      </mousebind>
       <mousebind button="Right" action="Click">
         <action name="ShowMenu" menu="client-menu" />
       </mousebind>
     </context>
 
-    <!--
-    <context name="Iconify">
-      <mousebind button="Left" action="Click">
-        <action name="Iconify" />
-      </mousebind>
-    </context>
-    <context name="Maximize">
-      <mousebind button="Left" action="Click">
-        <action name="ToggleMaximize" />
-      </mousebind>
-    </context>
-    <context name="Close">
-      <mousebind button="Left" action="Click">
-        <action name="Close" />
-      </mousebind>
-    </context>
-    -->
-
+    <!-- "Client" bindings _are_ sent to the client -->
     <context name="Client">
       <mousebind button="Left" action="Press">
         <action name="Focus" />
@@ -167,7 +208,14 @@
         <action name="Raise" />
       </mousebind>
     </context>
-
   </mouse>
+
+  <libinput>
+    <device category="touchpad">
+      <naturalScroll>yes</naturalScroll>
+      <disableWhileTyping>no</disableWhileTyping>
+      <scrollFactor>0.4</scrollFactor>
+    </device>
+  </libinput>
 
 </labwc_config>

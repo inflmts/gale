@@ -1,34 +1,50 @@
+//
+// gale::link ~/.config/labwc/waybar.jsonc
+//
 {
   "position": "bottom",
-  "height": 30,
-  "modules-left": [
-  ],
-  "modules-right": [
+  "height": 25,
+  "modules-center": [
     "network",
     "cpu",
     "memory",
-    "battery",
+    "bluetooth",
     "pulseaudio",
+    "backlight",
+    "battery"
+  ],
+  "modules-right": [
     "clock"
   ],
   "network": {
-    "format": "<span color=\"#808090\">{ifname}</span> {ipaddr}",
-    "format-ethernet": "<span color=\"#808090\">eth</span> {ipaddr}",
-    "format-wifi": "<span color=\"#808090\">wifi</span> {ipaddr}"
+    "format": "<span color=\"#808090\">{ifname}</span> {ipaddr}"
   },
   "cpu": {
-    "interval": 1,
+    "interval": 5,
     "format": "<span color=\"#808090\">cpu</span> {usage}%"
   },
   "memory": {
     "interval": 5,
-    "format": "<span color=\"#808090\">mem</span> {used} G<span color=\"#c0c0d8\">/{total} G</span>"
+    "format": "<span color=\"#808090\">mem</span> {used}G<span color=\"#e080ff\">/{total}G</span>"
+  },
+  "bluetooth": {
+    "format": "",
+    "format-on": "<span color=\"#808090\">bt</span> on",
+    "format-connected": "<span color=\"#009999\">bt</span> {device_alias}",
+    "max-length": 32
   },
   "pulseaudio": {
     "format": "<span color=\"#808090\">vol</span> {volume}%",
     "format-muted": "<span color=\"#998700\">vol</span> <s>{volume}%</s>"
   },
+  "backlight": {
+    "format": "<span color=\"#808090\">br</span> {percent}%"
+  },
+  "battery": {
+    "format": "<span color=\"#808090\">bat</span> {capacity}%",
+    "format-charging": "<span color=\"#009999\">chg</span> {capacity}%"
+  },
   "clock": {
-    "format": "<span color=\"#808090\">time</span> <span color=\"#c0c0d8\">{:%a %Y/%m/%d</span> %I:%M %p}"
+    "format": "<span color=\"#e080ff\">{:%a %m/%d/%Y</span> %I:%M %p}"
   }
 }

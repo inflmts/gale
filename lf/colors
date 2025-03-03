@@ -1,7 +1,5 @@
 #
-# lf color configuration
-#
-# This file is part of Gale.
+# gale::link ~/.config/lf/colors
 #
 
 ln      01;36       # LINK

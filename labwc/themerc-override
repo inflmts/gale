@@ -1,17 +1,24 @@
-window.active.border.color: #202024
-window.inactive.border.color: #101012
+#
+# gale::link ~/.config/labwc/themerc-override
+#
 
-window.active.title.bg.color: #202024
-window.inactive.title.bg.color: #101012
+window.button.height: 22
 
-window.active.label.text.color: #c0c0c6
-window.inactive.label.text.color: #60606c
+window.active.border.color: #28283c
+window.inactive.border.color: #121018
+
+window.active.title.bg.color: #28283c
+window.inactive.title.bg.color: #121018
+
+window.active.label.text.color: #c0c0e0
+window.inactive.label.text.color: #606070
 
 window.active.button.unpressed.image.color: #808090
 window.inactive.button.unpressed.image.color: #60606c
 
-osd.bg.color: #ff0055
-osd.border.color: #ffffff
+osd.bg.color: #600080
+osd.border.color: #c000ff
+osd.border.width: 2
 osd.label.text.color: #ffffff
-osd.window-switcher.preview.border.width: 2
-osd.window-switcher.preview.border.color: #ff0055
+osd.window-switcher.preview.border.width: 5
+osd.window-switcher.preview.border.color: #c000ff

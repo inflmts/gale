@@ -1,17 +1,14 @@
 /*
- * Waybar styles for gale-sway-waybar
- *
- * This file is part of Gale.
+ * gale::link ~/.config/labwc/waybar.css
  */
 
 * {
-  font-family: 'Montserrat', sans-serif;
-  font-weight: 500;
+  font-family: system;
   font-size: 11pt;
 }
 
 #waybar {
-  background-color: #101012;
+  background-color: #101018;
   color: #ffffff;
 }
 
@@ -23,58 +20,22 @@ button {
 
 .module {
   color: #ffffff;
-  padding: 0 5px;
-}
-
-#workspaces {
   padding: 0;
+  margin: 0 5px;
 }
 
-#workspaces button {
-  background-color: #50505a;
-  padding: 5px;
-  min-width: 20px;
-}
-
-#workspaces button.focused {
-  background-color: #ffffff;
-  color: #000000;
-}
-
-#workspaces button.visible:not(.focused) {
-  background-color: #70707e;
-}
-
-#workspaces button.urgent {
-  background-color: #ff0055;
-}
-
-#mode {
-  padding: 0 10px;
-  background-color: #ff0055;
-}
-
-#taskbar {
-  padding: 0;
-}
-
-#taskbar button {
-/*  background-color: #50505a;
-  padding: 0 10px;*/
-}
-
-#taskbar button.active {
-  background-color: #50505a;
+#bluetooth.connected {
+  color: #00ffff;
 }
 
 #pulseaudio.muted {
   color: #ffe000;
 }
 
-#tray .active:hover {
-  background-color: rgba(255, 255, 255, 0.25);
+#battery.charging {
+  color: #00ffff;
 }
 
-#custom-sep {
-  color: #808090;
+#tray .active:hover {
+  background-color: rgba(255, 255, 255, 0.25);
 }
