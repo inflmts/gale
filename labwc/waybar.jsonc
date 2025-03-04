@@ -24,7 +24,9 @@
     "interval": "once"
   },
   "network": {
-    "format": "<span color=\"#808090\">{ifname}</span> {ipaddr}"
+    "format": "<span alpha=\"#808090\">{ifname}</span> {ipaddr}",
+    "format-wifi": "<span color=\"#808090\">wi</span> {essid}",
+    "max-length": 32
   },
   "cpu": {
     "interval": 5,
@@ -32,11 +34,10 @@
   },
   "memory": {
     "interval": 5,
-    "format": "<span color=\"#808090\">mem</span> {used}G<span color=\"#e080ff\">/{total}G</span>"
+    "format": "<span color=\"#808090\">mem</span> {used}G"
   },
   "bluetooth": {
-    "format": "",
-    "format-on": "<span color=\"#808090\">bt</span> on",
+    "format": "<span color=\"#808090\">bt</span> {status}",
     "format-connected": "<span color=\"#009999\">bt</span> {device_alias}",
     "max-length": 32
   },
@@ -48,8 +49,8 @@
     "format": "<span color=\"#808090\">br</span> {percent}%"
   },
   "battery": {
-    "format": "<span color=\"#808090\">bat</span> {capacity}%",
-    "format-charging": "<span color=\"#009999\">chg</span> {capacity}%"
+    "format": "<span color=\"#808090\">ch</span> {capacity}%",
+    "format-discharging": "<span color=\"#998700\">ch</span> {capacity}%"
   },
   "clock": {
     "format": "<span color=\"#e080ff\">{:%a %m/%d/%Y</span> %I:%M %p}"

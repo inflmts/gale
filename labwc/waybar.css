@@ -33,8 +33,8 @@ button {
   color: #ffe000;
 }
 
-#battery.charging {
-  color: #00ffff;
+#battery.discharging {
+  color: #ffe000;
 }
 
 #tray .active:hover {
