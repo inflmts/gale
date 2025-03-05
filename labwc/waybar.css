@@ -25,6 +25,10 @@ button {
   margin: 0 5px;
 }
 
+#network.disconnected {
+  color: #ffe000;
+}
+
 #bluetooth.connected {
   color: #00ffff;
 }

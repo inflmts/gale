@@ -26,6 +26,7 @@
   "network": {
     "format": "<span alpha=\"#808090\">{ifname}</span> {ipaddr}",
     "format-wifi": "<span color=\"#808090\">wi</span> {essid}",
+    "format-disconnected": "no internet",
     "max-length": 32
   },
   "cpu": {
