@@ -36,11 +36,8 @@
       <action name="Reconfigure" />
     </keybind>
 
-    <!-- windows -->
+    <!-- window switcher (don't ask why there are so many) -->
 
-    <keybind key="W-q">
-      <action name="Close" />
-    </keybind>
     <keybind key="W-Tab">
       <action name="NextWindow" />
     </keybind>
@@ -52,6 +49,18 @@
     </keybind>
     <keybind key="A-S-Tab">
       <action name="PreviousWindow" />
+    </keybind>
+    <keybind key="W-j">
+      <action name="NextWindow" />
+    </keybind>
+    <keybind key="W-k">
+      <action name="PreviousWindow" />
+    </keybind>
+
+    <!-- window management -->
+
+    <keybind key="W-q">
+      <action name="Close" />
     </keybind>
 
     <keybind key="W-S-d">
