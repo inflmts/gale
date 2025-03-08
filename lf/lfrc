@@ -6,8 +6,7 @@
 #   - https://github.com/gokcehan/lf
 #
 
-# OPTIONS
-#=======================================
+#== OPTIONS ====================================================================
 
 # set $IFS to newline in subshells
 set ifs "\n"
@@ -40,8 +39,7 @@ set borderfmt "\033[38;5;240m"
 # enable mouse
 set mouse
 
-# COMMANDS & MAPPINGS
-#=======================================
+#== COMMANDS & MAPPINGS ========================================================
 
 # remove some default commands
 map gg
@@ -95,17 +93,18 @@ map ~ cd
 map . :set hidden!; statfmt
 map o push &<space>"$f"<c-a>
 
-# delete command
-cmd d delete
-
 # make <enter> an alias for l
 map <enter> open
 
-# dragon-drop
-map <c-x>d &dragon-drop -x $fx
+# terminal
+map <c-t> &dir=$PWD; cd && exec gale-term -d "$dir"
 
-# open in firefox
-#map <c-x>ff &firefox $fx
+# open in browser
+map <c-b> &exec gale-open --browser "$f"
+
+# dragon-drop
+map <a-d> &exec dragon-drop -x $fx
+
 # open in audacity
 #map <c-x>au &audacity "$f"
 

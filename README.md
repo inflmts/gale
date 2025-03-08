@@ -1,8 +1,8 @@
-# Gale
+<h1 align="center">Gale</h1>
 
-Daniel Li (InfiniteLimits) <inflmts@gmail.com>
-
-> "Your will is the most accurate way to predict the future." - Elon Musk
+<p align="center">
+  Daniel Li &mdash; <a href="https://inflmts.com">inflmts.com</a>
+</p>
 
 ## Overview
 

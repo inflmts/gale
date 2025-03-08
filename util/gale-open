@@ -18,27 +18,40 @@ usage: $progname [options] FILE|URL
 Options:
   --help      show this help
   --version   display version information
+  --browser   open browser
 EOF
 }
+
+browser=
+
+while [ $# -gt 0 ]; do
+  case $1 in
+    --help)
+      usage
+      exit 0
+      ;;
+    --version)
+      echo gale-open
+      exit 0
+      ;;
+    --browser)
+      browser=1
+      ;;
+    -*)
+      err "unrecognized option: $1"
+      exit 2
+      ;;
+    *)
+      break
+      ;;
+  esac
+  shift
+done
 
 if [ $# -ne 1 ]; then
   usage >&2
   exit 2
 fi
-
-case $1 in
-  --help)
-    usage
-    exit 0
-    ;;
-  --version)
-    echo gale-open
-    exit 0
-    ;;
-  -*)
-    err "unrecognized option: $1"
-    ;;
-esac
 
 file=$1
 
@@ -50,10 +63,12 @@ try() {
   for id; do
     if eval "test -z \"\${tried_$id-}\""; then
       eval "tried_$id=1"
-      "open_$1"
+      "open_$id"
     fi
   done
 }
+
+# applications
 
 open_neovide() {
   if has_command neovide; then
@@ -94,6 +109,12 @@ open_nano() {
 open_less() {
   if has_command less; then
     exec gale-term less "$file"
+  fi
+}
+
+open_swayimg() {
+  if has_command swayimg; then
+    exec swayimg -- "$file"
   fi
 }
 
@@ -150,7 +171,7 @@ open_text() {
 }
 
 open_image() {
-  try imv_dir imv browser
+  try swayimg imv_dir imv browser
 }
 
 open_audio() {
@@ -163,6 +184,11 @@ open_video() {
 
 if [ -n "${WAYLAND_DISPLAY-}" ] && has_command wl-copy; then
   wl-copy "$file" || :
+fi
+
+if [ -n "$browser" ]; then
+  try browser
+  exit
 fi
 
 case $file in
