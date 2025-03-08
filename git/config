@@ -1,5 +1,5 @@
 #
-# gale::link ~/.config/git/config.shared
+# ::::| ~/.config/git/config.shared
 #
 
 [alias]

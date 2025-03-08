@@ -1,5 +1,5 @@
 #!/bin/sh
-# gale::link ~/.config/gale-svc/autosleep
+# ::::| ~/.config/gale-svc/autosleep
 #
 # This is a simple front-end to swayidle that puts the computer to sleep after a
 # period of inactivity. It works for any compositor that swayidle supports, ie.

@@ -1,4 +1,4 @@
 #!/bin/sh
-# gale::link ~/.config/gale-svc/kanshi
+# ::::| ~/.config/gale-svc/kanshi
 
 exec kanshi

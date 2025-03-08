@@ -1,23 +1,21 @@
 #!/bin/sh
-# gale::link ~/.local/bin/gale-explorer
+# gale-explorer - launch a file explorer
+#
+# ::::| ~/.local/bin/gale-explorer
+#
 
-usage() {
-  echo 'usage: gale-explorer [DIR]'
-}
-
-while getopts : opt; do
-  case $opt in
-    *)
-      usage >&2
-      exit 2
-      ;;
-  esac
-done
-shift $((OPTIND-1))
-
-if command -v lf >/dev/null; then
-  exec gale-term -t lf lf -- "$@"
+if [ $# -ne 0 ]; then
+  echo >&2 "usage: ${0##*/}"
+  exit 2
 fi
 
-echo >&2 "error: unable to find suitable file explorer"
-exit 1
+if command -v lf > /dev/null 2>&1; then
+  exec gale-term -i explorer -t lf lf
+fi
+
+if command -v nautilus > /dev/null 2>&1; then
+  exec nautilus
+fi
+
+echo >&2 "error: could not find viable file explorer"
+exit 127

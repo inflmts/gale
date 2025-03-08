@@ -1,7 +1,5 @@
 #
-# gale::link ~/.inputrc
-#
-# This file is part of Gale.
+# ::::| ~/.inputrc
 #
 # Documentation:
 #   - readline(3)

@@ -1,5 +1,5 @@
 #!/bin/sh
-# gale::link ~/.config/labwc/autostart
+# ::::| ~/.config/labwc/autostart
 
 gale-svc start kanshi
 gale-svc start pipewire

@@ -1,5 +1,5 @@
 /*
- * gale::link ~/.config/labwc/waybar.css
+ * ::::| ~/.config/labwc/waybar.css
  */
 
 * {
@@ -15,14 +15,32 @@
 
 button {
   /* avoid rounded borders under each button name */
+  -gtk-icon-effect: none;
+  -gtk-icon-shadow: none;
   border: none;
   border-radius: 0;
+  box-shadow: none;
+  background-image: none;
 }
 
 .module {
   color: #ffffff;
   padding: 0;
   margin: 0 5px;
+}
+
+#taskbar button {
+  padding: 0 5px;
+  border-top: 2px solid transparent;
+}
+
+#taskbar button:hover {
+  background-color: #400060;
+}
+
+#taskbar button.active {
+  background-color: #400060;
+  border-color: #e080ff;
 }
 
 #network.disconnected {

@@ -1,7 +1,7 @@
 #!/bin/sh
 # gale-shutdown - shutdown the system
 #
-# This file is part of Gale.
+# ::::| ~/.local/bin/gale-shutdown
 #
 
 set -ue

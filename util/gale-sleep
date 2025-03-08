@@ -1,5 +1,5 @@
 #!/bin/sh
-# gale::link ~/.local/bin/gale-sleep
+# ::::| ~/.local/bin/gale-sleep
 
 set -ue
 

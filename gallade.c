@@ -1,15 +1,27 @@
-/*
- * gallade - The Gale Installer
- *
- * Copyright (c) 2025 Daniel Li
- *
- * This software is licensed under the MIT License.
- */
+#if 0
+#-------------------------------------------------------------------------------
+#
+#   gallade - The Gale Installer
+#
+#   Copyright (c) 2025 Daniel Li
+#
+#   This software is licensed under the MIT License.
+#
+#-------------------------------------------------------------------------------
+case ${1-} in
+  --debug) flags="-DGALLADE_DEBUG -g" ;;
+  '')      flags="-O2" ;;
+  *) echo >&2 "usage: $0 [--debug]"; exit 2 ;;
+esac
+mkdir -p ~/.local/bin
+exec gcc -std=c99 -Wall $flags -o ~/.local/bin/gallade "$0"
+#endif
 
 #define _DEFAULT_SOURCE
 #include <dirent.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <limits.h> /* PATH_MAX */
 #include <stdarg.h>
 #include <stddef.h>
 #include <stdio.h>
@@ -19,16 +31,19 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
+#define GALLADE_CONFIG_READ_MAX 4096
+#define GALLADE_SRC_PATH_MAX 128
+
+/*** UTILITIES ********************************************************* {{{1 */
+
 #define containerof(p, type, member) \
   ((type *)((char *)(p) - offsetof(type, member)))
 
 /*** LOGGING *********************************************************** {{{1 */
 
 #ifdef __GNUC__
-# define UNUSED __attribute__((unused))
 # define PRINTF(i, j) __attribute__((format(printf, i, j)))
 #else
-# define UNUSED
 # define PRINTF(i, j)
 #endif
 
@@ -71,23 +86,11 @@ static void enable_colors(void)
 #define ERR_SYS(...) msg_sys(prefix_err, __VA_ARGS__)
 #define DIE(n, ...) (msg(prefix_err, __VA_ARGS__), exit(n))
 #define DIE_SYS(n, ...) (msg_sys(prefix_err, __VA_ARGS__), exit(n))
-#ifndef NDEBUG
+#ifdef GALLADE_DEBUG
 # define DEBUG(...) msg(prefix_debug, __VA_ARGS__)
 #else
 # define DEBUG(...) (void)0
 #endif
-
-UNUSED PRINTF(3, 4)
-static void indentf(FILE *f, unsigned int indent, const char *format, ...)
-{
-  va_list ap;
-  for (; indent; --indent)
-    putc(' ', f);
-  va_start(ap, format);
-  vfprintf(f, format, ap);
-  va_end(ap);
-  putc('\n', f);
-}
 
 /*** MEMORY ************************************************************ {{{1 */
 
@@ -117,175 +120,138 @@ static void *xrealloc(void *p, size_t size)
 #define xresize(p, n) (p = xrealloc(p, n))
 #define xresizev(p, n, type) (p = (type*)xrealloc(p, (n) * sizeof(type)))
 
-/*** AVL *************************************************************** {{{1 */
+/*** STATE ************************************************************* {{{1 */
 
-struct avl
-{
-  const char *key;
-  struct avl *parent;
-  struct avl *left;
-  struct avl *right;
-  int bf;
+enum output_type {
+  //OUTPUT_NONE,
+  OUTPUT_SYMLINK = 1
 };
 
-/*
- * Returns the minimum element of the tree rooted at the specified node.
- */
-static struct avl *avl_min(struct avl *node)
-{
-  if (!node)
-    return NULL;
-  while (node->left)
-    node = node->left;
-  return node;
-}
+#define OUTPUT_LOGGED 0x1
 
-/*
- * Returns the inorder successor of the specified node.
- */
-static struct avl *avl_next(struct avl *node)
+struct output
 {
-  if (node->right)
-    return avl_min(node->right);
-  while (node->parent) {
-    if (node->parent->left == node) {
-      // coming in from left
-      return node->parent;
-    }
-    node = node->parent;
+  struct output *next;
+  enum output_type type;
+  unsigned int flags;
+  char *path;
+  struct {
+    char *target;
+  } symlink;
+};
+
+#define STATE_DRY 0x1
+#define STATE_VERBOSE 0x2
+#define STATE_NEED_UPDATE_LOG 0x4
+
+struct config_file;
+
+struct state
+{
+  unsigned int flags;
+  const char *srcroot;
+  struct config_file *files;
+  struct output *outputs;
+  unsigned int outputcnt;
+};
+
+/*** STATE / UTILITIES ************************************************* {{{1 */
+
+static struct output *output_get(struct state *state, const char *path)
+{
+  struct output *output = state->outputs;
+  while (output) {
+    int diff = strcmp(path, output->path);
+    if (diff < 0)
+      return NULL;
+    else if (diff == 0)
+      return output;
+    output = output->next;
   }
   return NULL;
 }
 
-/*
- * Returns the slot containing the node with the specified key,
- * or the slot where a new node would be inserted if the key is not found.
- * In any case, this never returns NULL.
- * If `pp` is not NULL, it will be set to the parent.
- */
-static struct avl **avl_slot(struct avl **root, const char *key, struct avl **pp)
+static struct output *output_add(struct state *state, const char *path)
 {
-  struct avl *node;
-  if (pp)
-    *pp = NULL;
-  while ((node = *root)) {
-    int diff = strcmp(key, node->key);
-    if (!diff)
-      return root;
-    if (pp)
-      *pp = node;
+  struct output **slot = &state->outputs;
+  while (*slot) {
+    int diff = strcmp(path, (*slot)->path);
     if (diff < 0)
-      root = &node->left;
-    else
-      root = &node->right;
+      break;
+    else if (diff == 0)
+      return NULL;
+    slot = &(*slot)->next;
   }
-  return root;
+
+  xdefine(output, struct output);
+  output->next = *slot;
+  *slot = output;
+  ++state->outputcnt;
+  return output;
 }
 
-/*
- * Inserts a node into the tree. `node->key` must be set by the caller.
- * Returns `node` if it is successfully inserted or NULL if a node with this
- * key already exists.
- */
-static struct avl *avl_insert(struct avl **root, struct avl *node)
-{
-  struct avl *parent;
-  struct avl **slot = avl_slot(root, node->key, &parent);
-  if (*slot)
-    return NULL;
-  node->parent = parent;
-  node->left = NULL;
-  node->right = NULL;
-  node->bf = 0;
-  // TODO: rebalance
-  *slot = node;
-  return node;
-}
+#define OUTPUT_ITER(state, item) \
+  for (struct output *item = (state)->outputs; item; item = item->next)
 
-/*** CF TYPES ********************************************************** {{{1 */
+//static void output_destroy(struct output *output)
+//{
+//  free(output->path);
+//  switch (output->type) {
+//    case OUTPUT_SYMLINK:
+//      free(output->symlink.target);
+//      break;
+//  }
+//}
+//
+//static void state_free(struct state *state)
+//{
+//  struct output *output = state->outputs, *next;
+//  while (output) {
+//    next = output->next;
+//    output_destroy(output);
+//    output = next;
+//  }
+//}
 
-enum cf_command_type
+/*** CONFIG ************************************************************ {{{1 */
+
+enum config_directive_type
 {
-  CF_LINK
+  CONFIG_SYMLINK
 };
 
-union cf_command;
-
-struct cf_block
+struct config_directive
 {
-  union cf_command **cmds;
-  unsigned int cmdcnt;
-  unsigned int cmdcap;
-};
-
-struct cf_command_header
-{
-  enum cf_command_type type;
+  struct config_directive *next;
+  enum config_directive_type type;
   unsigned int lineno;
+  union {
+    struct {
+      char *path;
+    } symlink;
+  };
 };
 
-struct cf_command_link
+struct config_file
 {
-  struct cf_command_header h;
+  struct config_file *next;
   char *path;
+  struct config_directive *head;
+  struct config_directive **tail;
 };
 
-union cf_command
-{
-  struct cf_command_header h;
-  struct cf_command_link link;
-};
+/*** CONFIG / UTILITIES ************************************************ {{{1 */
 
-struct cf
+static struct config_directive *config_add_directive(struct config_file *file)
 {
-  struct cf_block block;
-};
-
-/*** CF UTILITIES ****************************************************** {{{1 */
-
-static void cf_init_block(struct cf_block *block)
-{
-  block->cmds = NULL;
-  block->cmdcnt = 0;
-  block->cmdcap = 0;
+  xdefine(directive, struct config_directive);
+  directive->next = NULL;
+  *file->tail = directive;
+  file->tail = &directive->next;
+  return directive;
 }
 
-static void cf_free_block(struct cf_block *block)
-{
-  while (block->cmdcnt) {
-    union cf_command *cmd = block->cmds[--block->cmdcnt];
-    switch (cmd->h.type) {
-      case CF_LINK:
-        free(cmd->link.path);
-        break;
-    }
-  }
-  free(block->cmds);
-}
-
-static void cf_add_command(struct cf_block *block, union cf_command *cmd)
-{
-  if (block->cmdcnt >= block->cmdcap) {
-    block->cmdcap = block->cmdcap ? block->cmdcap * 2 : 4;
-    xresizev(block->cmds, block->cmdcap, union cf_command*);
-  }
-  block->cmds[block->cmdcnt++] = cmd;
-}
-
-static struct cf *cf_new()
-{
-  xdefine(cf, struct cf);
-  cf_init_block(&cf->block);
-  return cf;
-}
-
-static void cf_destroy(struct cf *cf)
-{
-  cf_free_block(&cf->block);
-  free(cf);
-}
-
-/*** CF PARSER ********************************************************* {{{1 */
+/*** CONFIG / PARSER *************************************************** {{{1 */
 
 #define ISSPACE(c) ((c) == ' ')
 #define ISDIGIT(c) ((c) >= '0' && (c) <= '9')
@@ -295,23 +261,20 @@ static void cf_destroy(struct cf *cf)
 #define ISDIRECTIVE(c) ISLOWER(c)
 #define ISPATH(c) (ISALNUM(c) || (c) == '.' || (c) == '-' || (c) == '_')
 
-struct cf_parser
+struct config_parser
 {
-  struct cf *cf;
+  struct config_file *file;
   unsigned int lineno;
-  struct cf_block *block;
   const char *errmsg;
   const char *cur;
   const char *end;
 };
 
-#define s ps->cur
+#define s p->cur
 
-static int cf_parse_path(struct cf_parser *ps, char **pathp)
+static int config_parse_path(struct config_parser *p, char **pathp)
 {
-  if (*s != '~' || *(++s) != '/')
-    return -1;
-  const char *begin = ++s;
+  const char *begin = s;
   while (1) {
     while (*s == '.')
       ++s;
@@ -329,48 +292,39 @@ static int cf_parse_path(struct cf_parser *ps, char **pathp)
   return 0;
 }
 
-static int cf_parse_space(struct cf_parser *ps)
-{
-  if (!ISSPACE(*s)) return -1;
-  do ++s;
-  while (ISSPACE(*s));
-  return 0;
-}
+//static int config_parse_space(struct config_parser *p)
+//{
+//  if (!ISSPACE(*s))
+//    return -1;
+//  do ++s;
+//  while (ISSPACE(*s));
+//  return 0;
+//}
 
-static int cf_parse_eol(struct cf_parser *ps)
+static int config_parse_eol(struct config_parser *p)
 {
   while (ISSPACE(*s))
     ++s;
-  if (*s == '\n')
-    goto newline;
-  if (*s == '#') {
-    do ++s;
-    while (*s != '\n');
-    goto newline;
-  }
-  return -1;
-newline:
+  if (*s != '\n')
+    return -1;
   ++s;
-  ++ps->lineno;
+  ++p->lineno;
   return 0;
 }
 
-static int cf_parse_link(struct cf_parser *ps)
+static int config_parse_symlink(struct config_parser *p)
 {
-  // gale::link <path> [if <cond>]
-  // TODO: handle if expression
+  // ~/PATH
 
-  unsigned int lineno = ps->lineno;
+  unsigned int lineno = p->lineno;
   char *path = NULL;
-  if (cf_parse_space(ps)) goto fail;
-  if (cf_parse_path(ps, &path)) goto fail;
-  if (cf_parse_eol(ps)) goto fail;
+  if (config_parse_path(p, &path)) goto fail;
+  if (config_parse_eol(p)) goto fail;
 
-  xdefine(cmd, struct cf_command_link);
-  cmd->h.type = CF_LINK;
-  cmd->h.lineno = lineno;
-  cmd->path = path;
-  cf_add_command(ps->block, (union cf_command *)cmd);
+  struct config_directive *directive = config_add_directive(p->file);
+  directive->type = CONFIG_SYMLINK;
+  directive->lineno = lineno;
+  directive->symlink.path = path;
   return 0;
 
 fail:
@@ -378,325 +332,143 @@ fail:
   return -1;
 }
 
-static int cf_parse_command(struct cf_parser *ps)
+static int config_parse_directive(struct config_parser *p)
 {
-  if (!ISLOWER(*s))
-    return -1;
-  const char *name = s;
-  do ++s;
-  while (ISLOWER(*s));
-  size_t len = s - name;
+  if (*s == '~') {
+    if (*(++s) != '/')
+      return -1;
+    ++s;
+    return config_parse_symlink(p);
+  }
 
-  if (len == 4 && !memcmp(name, "link", 4))
-    return cf_parse_link(ps);
+  //if (!ISLOWER(*s))
+  //  return -1;
+  //const char *name = s;
+  //do ++s;
+  //while (ISLOWER(*s));
+  //size_t len = s - name;
 
-  ps->errmsg = "invalid command";
+  p->errmsg = "invalid command";
   return -1;
 }
 
-static int cf_parse_main(struct cf_parser *ps)
+static int config_parse_main(struct config_parser *p)
 {
-begin:
-  ++ps->lineno;
-  if (s >= ps->end)
-    return 0;
+  while (s < p->end) {
+    ++p->lineno;
 
-mid:
-  if (*s == '\n') {
+    while (*s != '\n') {
+      // find directive signature (four colons, bar, and whitespace)
+      if (*(s++) != ':' ||
+          *s     != ':' ||
+          *(++s) != ':' ||
+          *(++s) != ':' ||
+          *(++s) != '|' ||
+          !ISSPACE(*(++s))) continue;
+
+      do ++s;
+      while (ISSPACE(*s));
+      if (config_parse_directive(p))
+        return -1;
+    }
     ++s;
-    goto begin;
-  }
-
-  // find command string
-  if (*(s++) != 'g') goto mid;
-  if (*s     != 'a') goto mid;
-  if (*(++s) != 'l') goto mid;
-  if (*(++s) != 'e') goto mid;
-  if (*(++s) != ':') goto mid;
-  if (*(++s) != ':') goto mid;
-  ++s;
-
-  if (cf_parse_command(ps))
-    return -1;
-  goto begin;
-}
-
-static void cf_parse_init(struct cf_parser *ps)
-{
-  ps->cf = cf_new();
-  ps->lineno = 0;
-  ps->block = &ps->cf->block;
-  ps->errmsg = "syntax error";
-}
-
-static void cf_parse_abort(struct cf_parser *ps)
-{
-  cf_destroy(ps->cf);
-}
-
-static int cf_parse(struct cf_parser *ps, const char *buf, size_t len)
-{
-  ps->cur = buf;
-  ps->end = buf + len;
-
-  if (cf_parse_main(ps)) {
-    ERR("line %u: %s", ps->lineno, ps->errmsg);
-    return -1;
   }
   return 0;
 }
 
-static struct cf *cf_parse_end(struct cf_parser *ps)
+static int config_parse(struct config_file *file, const char *buf, size_t size)
 {
-  return ps->cf;
+  struct config_parser p;
+  p.file = file;
+  p.lineno = 0;
+  p.errmsg = "invalid syntax";
+  p.cur = buf;
+  p.end = buf + size;
+
+  if (config_parse_main(&p)) {
+    ERR("%s: line %u: %s", file->path, p.lineno, p.errmsg);
+    return -1;
+  }
+
+  if (!file->head)
+    WARN("%s: no directives found", file->path);
+
+  return 0;
 }
 
 #undef s
 
-/*** CONFIG TYPES ****************************************************** {{{1 */
+/*** CONFIG / LOADER *************************************************** {{{1 */
 
-struct conffile
+struct config_loader
 {
-  size_t size;
-  unsigned long long mtime;
-  struct cf *cf;
-};
-
-#define CONFDIR_ROOT 0x1
-
-struct confdir
-{
-  unsigned long long mtime;
-  int flags;
-  struct avl *entries;
-};
-
-enum confent_type
-{
-  CONFENT_NONE,
-  CONFENT_FILE,
-  CONFENT_DIR
-};
-
-struct confent
-{
-  enum confent_type type;
+  struct state *state;
   char *path;
-  char *name;
-  struct avl node;
-  union {
-    struct conffile file;
-    struct confdir dir;
-  };
+  size_t pathlen;
+  size_t pathcap;
+  size_t prefixlen;
 };
 
-enum action_type {
-  ACTION_LINK
-};
-
-struct action
+static int config_load_alloc_path(struct config_loader *loader)
 {
-  enum action_type type;
-  char *path;
-  struct avl node;
-  struct {
-    char *target;
-  } link;
-};
-
-struct config
-{
-  struct confdir root;
-  int real;
-  int verbose;
-  int bad;
-  int need_update_cache;
-  struct avl *actions;
-  char *buf;
-  size_t bufsize;
-};
-
-/*** CONFIG UTILITIES ************************************************** {{{1 */
-
-static void conffile_free(struct conffile *file)
-{
-  if (file->cf)
-    cf_destroy(file->cf);
-}
-
-static void confdir_init(struct confdir *dir)
-{
-  dir->mtime = 0;
-  dir->flags = 0;
-  dir->entries = NULL;
-}
-
-static struct confent *confdir_add(struct confdir *dir, const char *name)
-{
-  xdefine(ent, struct confent);
-  ent->node.key = name;
-  if (avl_insert(&dir->entries, &ent->node))
-    return ent;
-  free(ent);
-  return NULL;
-}
-
-static inline struct confent *confent_from_node(struct avl *node)
-{
-  return node ? containerof(node, struct confent, node) : NULL;
-}
-
-#define CONFDIR_ITER(dir, ent) \
-  for (struct confent *ent = confent_from_node(avl_min((dir)->entries)); \
-       ent; ent = confent_from_node(avl_next(&ent->node)))
-
-static void confent_free_data(struct confent *ent);
-
-static void confdir_free(struct confdir *dir)
-{
-  // TODO
-}
-
-static void confent_free_data(struct confent *ent)
-{
-  switch (ent->type) {
-    case CONFENT_NONE:
-      break;
-    case CONFENT_FILE:
-      conffile_free(&ent->file);
-      break;
-    case CONFENT_DIR:
-      confdir_free(&ent->dir);
-      break;
+  if (loader->pathlen >= loader->pathcap) {
+    loader->pathcap = loader->pathlen + 1;
+    xresize(loader->path, loader->pathcap);
   }
+  return 0;
 }
 
-static void config_init(struct config *conf, int real, int verbose)
+static int config_load_file(struct config_loader *loader, struct config_file *file)
 {
-  confdir_init(&conf->root);
-  conf->root.flags = CONFDIR_ROOT;
-  conf->real = real;
-  conf->verbose = verbose;
-  conf->need_update_cache = 0;
-  conf->bad = 0;
-  conf->actions = NULL;
-  conf->buf = xmalloc(4096);
-  conf->bufsize = 4096;
-}
+  DEBUG("%s: %s", __func__, loader->path);
 
-static struct action *config_add_action(struct config *conf, const char *path)
-{
-  xdefine(act, struct action);
-  act->node.key = path;
-  if (avl_insert(&conf->actions, &act->node))
-    return act;
-  free(act);
-  return NULL;
-}
-
-static inline struct action *action_from_node(struct avl *node)
-{
-  return node ? containerof(node, struct action, node) : NULL;
-}
-
-#define ACTION_ITER(conf, act) \
-  for (struct action *act = action_from_node(avl_min((conf)->actions)); \
-       act; act = action_from_node(avl_next(&act->node)))
-
-//static void config_free(struct config *conf)
-//{
-//  confdir_free(&conf->root);
-//}
-
-/*** CONFIG LOADER ***************************************************** {{{1 */
-
-static struct cf *load_file(struct config *conf, const char *path, size_t len)
-{
-  DEBUG("loading file: %s", path);
-
-  int fd = open(path, O_RDONLY);
+  int fd = open(loader->path, O_RDONLY);
   if (fd < 0) {
-    ERR_SYS("failed to open '%s'", path);
-    return NULL;
+    ERR_SYS("failed to open '%s'", loader->path);
+    return -1;
   }
 
-  struct cf *cf = NULL;
-  char *buf = xmalloc(len + 1);
-  char *p = buf;
-  while (p < buf + len) {
-    ssize_t readsize = read(fd, p, buf + len - p);
-    if (readsize < 0) {
-      ERR_SYS("failed to read '%s'", path);
-      goto finish;
-    }
-    if (readsize == 0) {
-      ERR("'%s' shrank", path);
-      goto finish;
-    }
-    p += readsize;
+  int ret = -1;
+  char buf[GALLADE_CONFIG_READ_MAX];
+  ssize_t size = read(fd, buf, sizeof(buf) - 1);
+  if (size < 0) {
+    ERR_SYS("read");
+    goto finish;
+  }
+  if (size == 0) {
+    // empty file
+    goto finish;
   }
 
   close(fd);
   fd = -1;
 
-  if (buf[len - 1] != '\n')
-    buf[len++] = '\n';
+  // pad with an invalid character
+  buf[size++] = '\0';
 
-  struct cf_parser ps;
-  cf_parse_init(&ps);
-  if (cf_parse(&ps, buf, len)) {
-    cf_parse_abort(&ps);
-    goto finish;
-  }
-
-  cf = cf_parse_end(&ps);
+  ret = config_parse(file, buf, size);
 
 finish:
-  free(buf);
   if (fd >= 0)
     close(fd);
-  return cf;
+  return ret;
 }
 
-static int update_file(struct config *conf, struct conffile *file,
-                       size_t size, unsigned long long mtime, int init)
+static int config_load_dir(struct config_loader *loader, struct config_file ***slotp)
 {
-  if (init || file->size != size || file->mtime != mtime) {
-    file->size = size;
-    file->mtime = mtime;
-    file->cf = load_file(conf, conf->buf, size);
-    if (file->cf)
-      conf->need_update_cache = 1;
-    else
-      // bad files don't trigger a cache write by themselves
-      conf->bad = 1;
-  }
-  return 0;
-}
+  DEBUG("%s: %s", __func__, loader->path);
 
-static int load_dir(struct config *conf, struct confdir *dir, const char *path)
-{
-  DEBUG("config: loading directory: %s", conf->buf);
-
-  // construct the full path
-  size_t pathlen;
-  if (path) {
-    pathlen = strlen(path);
-    if (conf->bufsize < pathlen + 7) {
-      conf->bufsize = pathlen;
-      xresize(conf->buf, conf->bufsize);
-    }
-    sprintf(conf->buf, ".gale/%s", path);
-  } else {
-    strcpy(conf->buf, ".gale");
-  }
+  struct config_file *end = **slotp;
 
   struct dirent *dent;
-  DIR *d = opendir(conf->buf);
+  DIR *d = opendir(loader->path);
   if (!d) {
-    ERR_SYS("failed to open '%s'", conf->buf);
+    ERR_SYS("failed to open '%s'", loader->path);
     return -1;
   }
+
+  size_t pathlen = loader->pathlen;
+  loader->path[pathlen] = '/';
 
   while (errno = 0, dent = readdir(d)) {
     const char *name = dent->d_name;
@@ -705,27 +477,61 @@ static int load_dir(struct config *conf, struct confdir *dir, const char *path)
     if (*name == '.')
       continue;
 
-    // skip entries that are definitely not files or directories
-    if (dent->d_type != DT_UNKNOWN
-        && dent->d_type != DT_DIR
-        && (dir->flags & CONFDIR_ROOT || dent->d_type != DT_REG))
-      continue;
+    int type = dent->d_type;
 
-    struct confent *ent = confdir_add(dir, name);
-    if (!ent)
-      continue;
-
-    // construct the full path
-    size_t namelen = strlen(name);
-    if (path) {
-      ent->path = xmalloc(pathlen + 1 + namelen + 1);
-      sprintf(ent->path, "%s/%s", path, name);
-      ent->name = ent->path + pathlen + 1;
-    } else {
-      ent->path = memcpy(xmalloc(namelen + 1), name, namelen + 1);
-      ent->name = ent->path;
+    // skip entries that are not files or directories
+    switch (type) {
+      case DT_UNKNOWN:
+      case DT_REG:
+      case DT_DIR:
+        break;
+      default:
+        continue;
     }
-    ent->node.key = ent->name;
+
+    // construct pathname
+    size_t namelen = strlen(name);
+    loader->pathlen = pathlen + 1 + namelen;
+    config_load_alloc_path(loader);
+    memcpy(loader->path + pathlen + 1, name, namelen + 1);
+
+    if (type == DT_UNKNOWN) {
+      // determine type using lstat()
+      struct stat st;
+      if (lstat(loader->path, &st)) {
+        ERR_SYS("failed to lstat '%s'", loader->path);
+        return -1;
+      }
+      switch (st.st_mode & S_IFMT) {
+        case S_IFREG: type = DT_REG; break;
+        case S_IFDIR: type = DT_DIR; break;
+        default: continue;
+      }
+    }
+
+    struct config_file **slot = *slotp;
+    while (*slot != end) {
+      int diff = strcmp(name, (*slot)->path + pathlen + 1 - loader->prefixlen);
+      if (diff < 0) {
+        break;
+      } else if (diff == 0) {
+        ERR("readdir returned duplicate entry '%s'", name);
+        return -1;
+      }
+      slot = &(*slot)->next;
+    }
+
+    // construct pathname
+    size_t basesize = pathlen - loader->prefixlen + 1 + namelen + 1;
+    char *base = memcpy(xmalloc(basesize), loader->path + loader->prefixlen, basesize);
+
+    // insert file
+    xdefine(file, struct config_file);
+    file->next = *slot;
+    file->path = base;
+    file->head = NULL;
+    file->tail = type == DT_DIR ? NULL : &file->head;
+    *slot = file;
   }
 
   if (errno) {
@@ -735,368 +541,147 @@ static int load_dir(struct config *conf, struct confdir *dir, const char *path)
   }
 
   closedir(d);
+  d = NULL;
+
+  struct config_file *file;
+  while ((file = **slotp) != end) {
+    // construct pathname
+    const char *name = file->path + pathlen + 1 - loader->prefixlen;
+    size_t namelen = strlen(name);
+    loader->pathlen = pathlen + 1 + namelen;
+    config_load_alloc_path(loader);
+    memcpy(loader->path + pathlen + 1, name, namelen + 1);
+
+    if (file->tail) {
+      // file
+      config_load_file(loader, file);
+      *slotp = &file->next;
+    } else {
+      // directory
+      **slotp = file->next;
+      free(file->path);
+      free(file);
+      config_load_dir(loader, slotp);
+    }
+  }
+
+  loader->path[pathlen] = '\0';
+  loader->pathlen = pathlen;
+
   return 0;
 }
 
-static int update_ent(struct config *conf, struct confent *ent);
-
-static int update_dir(struct config *conf, struct confdir *dir,
-                      unsigned long long mtime, int init, const char *path)
+static int config_load(struct state *state)
 {
-  if (init)
-    confdir_init(dir);
-
-  if (init || dir->mtime != mtime) {
-    // update directory listing
-    dir->mtime = mtime;
-    conf->need_update_cache = 1;
-    if (load_dir(conf, dir, path))
-      return -1;
+  struct stat st;
+  if (stat(state->srcroot, &st)) {
+    ERR_SYS("failed to stat '%s'", state->srcroot);
+    return -1;
   }
 
-  int ret = 0;
-  CONFDIR_ITER(dir, ent) {
-    if (update_ent(conf, ent))
-      ret = -1;
-  }
+  size_t rootlen = strlen(state->srcroot);
+
+  struct config_loader loader;
+  loader.state = state;
+  loader.path = memcpy(xmalloc(4096), state->srcroot, rootlen + 1);
+  loader.pathlen = rootlen;
+  loader.pathcap = 4096;
+  loader.prefixlen = rootlen + 1;
+
+  struct config_file **slot = &state->files;
+  int ret = config_load_dir(&loader, &slot);
+  free(loader.path);
   return ret;
 }
 
-static int update_ent(struct config *conf, struct confent *ent)
+/*** LOG / PARSER ****************************************************** {{{1 */
+
+static int log_parse(struct state *state, const char *s, size_t len)
 {
-  struct stat st;
+  const char *end = s + len;
+  unsigned int lineno = 1;
+  char path[PATH_MAX];
 
-  size_t pathlen = strlen(ent->path);
-  if (conf->bufsize < pathlen + 7) {
-    conf->bufsize = pathlen;
-    xresize(conf->buf, conf->bufsize);
-  }
-
-  sprintf(conf->buf, ".gale/%s", ent->path);
-
-  if (lstat(conf->buf, &st)) {
-    ERR_SYS("failed to lstat '%s'", conf->buf);
-    return -1;
-  }
-
-  if (S_ISREG(st.st_mode)) {
-    int init = ent->type != CONFENT_FILE;
-    if (init) {
-      confent_free_data(ent);
-      ent->type = CONFENT_FILE;
+  while (s < end) {
+    const char *begin = s;
+    // path must begin with a dot
+    if (*s != '.')
+      goto invalid_path;
+    while (1) {
+      while (*s == '.')
+        ++s;
+      // path component cannot contain only dots
+      if (!ISPATH(*s))
+        goto invalid_path;
+      do ++s;
+      while (ISPATH(*s));
+      if (*s != '/')
+        break;
+      ++s;
     }
-    return update_file(conf, &ent->file, st.st_size, st.st_mtime, init);
-  }
+    if (*s != '\n')
+      goto invalid_path;
 
-  if (S_ISDIR(st.st_mode)) {
-    int init = ent->type != CONFENT_DIR;
-    if (init) {
-      confent_free_data(ent);
-      ent->type = CONFENT_DIR;
+    size_t len = s - begin;
+    if (len >= sizeof(path)) {
+      ERR("log: path too long at line %u: '%.*s'", lineno, (int)len, begin);
+      return -1;
     }
-    return update_dir(conf, &ent->dir, st.st_mtime, init, ent->path);
-  }
+    memcpy(path, begin, len);
+    path[len] = '\0';
 
-  // the file is some other type that we should ignore
-  switch (ent->type) {
-    case CONFENT_NONE:
-      break;
-    case CONFENT_FILE:
-      conffile_free(&ent->file);
-      break;
-    case CONFENT_DIR:
-      confdir_free(&ent->dir);
-      break;
-  }
-  ent->type = CONFENT_NONE;
-  conf->need_update_cache = 1;
-  return 0;
-}
+    struct output *output = output_get(state, path);
+    if (output) {
+      if (output->flags & OUTPUT_LOGGED) {
+        state->flags |= STATE_NEED_UPDATE_LOG;
+      } else {
+        output->flags |= OUTPUT_LOGGED;
+        --state->outputcnt;
+      }
+      goto next;
+    }
 
-static int update_config(struct config *conf)
-{
-  static const char *const gale_root = ".gale";
+    // remove
+    state->flags |= STATE_NEED_UPDATE_LOG;
 
-  struct stat st;
-  if (stat(gale_root, &st)) {
-    ERR_SYS("failed to stat '%s'", gale_root);
-    return -1;
-  }
-
-  return update_dir(conf, &conf->root, st.st_mtime, 0, NULL);
-}
-
-/*** CACHE PARSER ****************************************************** {{{1 */
-
-struct cache_parser
-{
-  struct config *conf;
-  const char *cur;
-  const char *end;
-  unsigned int lineno;
-  const char *errmsg;
-};
-
-#define s ps->cur
-
-static int cache_parse_eol(struct cache_parser *ps)
-{
-  // skip trailing space
-  while (ISSPACE(*s))
-    ++s;
-  if (*s == '\n') {
-    ++s;
-    return 0;
-  }
-  if (*s == '#') {
-    // comment
-    do ++s;
-    while (*s != '\n');
-    ++s;
-    return 0;
-  }
-  return -1;
-}
-
-static int cache_parse_space(struct cache_parser *ps)
-{
-  if (!ISSPACE(*s))
-    return -1;
-  do ++s;
-  while (ISSPACE(*s));
-  return 0;
-}
-
-static int cache_parse_name(struct cache_parser *ps, char **namep)
-{
-  const char *begin = s;
-  while (*s == '.')
-    ++s;
-  if (!ISPATH(*s))
-    return -1;
-  do ++s;
-  while (ISPATH(*s));
-  size_t len = s - begin;
-  char *name = memcpy(xmalloc(len + 1), begin, len);
-  name[len] = '\0';
-  *namep = name;
-  return 0;
-}
-
-static int cache_parse_size(struct cache_parser *ps, size_t *sizep)
-{
-  size_t size = 0;
-  if (!ISDIGIT(*s))
-    return -1;
-  do size = size * 10 + *(s++) - '0';
-  while (ISDIGIT(*s));
-  *sizep = size;
-  return 0;
-}
-
-static int cache_parse_mtime(struct cache_parser *ps, unsigned long long *mtimep)
-{
-  unsigned long long mtime = 0;
-  if (!ISDIGIT(*s))
-    return -1;
-  do mtime = mtime * 10 + *(s++) - '0';
-  while (ISDIGIT(*s));
-  *mtimep = mtime;
-  return 0;
-}
-
-static int cache_parse_cf(struct cache_parser *ps, struct cf **cfp)
-{
-  size_t cf_lineno;
-  struct cf_parser cps;
-  cf_parse_init(&cps);
-
-next:
-  if (cache_parse_size(ps, &cf_lineno)) goto done;
-  ++ps->lineno;
-  if (cache_parse_space(ps)) goto fail;
-
-  // synchronize parsers
-  cps.cur = s;
-  cps.end = ps->end;
-  cps.lineno = cf_lineno;
-  if (cf_parse_command(&cps)) {
-    s = cps.cur;
-    ps->errmsg = cps.errmsg;
-    goto fail;
-  }
-
-  s = cps.cur;
-  goto next;
-
-done:
-  if (!(*cfp = cf_parse_end(&cps)))
-    return -1;
-  return 0;
-
-fail:
-  cf_parse_abort(&cps);
-  return -1;
-}
-
-static struct confent *cache_prepare_entry(
-    struct cache_parser *ps, struct confent *dir,
-    enum confent_type type, char *name)
-{
-  struct confent *ent = confdir_add(dir ? &dir->dir : &ps->conf->root, name);
-  if (!ent) {
-    ps->errmsg = "duplicate entry";
-    free(name);
-    return NULL;
-  }
-
-  size_t namelen = strlen(name);
-  size_t pathlen = namelen;
-  char *path = name;
-  if (dir) {
-    size_t dirlen = strlen(dir->path);
-    pathlen = dirlen + 1 + namelen;
-    path = xmalloc(pathlen + 1);
-    strcpy(path, dir->path);
-    path[dirlen] = '/';
-    memcpy(path + dirlen + 1, name, namelen + 1);
-    free(name);
-    name = path + dirlen + 1;
-  }
-  ent->type = type;
-  ent->path = path;
-  ent->name = name;
-  ent->node.key = name;
-  return ent;
-}
-
-static int cache_parse_main(struct cache_parser *ps)
-{
-  int ret = -1;
-  char *name = NULL;
-  size_t size;
-  unsigned long long mtime;
-  struct confent *ent;
-
-  struct confent **dirstack = xnewv(8, struct confent*);
-  unsigned int dircnt = 0;
-  unsigned int dircap = 8;
-
-next:
-  ++ps->lineno;
-  if (s >= ps->end) {
-    ps->errmsg = "unexpected end of file";
-    goto fail;
-  }
-  if (dircnt) switch (*s) {
-    case '?': ++s; goto none;
-    case 'f': ++s; goto file;
-    case 'd': ++s; goto dir;
-    case '.': ++s; goto up;
-  } else switch (*s) {
-    case 'r': ++s; goto root;
-  }
-  if (cache_parse_eol(ps)) {
-    ps->errmsg = "invalid command";
-    goto fail;
-  }
-  goto next;
-
-root:
-  dirstack[dircnt++] = NULL;
-
-  if (cache_parse_space(ps)) goto fail;
-  if (cache_parse_mtime(ps, &ps->conf->root.mtime)) goto fail;
-  if (cache_parse_eol(ps)) goto fail;
-  goto next;
-
-none:
-  if (cache_parse_space(ps)) goto fail;
-  if (cache_parse_name(ps, &name)) goto fail;
-  if (cache_parse_eol(ps)) goto fail;
-
-  if (!(ent = cache_prepare_entry(ps, dirstack[dircnt - 1], CONFENT_NONE, name)))
-    goto fail;
-  name = NULL;
-  goto next;
-
-file:
-  if (cache_parse_space(ps)) goto fail;
-  if (cache_parse_name(ps, &name)) goto fail;
-  if (cache_parse_space(ps)) goto fail;
-  if (cache_parse_size(ps, &size)) goto fail;
-  if (cache_parse_space(ps)) goto fail;
-  if (cache_parse_mtime(ps, &mtime)) goto fail;
-  if (cache_parse_eol(ps)) goto fail;
-
-  if (!(ent = cache_prepare_entry(ps, dirstack[dircnt - 1], CONFENT_FILE, name)))
-    goto fail;
-  name = NULL;
-
-  ent->file.size = size;
-  ent->file.mtime = mtime;
-  ent->file.cf = NULL;
-
-  if (cache_parse_cf(ps, &ent->file.cf))
-    goto fail;
-  goto next;
-
-dir:
-  if (cache_parse_space(ps)) goto fail;
-  if (cache_parse_name(ps, &name)) goto fail;
-  if (cache_parse_space(ps)) goto fail;
-  if (cache_parse_mtime(ps, &mtime)) goto fail;
-  if (cache_parse_eol(ps)) goto fail;
-
-  if (!(ent = cache_prepare_entry(ps, dirstack[dircnt - 1], CONFENT_DIR, name)))
-    goto fail;
-  name = NULL;
-
-  confdir_init(&ent->dir);
-  ent->dir.mtime = mtime;
-
-  // push directory
-  if (dircnt == dircap)
-    xresizev(dirstack, dircap *= 2, struct confent*);
-  dirstack[dircnt++] = ent;
-  goto next;
-
-up:
-  if (cache_parse_eol(ps)) goto fail;
-
-  // pop directory
-  if (--dircnt)
+    struct stat st;
+    if (lstat(path, &st)) {
+      if (errno == ENOENT)
+        // no longer exists
+        goto next;
+      ERR_SYS("failed to lstat '%s'", path);
+      return -1;
+    }
+    if (!S_ISLNK(st.st_mode)) {
+      WARN("refusing to remove non-symlink '%s'", path);
+      goto next;
+    }
+    MSG("Removing: %s", path);
+    if (state->flags & STATE_DRY)
+      goto next;
+    if (unlink(path)) {
+      ERR_SYS("failed to unlink '%s'", path);
+      return -1;
+    }
     goto next;
 
-  // that was the root
-  if (s < ps->end)
-    ps->errmsg = "expected end of file";
-  else
-    ret = 0;
-
-fail:
-  free(name);
-  free(dirstack);
-  return ret;
-}
-
-static int cache_parse(struct config *conf, const char *buf, size_t len)
-{
-  struct cache_parser ps;
-  ps.conf = conf;
-  ps.cur = buf;
-  ps.end = buf + len;
-  ps.lineno = 0;
-  ps.errmsg = "invalid value";
-
-  if (cache_parse_main(&ps)) {
-    ERR("cache: line %u: %s", ps.lineno, ps.errmsg);
+invalid_path:
+    while (*s != '\n')
+      ++s;
+    ERR("log: invalid path at line %u: '%.*s'", lineno, (int)(s - begin), begin);
     return -1;
+
+next:
+    ++s;
+    ++lineno;
   }
+
   return 0;
 }
 
-static int cache_load(struct config *conf, const char *filename)
+/*** LOG / READER ****************************************************** {{{1 */
+
+static int log_read(struct state *state, const char *filename)
 {
   struct stat st;
   if (stat(filename, &st)) {
@@ -1106,101 +691,68 @@ static int cache_load(struct config *conf, const char *filename)
     return -1;
   }
 
-  size_t len = st.st_size;
-  if (len == 0)
+  size_t size = st.st_size;
+  if (size == 0)
+    // empty log file
     return 0;
 
-  int fd = open(filename, O_RDONLY);
-  if (fd < 0) {
-    ERR_SYS("failed to open '%s'", filename);
+  // allocate extra byte for terminating newline
+  char *buf = malloc(size + 1);
+  if (!buf) {
+    ERR("log file too large");
     return -1;
   }
 
   int ret = -1;
-  char *buf = xmalloc(len + 1);
-  char *p = buf;
-  while (p < buf + len) {
-    ssize_t readsize = read(fd, p, buf + len - p);
+  int fd = open(filename, O_RDONLY);
+  if (fd < 0) {
+    ERR_SYS("failed to open '%s'", filename);
+    goto finish;
+  }
+
+  char *cur = buf;
+  char *end = buf + size;
+  while (cur < end) {
+    ssize_t readsize = read(fd, cur, end - cur);
     if (readsize < 0) {
       ERR_SYS("read");
       goto finish;
     }
     if (readsize == 0) {
-      ERR("cache file shrank");
-      goto finish;
+      // log file shrank?
+      size = cur - buf;
+      break;
     }
-    p += readsize;
+    cur += readsize;
   }
 
   close(fd);
   fd = -1;
 
-  if (buf[len - 1] != '\n')
-    buf[len++] = '\n';
+  if (buf[size - 1] != '\n')
+    buf[size++] = '\n';
 
-  ret = cache_parse(conf, buf, len);
+  ret = log_parse(state, buf, size);
 
 finish:
-  free(buf);
   if (fd >= 0)
     close(fd);
+  free(buf);
   return ret;
 }
 
-/*** CACHE WRITER ****************************************************** {{{1 */
+/*** LOG / WRITER ****************************************************** {{{1 */
 
-static void cache_write_cf(FILE *f, struct cf_block *block)
-{
-  for (unsigned int i = 0; i < block->cmdcnt; i++) {
-    union cf_command *cmd = block->cmds[i];
-    fprintf(f, "%u ", cmd->h.lineno);
-    switch (cmd->h.type) {
-      case CF_LINK:
-        fprintf(f, "link ~/%s\n", cmd->link.path);
-        break;
-    }
-  }
-}
-
-static void cache_write_dir(FILE *f, struct confdir *dir)
-{
-  CONFDIR_ITER(dir, ent) {
-    switch (ent->type) {
-      case CONFENT_NONE:
-        // ignore
-        break;
-      case CONFENT_FILE:
-        if (ent->file.cf) {
-          fprintf(f, "f %s %zu %lld\n", ent->name, ent->file.size, ent->file.mtime);
-          cache_write_cf(f, &ent->file.cf->block);
-        } else {
-          // this will force update_file to read it again
-          fprintf(f, "? %s\n", ent->name);
-        }
-        break;
-      case CONFENT_DIR:
-        fprintf(f, "d %s %lld\n", ent->name, ent->dir.mtime);
-        cache_write_dir(f, &ent->dir);
-        break;
-    }
-  }
-  fprintf(f, ".\n");
-}
-
-static void cache_write(FILE *f, struct config *conf)
-{
-  fprintf(f, "r %lld\n", conf->root.mtime);
-  cache_write_dir(f, &conf->root);
-}
-
-static int cache_save(struct config *conf, const char *filename)
+static int log_write(struct state *state, const char *filename)
 {
   int ret = -1;
   FILE *f = NULL;
 
-  size_t filelen = strlen(filename);
-  char *tmpfile = malloc(filelen + 5);
-  sprintf(tmpfile, "%s.tmp", filename);
+  char tmpfile[PATH_MAX];
+  if (snprintf(tmpfile, sizeof(tmpfile), "%s.tmp", filename) >= sizeof(tmpfile)) {
+    ERR("log filename too long");
+    goto finish;
+  }
 
   int fd = open(tmpfile, O_WRONLY | O_CREAT | O_EXCL, 0666);
   if (fd < 0) {
@@ -1215,10 +767,14 @@ static int cache_save(struct config *conf, const char *filename)
     goto finish;
   }
 
-  cache_write(f, conf);
+  // write outputs
+  OUTPUT_ITER(state, output) {
+    fprintf(f, "%s\n", output->path);
+  }
+
   if (ferror(f)) {
     ERR("write error");
-    return -1;
+    goto finish;
   }
 
   fclose(f);
@@ -1232,68 +788,74 @@ static int cache_save(struct config *conf, const char *filename)
   ret = 0;
 
 finish:
-  free(tmpfile);
   if (f)
     fclose(f);
   return ret;
 }
 
-#undef s
-
 /*** RESOLVER ********************************************************** {{{1 */
 
-static int resolve_cf_link(struct config *conf, struct confent *ent, union cf_command *cmd)
+static int resolve_symlink(struct state *state, struct config_file *file,
+                           struct config_directive *directive)
 {
-  char *path = cmd->link.path;
-  struct action *act = config_add_action(conf, path);
-  if (!act) {
-    ERR("multiple actions for '%s'", path);
+  char *path = directive->symlink.path;
+  struct output *output = output_add(state, path);
+  if (!output) {
+    ERR("multiple definitions for '%s'", path);
     return -1;
   }
+
+  // count the number of slashes in the path
+  int dircnt = 0;
+  char *s;
+  for (s = path; *s; ++s)
+    if (*s == '/')
+      ++dircnt;
+
+  // "../" * dircnt + srcroot + "/" + srcpath
+  size_t target_len = 3 * dircnt + strlen(state->srcroot) + 1 + strlen(file->path);
+  char *target = xmalloc(target_len + 1);
+  s = target;
+  while (dircnt) {
+    *(s++) = '.';
+    *(s++) = '.';
+    *(s++) = '/';
+    --dircnt;
+  }
+  sprintf(s, "%s/%s", state->srcroot, file->path);
+
   path = strdup(path);
-  act->type = ACTION_LINK;
-  act->path = path;
-  act->node.key = path;
-  act->link.target = ent->path;
+  output->type = OUTPUT_SYMLINK;
+  output->flags = 0;
+  output->path = path;
+  output->symlink.target = target;
   return 0;
 }
 
-static int resolve_cf(struct config *conf, struct confent *ent, struct cf_block *block)
+static int resolve_file(struct state *state, struct config_file *file)
 {
-  for (unsigned int i = 0; i < block->cmdcnt; i++) {
-    union cf_command *cmd = block->cmds[i];
-    switch (cmd->h.type) {
-      case CF_LINK:
-        if (resolve_cf_link(conf, ent, cmd)) return -1;
+  struct config_directive *directive = file->head;
+  while (directive) {
+    switch (directive->type) {
+      case CONFIG_SYMLINK:
+        if (resolve_symlink(state, file, directive))
+          return -1;
         break;
     }
+    directive = directive->next;
   }
   return 0;
 }
 
-static int resolve_dir(struct config *conf, struct confdir *dir)
+static int resolve(struct state *state)
 {
-  int ret = 0;
-  CONFDIR_ITER(dir, ent) {
-    switch (ent->type) {
-      case CONFENT_NONE:
-        break;
-      case CONFENT_FILE:
-        if (resolve_cf(conf, ent, &ent->file.cf->block))
-          ret = -1;
-        break;
-      case CONFENT_DIR:
-        if (resolve_dir(conf, &ent->dir))
-          ret = -1;
-        break;
-    }
+  struct config_file *file = state->files;
+  while (file) {
+    if (resolve_file(state, file))
+      return -1;
+    file = file->next;
   }
-  return ret;
-}
-
-static int resolve(struct config *conf)
-{
-  return resolve_dir(conf, &conf->root);
+  return 0;
 }
 
 /*** EXECUTOR ********************************************************** {{{1 */
@@ -1314,75 +876,49 @@ static int create_parent_directories(char *path)
   return 0;
 }
 
-static int execute_link(struct config *conf, struct action *act)
+static int execute_symlink(struct state *state, struct output *output)
 {
-  int dircnt = 0;
-  char *s;
-  for (s = act->path; *s; ++s)
-    if (*s == '/')
-      ++dircnt;
-  size_t baselen = strlen(act->link.target);
-  size_t target_len = dircnt * 3 + 6 + baselen;
-  size_t bufsize = 2 * (target_len + 1);
-
-  // get a big enough buffer
-  if (conf->bufsize <= bufsize) {
-    do conf->bufsize <<= 1;
-    while (conf->bufsize <= bufsize);
-    xresize(conf->buf, conf->bufsize);
-  }
-
-  // generate the target
-  char *target = conf->buf;
-  char *existing = conf->buf + target_len + 1;
-  s = target;
-  while (dircnt) {
-    memcpy(s, "../", 3);
-    s += 3;
-    --dircnt;
-  }
-  memcpy(s, ".gale/", 6);
-  s += 6;
-  memcpy(s, act->link.target, baselen + 1);
-
-  ssize_t existing_len = readlink(act->path, existing, target_len + 1);
+  char existing[PATH_MAX];
+  const char *target = output->symlink.target;
+  size_t target_len = strlen(target);
+  ssize_t existing_len = readlink(output->path, existing, target_len + 1);
   if (existing_len < 0) {
     if (errno == EINVAL) {
-      ERR("refusing to replace '%s'", act->path);
+      ERR("refusing to replace '%s'", output->path);
       return -1;
     }
     if (errno != ENOENT) {
-      ERR_SYS("failed to readlink '%s'", act->path);
+      ERR_SYS("failed to readlink '%s'", output->path);
       return -1;
     }
-    MSG("Creating symlink: %s -> %s", act->path, target);
+    MSG("Creating symlink: %s -> %s", output->path, target);
   } else if (existing_len == target_len && !memcmp(existing, target, target_len)) {
-    if (conf->verbose)
-      MSG("Skipping symlink: %s -> %s", act->path, target);
+    if (state->flags & STATE_VERBOSE)
+      MSG("Skipping symlink: %s -> %s", output->path, target);
     return 0;
   } else {
-    MSG("Replacing symlink: %s -> %s", act->path, target);
-    if (conf->real && unlink(act->path)) {
-      ERR_SYS("failed to unlink '%s'", act->path);
+    MSG("Replacing symlink: %s -> %s", output->path, target);
+    if (!(state->flags & STATE_DRY) && unlink(output->path)) {
+      ERR_SYS("failed to unlink '%s'", output->path);
       return -1;
     }
   }
 
-  if (!conf->real)
+  if (state->flags & STATE_DRY)
     return 0;
 
-  if (!symlink(target, act->path))
+  if (!symlink(target, output->path))
     return 0;
 
   if (errno != ENOENT)
     goto symlink_failed;
 
   // create parent directories
-  if (create_parent_directories(act->path))
+  if (create_parent_directories(output->path))
     return -1;
 
   // try again
-  if (!symlink(target, act->path))
+  if (!symlink(target, output->path))
     return 0;
 
 symlink_failed:
@@ -1390,13 +926,14 @@ symlink_failed:
   return -1;
 }
 
-static int execute(struct config *conf)
+static int execute(struct state *state)
 {
   int ret = 0;
-  ACTION_ITER(conf, act) {
-    switch (act->type) {
-      case ACTION_LINK:
-        ret |= execute_link(conf, act);
+  OUTPUT_ITER(state, output) {
+    switch (output->type) {
+      case OUTPUT_SYMLINK:
+        if (execute_symlink(state, output))
+          ret = -1;
         break;
     }
   }
@@ -1459,50 +996,68 @@ static void recompile(void)
   exit(0);
 }
 
-/*** GALEOPT *********************************************************** {{{1 */
+/*** OPTION PARSER ***************************************************** {{{1 */
 
 // Screw getopt! This is a lot more painful to read and a lot more fun to use.
 
-#define GALEOPT(argv) \
-  for (char **_argv = (argv), *_arg, _s, _n; \
-    (_arg = *_argv) && (( \
-      _arg[0] != '-' || _arg[1] == '\0' \
-      ? DIE(2, "invalid argument: '%s'", _arg) \
-      : *(++_arg) == '-' \
-      ? (_s = 0, ++_arg, ++_argv, 1) \
-      : (_s = *_arg, *(_arg++) = '-', *_arg ? (++(*_argv), 1) : (++_argv, 1)) \
-    ), _n = 1); \
-    _n && (_s ? (DIE(2, "invalid option: -%c", _s), 1) \
-               : DIE(2, "invalid option: --%s", _arg), 1))
+#define OPTBEGIN(argv) { \
+  char **_argv = (argv), *_arg, _s; \
+  while ((_arg = *_argv)) { \
+    if (_arg[0] != '-' || _arg[1] == 0) \
+      DIE(2, "invalid argument: '%s'", _arg); \
+    if (*(++_arg) == '-') { \
+      _s = 0; \
+      ++_arg; \
+      ++_argv; \
+    } else { \
+      _s = *_arg; \
+      *(_arg++) = '-'; \
+      if (*_arg) ++(*_argv); \
+      else ++_argv; \
+    } \
+    if (0)
 
-#define OPT(s, l, code) \
-  if (_s ? _s == s : !strcmp(_arg, l)) { code; _n = 0; continue; }
+#define OPTEND \
+  else if (_s) DIE(2, "invalid option: -%c", _s); \
+  else DIE(2, "invalid option: --%s", _arg); }}
 
-#define OPTLONG(l, code) \
-  if (!_s && !strcmp(_arg, l)) { code; _n = 0; continue; }
+#define OPT(s, l) \
+  else if (_s ? _s == s : !strcmp(_arg, l))
+
+#define OPTLONG(l) \
+  if (!_s && !strcmp(_arg, l))
 
 /*** MAIN ************************************************************** {{{1 */
 
-static void help(FILE *f, int ret)
-{
-  static const char usage[] = "\
-usage: gallade [options]\n\
-\n\
-Options:\n\
+static const char usage[] = "usage: gallade [options]"
+#ifdef GALLADE_DEBUG
+" (debug build)"
+#endif
+"\n\nOptions:\n\
   -h, --help        show this help and exit\n\
   -n, --dry-run     don't do anything, only show what would happen\n\
   -v, --verbose     be verbose\n\
-  -R, --recompile   recompile gallade\n\
-      --no-cache    don't read the cache\n\
 ";
-  fputs(usage, f);
-  exit(ret);
-}
 
 int main(int argc, char **argv)
 {
   if (isatty(2))
     enable_colors();
+
+  unsigned int flags = 0;
+
+  OPTBEGIN(argv + 1);
+  OPT('h', "help") {
+    fputs(usage, stdout);
+    return 0;
+  }
+  OPT('n', "dry-run") {
+    flags |= STATE_DRY;
+  }
+  OPT('v', "verbose") {
+    flags |= STATE_VERBOSE;
+  }
+  OPTEND;
 
   const char *home = getenv("HOME");
   if (!home) {
@@ -1514,77 +1069,44 @@ int main(int argc, char **argv)
     return 1;
   }
 
-  int real = 1;
-  int verbose = 0;
-  int use_cache = 1;
+  //- Putting it all together: -------------------------------------------------
 
-  GALEOPT(argv + 1) {
-    OPT('h', "help", help(stdout, 0));
-    OPT('n', "dry-run", real = 0);
-    OPT('v', "verbose", verbose = 1);
-    OPT('R', "recompile", recompile());
-    OPTLONG( "no-cache", use_cache = 0);
-  }
+  struct state state;
+  state.flags = flags;
+  state.srcroot = ".gale";
+  state.files = NULL;
+  state.outputs = NULL;
+  state.outputcnt = 0;
 
-  // General Architecture
-  // --------------------
+  // 1. Load the config. -------------------------------------------------------
 
-  struct config conf;
-  config_init(&conf, real, verbose);
-
-  //
-  // 1. Load the cache.
-  //
-  if (use_cache && cache_load(&conf, ".gale.cache"))
+  if (config_load(&state))
     return 1;
 
-  //
-  // 2. Load the config. The cache is used to skip reading files and
-  //    directories that haven't changed based on their stat() information.
-  //
-  if (update_config(&conf))
+  // 2. Resolve the config. ----------------------------------------------------
+
+  if (resolve(&state))
     return 1;
 
-  //
-  // 3. If anything changed, write the updated cache.
-  //
-  if (conf.need_update_cache) {
-    MSG("Updating cache...");
-    if (cache_save(&conf, ".gale.cache"))
+  // 3. Load the log against the config. ---------------------------------------
+
+  if (log_read(&state, ".gale.log"))
+    return 1;
+
+  // 4. Update the log if necessary. -------------------------------------------
+
+  if (state.outputcnt || state.flags & STATE_NEED_UPDATE_LOG) {
+    MSG("Updating log...");
+    if (!(state.flags & STATE_DRY) && log_write(&state, ".gale.log"))
       return 1;
   }
 
-  //
-  // 4. Quit if the config files contain syntax errors. The cache is still
-  //    updated with the files that were parsed correctly.
-  //
-  if (conf.bad)
+  // 5. Update the home directory. ---------------------------------------------
+
+  if (execute(&state))
     return 1;
 
-  //
-  // 5. Resolve the config.
-  //
-  if (resolve(&conf))
-    return 1;
-
-  //
-  // 6. Delete files that are no longer produced by any config file.
-  //
-  //if (prune(&conf))
-  //  return 1;
-
-  //
-  // 7. Write the updated log if any files were added or removed.
-  //
-  //if (log_write(&conf))
-  //  return 1;
-
-  //
-  // 8. Update the home directory.
-  //
-  if (execute(&conf))
-    return 1;
-
+  // maybe clean up one day
   return 0;
 }
 

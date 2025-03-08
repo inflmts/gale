@@ -1,11 +1,11 @@
 //
-// gale::link ~/.config/labwc/waybar.jsonc
+// ::::| ~/.config/labwc/waybar.jsonc
 //
 {
   "position": "bottom",
   "height": 25,
   "modules-left": [
-    "custom/hostname"
+    "wlr/taskbar"
   ],
   "modules-center": [
     "network",
@@ -19,9 +19,10 @@
   "modules-right": [
     "clock"
   ],
-  "custom/hostname": {
-    "exec": "echo \"$USER<span color=\\\"#e080ff\\\">@$(hostname)</span>\"",
-    "interval": "once"
+  "wlr/taskbar": {
+    "all-outputs": true,
+    "sort-by-app-id": true,
+    "on-click": "activate"
   },
   "network": {
     "format": "<span alpha=\"#808090\">{ifname}</span> {ipaddr}",

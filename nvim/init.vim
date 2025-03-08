@@ -1,13 +1,12 @@
-"###############################################################################
+"#############################################################################
 "
-"   gale::link ~/.config/nvim/init.vim
+"   ::::| ~/.config/nvim/init.vim
 "
 "   This works on both Linux and Windows.
 "
-"###############################################################################
+"#############################################################################
 
-"=======================================
-" PLUGINS
+"-- PLUGINS ------------------------------------------------------------------
 
 " load vim-plug if available
 runtime autoload/plug.vim
@@ -26,8 +25,7 @@ endfunction
 
 command! PlugSetup call s:install_vim_plug()
 
-"=======================================
-" OPTIONS
+"-- OPTIONS ------------------------------------------------------------------
 
 " indentation
 set et sw=2 sts=2 sta ai si
@@ -60,8 +58,7 @@ if $TERM !=# "linux"
   set title
 endif
 
-"=======================================
-" KEYBINDINGS
+"-- KEYBINDINGS --------------------------------------------------------------
 "
 " TIP: See |map-table| for all map modes in a convenient table.
 "
@@ -133,24 +130,22 @@ inoremap <expr> <C-P> !pumvisible() && !empty(&omnifunc) ? "\<C-X>\<C-O>" : "\<C
 " nvim diagnostics
 nnoremap # <Cmd>lua vim.diagnostic.open_float()<CR>
 
-"=======================================
-" AUTOCOMMANDS
+"-- AUTOCOMMANDS -------------------------------------------------------------
 
 augroup init
 
   " clear previously defined autocommands
-  auto!
+  au!
 
-  auto FileType sh setlocal fo-=t
-  auto FileType markdown setlocal et sw=2 sts=2 tw=80
-  auto FileType make setlocal noet
-  auto FileType asciidoc setlocal nosi comments=fb:-,fb:*,fb://
-  auto FileType cs,java setlocal sw=4 sts=4
+  au FileType asciidoc setlocal nosi comments=fb:-,fb:*,fb://
+  au FileType cs,java setlocal sw=4 sts=4
+  au FileType make setlocal noet
+  au FileType markdown setlocal et sw=2 sts=2 tw=80
+  au FileType python,sh setlocal fo-=t
 
 augroup END
 
-"=======================================
-" GUI
+"-- GUI ----------------------------------------------------------------------
 
 if has('gui_running')
   if exists('g:neovide')
@@ -161,16 +156,14 @@ if has('gui_running')
   endif
 endif
 
-"=======================================
-" NEOVIDE
+"-- NEOVIDE ------------------------------------------------------------------
 
 if exists('g:neovide')
   let g:neovide_cursor_animation_length = 0.05
   let g:neovide_cursor_trail_size = 0.5
 endif
 
-"=======================================
-" COLORS
+"-- COLORS -------------------------------------------------------------------
 
 let g:sonokai_disable_italic_comment = 1
 if !has('gui_running')
@@ -193,8 +186,7 @@ if $TERM ==# "linux"
   hi Visual cterm=reverse ctermfg=NONE ctermbg=NONE
 endif
 
-"=======================================
-" RESTART
+"-- RESTART ------------------------------------------------------------------
 "
 " This provides basic functionality to make restarting easier.
 "
@@ -216,20 +208,25 @@ command! Restart call s:restart()
 " The :Resume command loads the session file.
 command! Resume call s:resume()
 
-"=======================================
-" GALE
+"-- GALLADE ------------------------------------------------------------------
 
-function GaleEdit() abort
-  if exists('g:gale_root')
-    execute 'edit ' .. fnameescape(g:gale_root .. '/nvim/init.vim')
+function s:gallade() abort
+  if exists('g:gallade_buffer') && bufexists(g:gallade_buffer)
+    let switchbuf = &switchbuf
+    let &switchbuf = 'useopen'
+    execute 'sbuffer' g:gallade_buffer
+    let &switchbuf = switchbuf
+  else
+    horizontal terminal gallade
+    let g:gallade_buffer = bufnr()
+    nnoremap <buffer> q <c-w>q
   endif
 endfunction
 
-" The :GaleEdit command edits this file.
-command! GaleEdit call GaleEdit()
+command! Gallade call s:gallade()
+nnoremap <c-g> <cmd>Gallade<cr>
 
-"=======================================
-" LSP
+"-- LSP ----------------------------------------------------------------------
 
 lua << EOF
 local ok

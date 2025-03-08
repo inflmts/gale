@@ -1,5 +1,5 @@
 #
-# gale::link ~/.profile
+# ::::| ~/.profile
 #
 
 # ENVIRONMENT VARIABLES

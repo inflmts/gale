@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <!--
-  gale::link ~/.config/labwc/rc.xml
+  ::::| ~/.config/labwc/rc.xml
 -->
 <labwc_config>
 
@@ -126,7 +126,16 @@
       <action name="Execute" command="firefox" />
     </keybind>
     <keybind key="W-S-c">
-      <action name="Execute" command="chromium" />
+      <action name="ForEach">
+        <query identifier="chromium" />
+        <then>
+          <action name="Focus" />
+          <action name="Raise" />
+        </then>
+        <none>
+          <action name="Execute" command="chromium" />
+        </none>
+      </action>
     </keybind>
     <keybind key="W-t">
       <action name="Execute" command="gale-term -t top top" />

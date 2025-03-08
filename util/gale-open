@@ -1,0 +1,223 @@
+#!/bin/sh
+# gale-open - open a file sanely
+#
+# ::::| ~/.local/bin/gale-open
+# ::::| ~/.local/bin/xdg-open
+#
+
+set -ue
+
+progname=${0##*/}
+
+err() { echo >&2 "$progname: $*"; }
+
+usage() {
+  cat <<EOF
+usage: $progname [options] FILE|URL
+
+Options:
+  --help      show this help
+  --version   display version information
+EOF
+}
+
+if [ $# -ne 1 ]; then
+  usage >&2
+  exit 2
+fi
+
+case $1 in
+  --help)
+    usage
+    exit 0
+    ;;
+  --version)
+    echo gale-open
+    exit 0
+    ;;
+  -*)
+    err "unrecognized option: $1"
+    ;;
+esac
+
+file=$1
+
+has_command() {
+  command -v "$1" > /dev/null 2>&1
+}
+
+try() {
+  for id; do
+    if eval "test -z \"\${tried_$id-}\""; then
+      eval "tried_$id=1"
+      "open_$1"
+    fi
+  done
+}
+
+open_neovide() {
+  if has_command neovide; then
+    exec neovide "$file"
+  fi
+}
+
+open_neovim_qt() {
+  if has_command nvim-qt; then
+    exec nvim-qt -- "$file"
+  fi
+}
+
+open_nvim() {
+  if has_command nvim; then
+    exec gale-term nvim "$file"
+  fi
+}
+
+open_vim() {
+  if has_command vim; then
+    exec gale-term vim "$file"
+  fi
+}
+
+open_vi() {
+  if has_command vi; then
+    exec gale-term vi "$file"
+  fi
+}
+
+open_nano() {
+  if has_command nano; then
+    exec gale-term nano "$file"
+  fi
+}
+
+open_less() {
+  if has_command less; then
+    exec gale-term less "$file"
+  fi
+}
+
+open_imv_dir() {
+  if has_command imv-dir; then
+    exec imv-dir "$file"
+  fi
+}
+
+open_imv() {
+  if has_command imv; then
+    exec imv "$file"
+  fi
+}
+
+open_mpv() {
+  if has_command mpv; then
+    exec mpv --player-operation-mode=pseudo-gui -- "$file"
+  fi
+}
+
+open_lf() {
+  if has_command lf; then
+    exec gale-term lf -- "$file"
+  fi
+}
+
+open_nautilus() {
+  if has_command nautilus; then
+    exec nautilus -- "$file"
+  fi
+}
+
+open_chromium() {
+  if has_command chromium; then
+    exec chromium "$file"
+  fi
+}
+
+open_firefox() {
+  if has_command firefox; then
+    exec firefox "$file"
+  fi
+}
+
+# generic
+
+open_browser() {
+  try chromium firefox
+}
+
+open_text() {
+  try neovide neovim_qt nvim vim vi nano less
+}
+
+open_image() {
+  try imv_dir imv browser
+}
+
+open_audio() {
+  try mpv browser
+}
+
+open_video() {
+  try mpv browser
+}
+
+if [ -n "${WAYLAND_DISPLAY-}" ] && has_command wl-copy; then
+  wl-copy "$file" || :
+fi
+
+case $file in
+  file:///*)
+    file=${file#file://}
+    ;;
+  http://*|https://*)
+    try browser
+    exit
+    ;;
+esac
+
+if [ ! -e "$file" ]; then
+  err "file does not exist: $file"
+  exit 1
+fi
+
+if [ -d "$file" ]; then
+  try lf nautilus
+  cd "$file"
+  exec gale-term
+fi
+
+case $file in
+  *.txt)
+    mimetype=text/plain
+    ;;
+  *.svg)
+    mimetype=image/svg+xml
+    ;;
+  *)
+    mimetype=$(file -Lb --mime-type -- "$file") || mimetype=text/plain
+    ;;
+esac
+
+case $mimetype in
+  application/pdf)
+    try browser
+    ;;
+  image/svg+xml)
+    try browser image
+    ;;
+  image/*)
+    try image browser
+    ;;
+  audio/*)
+    try audio
+    ;;
+  video/*)
+    try video
+    ;;
+  *)
+    try text
+    ;;
+esac
+
+err "could not find a way to open '$file', sorry"
+exit 127

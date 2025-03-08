@@ -1,5 +1,8 @@
 #!/bin/sh
-# gale::link ~/.local/bin/gale-term
+# gale-term - launch a terminal
+#
+# ::::| ~/.local/bin/gale-term
+#
 
 set -ue
 
@@ -8,16 +11,24 @@ usage() {
 usage: gale-term [options] [COMMAND [ARG...]]
 
 Options:
+  -i ID       set app_id
   -t TITLE    set terminal title
+  -d DIR      set working directory
 EOF
 }
 
-unset title
+unset id title dir
 
-while getopts :t: opt; do
+while getopts :i:t:d: opt; do
   case $opt in
+    i)
+      id=$OPTARG
+      ;;
     t)
       title=$OPTARG
+      ;;
+    d)
+      dir=$OPTARG
       ;;
     *)
       usage >&2
@@ -28,26 +39,29 @@ done
 shift $((OPTIND-1))
 
 is_wayland() {
-  [ -n "$WAYLAND_DISPLAY" ]
+  [ -n "${WAYLAND_DISPLAY-}" ]
 }
 
 has_command() {
-  command -v "$1" >/dev/null
+  command -v "$1" > /dev/null 2>&1
 }
-
-# alacritty
-if has_command alacritty; then
-  exec alacritty ${1+-e} "$@"
-fi
 
 # foot
 if is_wayland && has_command foot; then
-  exec foot ${title+-T "$title"} -- "$@"
+  exec foot \
+    ${id+-a "$id"} \
+    ${title+-T "$title"} \
+    ${dir+-D "$dir"} \
+    ${1+--} "$@"
 fi
 
-# urxvt
-if has_command urxvt; then
-  exec urxvt ${1+-e} "$@"
+# alacritty
+if has_command alacritty; then
+  exec alacritty \
+    ${id+--class "$id"} \
+    ${title+--title "$title"} \
+    ${dir+--working-directory "$dir"} \
+    ${1+-e} "$@"
 fi
 
 # not found
