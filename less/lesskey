@@ -10,7 +10,7 @@
 
 \40   forw-screen
 \b    back-screen
-\kb   back-screen
+\177  back-screen
 ^X    clear-search
 
 #line-edit
