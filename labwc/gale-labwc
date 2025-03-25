@@ -1,0 +1,7 @@
+#!/bin/sh
+# gale-labwc
+#
+# ::::| ~/.local/bin/gale-labwc
+#
+cd
+exec dbus-run-session labwc

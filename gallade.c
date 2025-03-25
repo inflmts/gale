@@ -1,4 +1,4 @@
-#if 0
+#define _ /*
 #-------------------------------------------------------------------------------
 #
 #   gallade - The Gale Installer
@@ -8,20 +8,28 @@
 #   This software is licensed under the MIT License.
 #
 #-------------------------------------------------------------------------------
-case ${1-} in
-  --debug) flags="-DGALLADE_DEBUG -g" ;;
-  '')      flags="-O2" ;;
-  *) echo >&2 "usage: $0 [--debug]"; exit 2 ;;
-esac
+set -ue
+flags="-O2"
+while [ $# -gt 0 ]; do
+  case $1 in
+    --debug) flags="-DGALLADE_DEBUG -g" ;;
+    --) shift; break ;;
+    *) echo >&2 "usage: sh $0 [--debug] -- [options]"; exit 2 ;;
+  esac
+  shift
+done
+bin=~/.local/bin/gallade
 mkdir -p ~/.local/bin
-exec gcc -std=c99 -Wall $flags -o ~/.local/bin/gallade "$0"
-#endif
+gcc -std=c99 -Wall $flags -o "$bin.tmp" "$0"
+mv "$bin.tmp" "$bin"
+exec "$bin" "$@"
+*/
 
 #define _DEFAULT_SOURCE
 #include <dirent.h>
 #include <errno.h>
 #include <fcntl.h>
-#include <limits.h> /* PATH_MAX */
+#include <limits.h>
 #include <stdarg.h>
 #include <stddef.h>
 #include <stdio.h>
@@ -31,13 +39,20 @@ exec gcc -std=c99 -Wall $flags -o ~/.local/bin/gallade "$0"
 #include <sys/wait.h>
 #include <unistd.h>
 
-#define GALLADE_CONFIG_READ_MAX 4096
-#define GALLADE_SRC_PATH_MAX 128
-
 /*** UTILITIES ********************************************************* {{{1 */
+
+#define GALLADE_CONFIG_READ_MAX 4096
 
 #define containerof(p, type, member) \
   ((type *)((char *)(p) - offsetof(type, member)))
+
+#define ISSPACE(c) ((c) == ' ')
+#define ISDIGIT(c) ((c) >= '0' && (c) <= '9')
+#define ISUPPER(c) ((c) >= 'A' && (c) <= 'Z')
+#define ISLOWER(c) ((c) >= 'a' && (c) <= 'z')
+#define ISALNUM(c) (ISDIGIT(c) || ISUPPER(c) || ISLOWER(c))
+#define ISDIRECTIVE(c) ISLOWER(c)
+#define ISPATH(c) (ISALNUM(c) || (c) == '.' || (c) == '-' || (c) == '_')
 
 /*** LOGGING *********************************************************** {{{1 */
 
@@ -82,10 +97,9 @@ static void enable_colors(void)
 
 #define MSG(...) msg(NULL, __VA_ARGS__)
 #define WARN(...) msg(prefix_warn, __VA_ARGS__)
+#define WARN_SYS(...) msg_sys(prefix_warn, __VA_ARGS__)
 #define ERR(...) msg(prefix_err, __VA_ARGS__)
 #define ERR_SYS(...) msg_sys(prefix_err, __VA_ARGS__)
-#define DIE(n, ...) (msg(prefix_err, __VA_ARGS__), exit(n))
-#define DIE_SYS(n, ...) (msg_sys(prefix_err, __VA_ARGS__), exit(n))
 #ifdef GALLADE_DEBUG
 # define DEBUG(...) msg(prefix_debug, __VA_ARGS__)
 #else
@@ -253,18 +267,13 @@ static struct config_directive *config_add_directive(struct config_file *file)
 
 /*** CONFIG / PARSER *************************************************** {{{1 */
 
-#define ISSPACE(c) ((c) == ' ')
-#define ISDIGIT(c) ((c) >= '0' && (c) <= '9')
-#define ISUPPER(c) ((c) >= 'A' && (c) <= 'Z')
-#define ISLOWER(c) ((c) >= 'a' && (c) <= 'z')
-#define ISALNUM(c) (ISDIGIT(c) || ISUPPER(c) || ISLOWER(c))
-#define ISDIRECTIVE(c) ISLOWER(c)
-#define ISPATH(c) (ISALNUM(c) || (c) == '.' || (c) == '-' || (c) == '_')
+#define CONFIG_HAS_DIRECTIVES 0x1
 
 struct config_parser
 {
   struct config_file *file;
   unsigned int lineno;
+  unsigned int flags;
   const char *errmsg;
   const char *cur;
   const char *end;
@@ -274,6 +283,9 @@ struct config_parser
 
 static int config_parse_path(struct config_parser *p, char **pathp)
 {
+  // path must begin with a dot
+  if (*s != '.')
+    return -1;
   const char *begin = s;
   while (1) {
     while (*s == '.')
@@ -314,8 +326,6 @@ static int config_parse_eol(struct config_parser *p)
 
 static int config_parse_symlink(struct config_parser *p)
 {
-  // ~/PATH
-
   unsigned int lineno = p->lineno;
   char *path = NULL;
   if (config_parse_path(p, &path)) goto fail;
@@ -334,10 +344,8 @@ fail:
 
 static int config_parse_directive(struct config_parser *p)
 {
-  if (*s == '~') {
-    if (*(++s) != '/')
-      return -1;
-    ++s;
+  if (s[0] == '~' && s[1] == '/') {
+    s += 2;
     return config_parse_symlink(p);
   }
 
@@ -370,17 +378,21 @@ static int config_parse_main(struct config_parser *p)
       while (ISSPACE(*s));
       if (config_parse_directive(p))
         return -1;
+      p->flags |= CONFIG_HAS_DIRECTIVES;
     }
     ++s;
   }
   return 0;
 }
 
+#undef s
+
 static int config_parse(struct config_file *file, const char *buf, size_t size)
 {
   struct config_parser p;
   p.file = file;
   p.lineno = 0;
+  p.flags = 0;
   p.errmsg = "invalid syntax";
   p.cur = buf;
   p.end = buf + size;
@@ -390,13 +402,11 @@ static int config_parse(struct config_file *file, const char *buf, size_t size)
     return -1;
   }
 
-  if (!file->head)
+  if (!(p.flags & CONFIG_HAS_DIRECTIVES))
     WARN("%s: no directives found", file->path);
 
   return 0;
 }
-
-#undef s
 
 /*** CONFIG / LOADER *************************************************** {{{1 */
 
@@ -443,8 +453,8 @@ static int config_load_file(struct config_loader *loader, struct config_file *fi
   close(fd);
   fd = -1;
 
-  // pad with an invalid character
-  buf[size++] = '\0';
+  // pad with a newline
+  buf[size++] = '\n';
 
   ret = config_parse(file, buf, size);
 
@@ -454,11 +464,39 @@ finish:
   return ret;
 }
 
-static int config_load_dir(struct config_loader *loader, struct config_file ***slotp)
+static int config_check_name(const char *name)
+{
+  // ignore names that begin with a dot
+  if (*name == '.')
+    return 0;
+  while (*name) {
+    if (!(ISALNUM(*name) || *name == '.' || *name == '-'))
+      return 0;
+    ++name;
+  }
+  return 1;
+}
+
+static int config_load_dir(struct config_loader *loader,
+                           struct config_file ***slotp, int root)
 {
   DEBUG("%s: %s", __func__, loader->path);
 
-  struct config_file *end = **slotp;
+  size_t pathlen = loader->pathlen;
+  loader->pathlen += 9;
+  config_load_alloc_path(loader);
+  memcpy(loader->path + pathlen, "/.disable", 10);
+
+  // check for disable file
+  struct stat st;
+  if (!lstat(loader->path, &st)) {
+    return 0;
+  } else if (errno != ENOENT) {
+    ERR_SYS("failed to lstat '%s'", loader->path);
+    return -1;
+  }
+
+  loader->path[pathlen] = '\0';
 
   struct dirent *dent;
   DIR *d = opendir(loader->path);
@@ -467,27 +505,21 @@ static int config_load_dir(struct config_loader *loader, struct config_file ***s
     return -1;
   }
 
-  size_t pathlen = loader->pathlen;
+  struct config_file *end = **slotp;
   loader->path[pathlen] = '/';
 
   while (errno = 0, dent = readdir(d)) {
     const char *name = dent->d_name;
 
-    // ignore files that begin with a dot
-    if (*name == '.')
+    // ignore invalid filenames
+    if (!config_check_name(name))
       continue;
 
     int type = dent->d_type;
 
-    // skip entries that are not files or directories
-    switch (type) {
-      case DT_UNKNOWN:
-      case DT_REG:
-      case DT_DIR:
-        break;
-      default:
-        continue;
-    }
+    // skip entries that are not directories or non-toplevel files
+    if (type != DT_UNKNOWN && type != DT_DIR && (root || type != DT_REG))
+      continue;
 
     // construct pathname
     size_t namelen = strlen(name);
@@ -497,16 +529,16 @@ static int config_load_dir(struct config_loader *loader, struct config_file ***s
 
     if (type == DT_UNKNOWN) {
       // determine type using lstat()
-      struct stat st;
       if (lstat(loader->path, &st)) {
         ERR_SYS("failed to lstat '%s'", loader->path);
         return -1;
       }
-      switch (st.st_mode & S_IFMT) {
-        case S_IFREG: type = DT_REG; break;
-        case S_IFDIR: type = DT_DIR; break;
-        default: continue;
-      }
+      if (S_ISDIR(st.st_mode))
+        type = DT_DIR;
+      else if (!root && S_ISREG(st.st_mode))
+        type = DT_REG;
+      else
+        continue;
     }
 
     struct config_file **slot = *slotp;
@@ -561,7 +593,7 @@ static int config_load_dir(struct config_loader *loader, struct config_file ***s
       **slotp = file->next;
       free(file->path);
       free(file);
-      config_load_dir(loader, slotp);
+      config_load_dir(loader, slotp, 0);
     }
   }
 
@@ -589,12 +621,55 @@ static int config_load(struct state *state)
   loader.prefixlen = rootlen + 1;
 
   struct config_file **slot = &state->files;
-  int ret = config_load_dir(&loader, &slot);
+  int ret = config_load_dir(&loader, &slot, 1);
   free(loader.path);
   return ret;
 }
 
 /*** LOG / PARSER ****************************************************** {{{1 */
+
+/*
+ * Make a best-effort attempt to remove the parent directories of the specified
+ * path. No error is reported if this fails. The path must be well-formed and
+ * may be modified.
+ */
+static void remove_parent_directories(char *path)
+{
+  char *end = path;
+  while (*end)
+    ++end;
+  while (end > path) {
+    if (*end == '/') {
+      *end = '\0';
+      if (rmdir(path) && errno != ENOENT)
+        return;
+    }
+    --end;
+  }
+}
+
+/*
+ * Make a best-effort attempt to remove the specified path and its parent
+ * directories. The path must be well-formed and may be modified.
+ */
+static void remove_output_safe(char *path)
+{
+  struct stat st;
+  if (lstat(path, &st)) {
+    if (errno != ENOENT)
+      WARN_SYS("failed to lstat '%s'", path);
+    return;
+  }
+  if (!S_ISLNK(st.st_mode)) {
+    WARN("refusing to remove non-symlink '%s'", path);
+    return;
+  }
+  if (unlink(path)) {
+    WARN_SYS("failed to unlink '%s'", path);
+    return;
+  }
+  remove_parent_directories(path);
+}
 
 static int log_parse(struct state *state, const char *s, size_t len)
 {
@@ -624,7 +699,7 @@ static int log_parse(struct state *state, const char *s, size_t len)
 
     size_t len = s - begin;
     if (len >= sizeof(path)) {
-      ERR("log: path too long at line %u: '%.*s'", lineno, (int)len, begin);
+      ERR("log: path too long at line %u", lineno);
       return -1;
     }
     memcpy(path, begin, len);
@@ -643,32 +718,15 @@ static int log_parse(struct state *state, const char *s, size_t len)
 
     // remove
     state->flags |= STATE_NEED_UPDATE_LOG;
-
-    struct stat st;
-    if (lstat(path, &st)) {
-      if (errno == ENOENT)
-        // no longer exists
-        goto next;
-      ERR_SYS("failed to lstat '%s'", path);
-      return -1;
-    }
-    if (!S_ISLNK(st.st_mode)) {
-      WARN("refusing to remove non-symlink '%s'", path);
-      goto next;
-    }
     MSG("Removing: %s", path);
-    if (state->flags & STATE_DRY)
-      goto next;
-    if (unlink(path)) {
-      ERR_SYS("failed to unlink '%s'", path);
-      return -1;
-    }
+    if (!(state->flags & STATE_DRY))
+      remove_output_safe(path);
     goto next;
 
 invalid_path:
     while (*s != '\n')
       ++s;
-    ERR("log: invalid path at line %u: '%.*s'", lineno, (int)(s - begin), begin);
+    ERR("log: invalid path at line %u", lineno);
     return -1;
 
 next:
@@ -940,100 +998,102 @@ static int execute(struct state *state)
   return ret;
 }
 
-/*** RECOMPILE ********************************************************* {{{1 */
+/*** AUTOCOMPILE ******************************************************* {{{1 */
 
-static void recompile(void)
+/*
+ * Because the Gale configuration language is closely tied to the Gallade
+ * implementation, Gallade will attempt to recompile itself if it detects it is
+ * out of date.
+ */
+static void autocompile(int argc, char **argv)
 {
   static char *const srcfile = ".gale/gallade.c";
-  static char *const tmpfile = ".local/bin/gallade.tmp";
   static char *const exefile = ".local/bin/gallade";
-  static char *const gcc_args[] = {
-    "gcc", "-Wall", "-std=c99", "-g", "-o", tmpfile, srcfile, (char*)NULL
-  };
+
+  if (argc > 27) {
+    WARN("too many arguments");
+    return;
+  }
 
   struct stat st;
   long long srctime, exetime;
   if (stat(srcfile, &st)) {
-    ERR_SYS("failed to stat '%s'", srcfile);
-    exit(1);
+    WARN_SYS("failed to stat '%s'", srcfile);
+    return;
   }
   srctime = st.st_mtime;
   if (stat(exefile, &st)) {
-    if (errno != ENOENT) {
-      ERR_SYS("failed to stat '%s'", exefile);
-      exit(1);
-    }
-    exetime = srctime - 1;
-  } else {
-    exetime = st.st_mtime;
+    WARN_SYS("failed to stat '%s'", exefile);
+    return;
   }
+  exetime = st.st_mtime;
   if (srctime <= exetime)
-    exit(0);
+    return;
 
   MSG("Recompiling...");
 
-  pid_t pid = fork();
-  if (pid < 0) {
-    ERR_SYS("fork");
-    exit(1);
-  }
-  if (pid == 0) {
-    execvp("gcc", gcc_args);
-    ERR_SYS("execvp");
-    exit(-1);
-  }
-  int wstatus;
-  if (waitpid(pid, &wstatus, 0) < 0) {
-    ERR_SYS("waitpid");
-    exit(1);
-  }
-  if (!WIFEXITED(wstatus) || WEXITSTATUS(wstatus) != 0)
-    exit(1);
-  if (rename(tmpfile, exefile)) {
-    ERR_SYS("failed to rename '%s' to '%s'", tmpfile, exefile);
-    exit(1);
-  }
-  exit(0);
+  char *exec_argv[32];
+  int i = 0;
+  exec_argv[i++] = "sh";
+  exec_argv[i++] = srcfile;
+#ifdef GALLADE_DEBUG
+  exec_argv[i++] = "--debug";
+#endif
+  exec_argv[i++] = "--";
+  for (int j = 0; j < argc; j++)
+    exec_argv[i++] = argv[j];
+  exec_argv[i] = NULL;
+
+  execv("/bin/sh", exec_argv);
+  ERR_SYS("execv");
+  exit(-1);
 }
 
 /*** OPTION PARSER ***************************************************** {{{1 */
 
 // Screw getopt! This is a lot more painful to read and a lot more fun to use.
 
-#define OPTBEGIN(argv) { \
-  char **_argv = (argv), *_arg, _s; \
-  while ((_arg = *_argv)) { \
-    if (_arg[0] != '-' || _arg[1] == 0) \
-      DIE(2, "invalid argument: '%s'", _arg); \
-    if (*(++_arg) == '-') { \
-      _s = 0; \
-      ++_arg; \
+#define OPTBEGIN(argv) \
+  for (char **_argv = (argv), *_clump = NULL, *_arg, _s;;) { \
+    if (_clump) { \
+      _s = *_clump; \
+      if (!*(++_clump)) \
+        _clump = NULL; \
+    } else if ((_arg = *_argv)) { \
       ++_argv; \
-    } else { \
-      _s = *_arg; \
-      *(_arg++) = '-'; \
-      if (*_arg) ++(*_argv); \
-      else ++_argv; \
-    } \
+      if (_arg[0] != '-' || _arg[1] == 0) \
+        ERR("invalid argument: '%s'", _arg), exit(2); \
+      ++_arg; _s = *_arg; ++_arg; \
+      if (_s == '-') _s = 0; \
+      else if (*_arg) _clump = _arg; \
+    } else break; \
     if (0)
 
-#define OPTEND \
-  else if (_s) DIE(2, "invalid option: -%c", _s); \
-  else DIE(2, "invalid option: --%s", _arg); }}
-
 #define OPT(s, l) \
-  else if (_s ? _s == s : !strcmp(_arg, l))
+  } else if (_s ? _s == s : !strcmp(_arg, l)) {
 
 #define OPTLONG(l) \
-  if (!_s && !strcmp(_arg, l))
+  } else if (!_s && !strcmp(_arg, l)) {
+
+#define OPTEND \
+  else { \
+    if (_s) ERR("invalid option: -%c", _s); \
+    else ERR("invalid option: --%s", _arg); \
+    exit(2); \
+  }}
 
 /*** MAIN ************************************************************** {{{1 */
 
-static const char usage[] = "usage: gallade [options]"
 #ifdef GALLADE_DEBUG
-" (debug build)"
+# define GALLADE_DEBUG_INDICATOR " (debug build)"
+#else
+# define GALLADE_DEBUG_INDICATOR
 #endif
-"\n\nOptions:\n\
+
+static const char usage[] = "\
+usage: gallade [options]" GALLADE_DEBUG_INDICATOR "\n\
+\n\
+Options:\n\
   -h, --help        show this help and exit\n\
   -n, --dry-run     don't do anything, only show what would happen\n\
   -v, --verbose     be verbose\n\
@@ -1043,21 +1103,6 @@ int main(int argc, char **argv)
 {
   if (isatty(2))
     enable_colors();
-
-  unsigned int flags = 0;
-
-  OPTBEGIN(argv + 1);
-  OPT('h', "help") {
-    fputs(usage, stdout);
-    return 0;
-  }
-  OPT('n', "dry-run") {
-    flags |= STATE_DRY;
-  }
-  OPT('v', "verbose") {
-    flags |= STATE_VERBOSE;
-  }
-  OPTEND;
 
   const char *home = getenv("HOME");
   if (!home) {
@@ -1069,7 +1114,17 @@ int main(int argc, char **argv)
     return 1;
   }
 
-  //- Putting it all together: -------------------------------------------------
+  autocompile(argc - 1, argv + 1);
+
+  unsigned int flags = 0;
+
+  OPTBEGIN(argv + 1) {
+    OPT('h', "help") fputs(usage, stdout); return 0;
+    OPT('n', "dry-run") flags |= STATE_DRY;
+    OPT('v', "verbose") flags |= STATE_VERBOSE;
+  } OPTEND
+
+  //= Putting it all together: =================================================
 
   struct state state;
   state.flags = flags;
@@ -1088,7 +1143,7 @@ int main(int argc, char **argv)
   if (resolve(&state))
     return 1;
 
-  // 3. Load the log against the config. ---------------------------------------
+  // 3. Load the log and remove stale entries. ---------------------------------
 
   if (log_read(&state, ".gale.log"))
     return 1;
@@ -1106,7 +1161,8 @@ int main(int argc, char **argv)
   if (execute(&state))
     return 1;
 
-  // maybe clean up one day
+  // ...maybe clean up one day. ------------------------------------------------
+
   return 0;
 }
 

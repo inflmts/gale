@@ -22,6 +22,7 @@
   "wlr/taskbar": {
     "all-outputs": true,
     "sort-by-app-id": true,
+    "icon-theme": ["Adwaita"],
     "on-click": "activate"
   },
   "network": {

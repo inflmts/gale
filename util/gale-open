@@ -18,10 +18,12 @@ usage: $progname [options] FILE|URL
 Options:
   --help      show this help
   --version   display version information
+  --fork      open in the background
   --browser   open browser
 EOF
 }
 
+exec=exec
 browser=
 
 while [ $# -gt 0 ]; do
@@ -33,6 +35,9 @@ while [ $# -gt 0 ]; do
     --version)
       echo gale-open
       exit 0
+      ;;
+    --fork)
+      exec=fork
       ;;
     --browser)
       browser=1
@@ -55,6 +60,8 @@ fi
 
 file=$1
 
+# utilities
+
 has_command() {
   command -v "$1" > /dev/null 2>&1
 }
@@ -68,95 +75,100 @@ try() {
   done
 }
 
+fork() {
+  setsid nohup "$@" <&- > /dev/null 2>&1 &
+  exit
+}
+
 # applications
 
 open_neovide() {
   if has_command neovide; then
-    exec neovide "$file"
+    $exec neovide "$file"
   fi
 }
 
 open_neovim_qt() {
   if has_command nvim-qt; then
-    exec nvim-qt -- "$file"
+    $exec nvim-qt -- "$file"
   fi
 }
 
 open_nvim() {
   if has_command nvim; then
-    exec gale-term nvim "$file"
+    $exec gale-term nvim "$file"
   fi
 }
 
 open_vim() {
   if has_command vim; then
-    exec gale-term vim "$file"
+    $exec gale-term vim "$file"
   fi
 }
 
 open_vi() {
   if has_command vi; then
-    exec gale-term vi "$file"
+    $exec gale-term vi "$file"
   fi
 }
 
 open_nano() {
   if has_command nano; then
-    exec gale-term nano "$file"
+    $exec gale-term nano "$file"
   fi
 }
 
 open_less() {
   if has_command less; then
-    exec gale-term less "$file"
+    $exec gale-term less "$file"
   fi
 }
 
 open_swayimg() {
   if has_command swayimg; then
-    exec swayimg -- "$file"
+    $exec swayimg -- "$file"
   fi
 }
 
 open_imv_dir() {
   if has_command imv-dir; then
-    exec imv-dir "$file"
+    $exec imv-dir "$file"
   fi
 }
 
 open_imv() {
   if has_command imv; then
-    exec imv "$file"
+    $exec imv "$file"
   fi
 }
 
 open_mpv() {
   if has_command mpv; then
-    exec mpv --player-operation-mode=pseudo-gui -- "$file"
+    $exec mpv --player-operation-mode=pseudo-gui -- "$file"
   fi
 }
 
 open_lf() {
   if has_command lf; then
-    exec gale-term lf -- "$file"
+    $exec gale-term lf -- "$file"
   fi
 }
 
 open_nautilus() {
   if has_command nautilus; then
-    exec nautilus -- "$file"
+    $exec nautilus -- "$file"
   fi
 }
 
 open_chromium() {
   if has_command chromium; then
-    exec chromium "$file"
+    $exec chromium "$file"
   fi
 }
 
 open_firefox() {
   if has_command firefox; then
-    exec firefox "$file"
+    $exec firefox "$file"
   fi
 }
 
@@ -182,22 +194,30 @@ open_video() {
   try mpv browser
 }
 
+#
+
 if [ -n "${WAYLAND_DISPLAY-}" ] && has_command wl-copy; then
   wl-copy "$file" || :
 fi
 
 if [ -n "$browser" ]; then
   try browser
-  exit
+  err "could not find browser to open '$file'"
+  exit 127
 fi
 
-case $file in
-  file:///*)
-    file=${file#file://}
+case ${file%%/*} in
+  file:*)
+    file=${file#*:}
     ;;
-  http://*|https://*)
+  http:*|https:*)
     try browser
-    exit
+    err "could not find browser to open '$file'"
+    exit 127
+    ;;
+  *:*)
+    err "unrecognized schema '${file%%:*}'"
+    exit 127
     ;;
 esac
 
@@ -209,7 +229,7 @@ fi
 if [ -d "$file" ]; then
   try lf nautilus
   cd "$file"
-  exec gale-term
+  $exec gale-term
 fi
 
 case $file in

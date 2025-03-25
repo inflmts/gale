@@ -2,9 +2,6 @@
 # ::::| ~/.profile
 #
 
-# ENVIRONMENT VARIABLES
-#=======================================
-
 # autodetect $EDITOR
 if command -v nvim >/dev/null; then
   export EDITOR=nvim

@@ -29,6 +29,10 @@ button {
   margin: 0 5px;
 }
 
+#taskbar {
+  margin-left: 0;
+}
+
 #taskbar button {
   padding: 0 5px;
   border-top: 2px solid transparent;

@@ -42,9 +42,6 @@ set mouse
 #== COMMANDS & MAPPINGS ========================================================
 
 # remove some default commands
-map gg
-map gh
-
 map zh
 map zr
 map zn
@@ -88,7 +85,10 @@ map E :set sortby ext; statfmt
 map I :set reverse!; statfmt
 
 # other commands
-map g top
+map g/ cd /
+map gs !git status
+map g<c-a> !git add -Av && git status
+map gc !git commit
 map ~ cd
 map . :set hidden!; statfmt
 map o push &<space>"$f"<c-a>
@@ -100,7 +100,7 @@ map <enter> open
 map <c-t> &dir=$PWD; cd && exec gale-term -d "$dir"
 
 # open in browser
-map <c-b> &exec gale-open --browser "$f"
+map <a-b> &exec gale-open --browser "$f"
 
 # dragon-drop
 map <a-d> &exec dragon-drop -x $fx
