@@ -89,14 +89,17 @@
     <keybind key="W-f">
       <action name="ToggleFullscreen" />
     </keybind>
-    <keybind key="W-s">
-      <action name="Maximize" />
-    </keybind>
+
+    <!-- reveal all windows -->
+
     <keybind key="W-a">
-      <action name="SnapToEdge" direction="left" />
-    </keybind>
-    <keybind key="W-d">
-      <action name="SnapToEdge" direction="right" />
+      <action name="ForEach">
+        <query iconified="yes" />
+        <then>
+          <action name="Focus" />
+          <action name="Raise" />
+        </then>
+      </action>
     </keybind>
 
     <!-- outputs -->
@@ -114,17 +117,35 @@
       <action name="MoveToOutput" direction="right" />
     </keybind>
 
-    <!-- programs -->
+    <!-- terminal -->
 
     <keybind key="W-Return">
       <action name="Execute" command="gale-term" />
     </keybind>
+
+    <!-- explorer -->
+
     <keybind key="W-e">
-      <action name="Execute" command="gale-explorer" />
+      <action name="ForEach">
+        <query identifier="gale-explorer" />
+        <then>
+          <action name="Focus" />
+          <action name="Raise" />
+        </then>
+        <none>
+          <action name="Execute" command="gale-explorer" />
+        </none>
+      </action>
     </keybind>
+
+    <!-- firefox -->
+
     <keybind key="W-S-f">
       <action name="Execute" command="firefox" />
     </keybind>
+
+    <!-- chromium -->
+
     <keybind key="W-S-c">
       <action name="ForEach">
         <query identifier="chromium" />
@@ -137,9 +158,15 @@
         </none>
       </action>
     </keybind>
+
+    <!-- top -->
+
     <keybind key="W-t">
       <action name="Execute" command="gale-term -t top top" />
     </keybind>
+
+    <!-- bluetoothctl -->
+
     <keybind key="W-S-b">
       <action name="Execute" command="gale-term -t bluetoothctl bluetoothctl" />
     </keybind>
@@ -148,6 +175,12 @@
 
     <keybind key="W-S-s">
       <action name="Execute" command="gale-sleep" />
+    </keybind>
+    <keybind key="W-C-o">
+      <action name="Execute" command="gale-shutdown" />
+    </keybind>
+    <keybind key="W-C-r">
+      <action name="Execute" command="gale-reboot" />
     </keybind>
 
     <!-- volume control -->
@@ -165,6 +198,7 @@
 
   <mouse>
     <!-- desktop -->
+
     <context name="Desktop">
       <mousebind button="Right" action="Press">
         <action name="ShowMenu" menu="root-menu" />
@@ -172,6 +206,7 @@
     </context>
 
     <!-- "Frame" bindings aren't sent to the client -->
+
     <context name="Frame">
       <mousebind button="W-Left" action="Press">
         <action name="Focus" />
@@ -195,6 +230,7 @@
     </context>
 
     <!-- space between the buttons on the titlebar -->
+
     <context name="Title">
       <mousebind button="Left" action="Press">
         <action name="Focus" />
@@ -212,6 +248,7 @@
     </context>
 
     <!-- "Client" bindings _are_ sent to the client -->
+
     <context name="Client">
       <mousebind button="Left" action="Press">
         <action name="Focus" />

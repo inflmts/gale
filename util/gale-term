@@ -8,12 +8,12 @@ set -ue
 
 usage() {
   cat <<EOF
-usage: gale-term [options] [COMMAND [ARG...]]
+usage: gale-term [options] [<command> [...]]
 
 Options:
-  -i ID       set app_id
-  -t TITLE    set terminal title
-  -d DIR      set working directory
+  -i <id>     set app_id
+  -t <title>  set terminal title
+  -d <dir>    set working directory
 EOF
 }
 

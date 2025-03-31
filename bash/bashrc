@@ -269,16 +269,6 @@ lsenv() {
   env | LC_ALL=C sort -t '=' -k 1
 }
 
-# open files
-open() {
-  gale-open --fork "$@"
-}
-
-# open files in a browser
-browser() {
-  gale-open --fork --browser "$@"
-}
-
 cdcode() {
   local name
   name=$(ls ~/code | fzf) && cd ~/code/"$name"

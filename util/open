@@ -1,7 +1,7 @@
 #!/bin/sh
-# gale-open - open a file sanely
+# open - open a file sanely
 #
-# ::::| ~/.local/bin/gale-open
+# ::::| ~/.local/bin/open
 # ::::| ~/.local/bin/xdg-open
 #
 
@@ -13,21 +13,32 @@ err() { echo >&2 "$progname: $*"; }
 
 usage() {
   cat <<EOF
-usage: $progname [options] FILE|URL
+usage: $progname [options] <file> | <url>
 
 Options:
-  --help      show this help
-  --version   display version information
-  --fork      open in the background
-  --browser   open browser
+  -q, --query     print the application that would be opened
+  -b, --browser   open browser
+      --help      show this help
+      --version   display version information
 EOF
 }
 
-exec=exec
+if [ "$progname" = xdg-open ]; then
+  exec=exec
+else
+  exec=fork
+fi
+
 browser=
 
 while [ $# -gt 0 ]; do
   case $1 in
+    -q|--query)
+      exec=query
+      ;;
+    -b|--browser)
+      browser=1
+      ;;
     --help)
       usage
       exit 0
@@ -35,12 +46,6 @@ while [ $# -gt 0 ]; do
     --version)
       echo gale-open
       exit 0
-      ;;
-    --fork)
-      exec=fork
-      ;;
-    --browser)
-      browser=1
       ;;
     -*)
       err "unrecognized option: $1"
@@ -73,6 +78,11 @@ try() {
       "open_$id"
     fi
   done
+}
+
+query() {
+  echo "$id"
+  exit
 }
 
 fork() {
@@ -196,10 +206,6 @@ open_video() {
 
 #
 
-if [ -n "${WAYLAND_DISPLAY-}" ] && has_command wl-copy; then
-  wl-copy "$file" || :
-fi
-
 if [ -n "$browser" ]; then
   try browser
   err "could not find browser to open '$file'"
@@ -252,7 +258,7 @@ case $mimetype in
     try browser image
     ;;
   image/*)
-    try image browser
+    try image
     ;;
   audio/*)
     try audio

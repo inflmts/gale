@@ -4,9 +4,6 @@
 {
   "position": "bottom",
   "height": 25,
-  "modules-left": [
-    "wlr/taskbar"
-  ],
   "modules-center": [
     "network",
     "cpu",
@@ -19,12 +16,6 @@
   "modules-right": [
     "clock"
   ],
-  "wlr/taskbar": {
-    "all-outputs": true,
-    "sort-by-app-id": true,
-    "icon-theme": ["Adwaita"],
-    "on-click": "activate"
-  },
   "network": {
     "format": "<span alpha=\"#808090\">{ifname}</span> {ipaddr}",
     "format-wifi": "<span color=\"#808090\">wi</span> {essid}",

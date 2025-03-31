@@ -10,7 +10,7 @@ if [ $# -ne 0 ]; then
 fi
 
 if command -v lf > /dev/null 2>&1; then
-  exec gale-term -i explorer -t lf lf
+  exec gale-term -i gale-explorer -t lf lf
 fi
 
 if command -v nautilus > /dev/null 2>&1; then
