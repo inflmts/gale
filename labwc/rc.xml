@@ -268,7 +268,6 @@
   <libinput>
     <device category="touchpad">
       <naturalScroll>yes</naturalScroll>
-      <disableWhileTyping>no</disableWhileTyping>
       <scrollFactor>0.4</scrollFactor>
     </device>
   </libinput>

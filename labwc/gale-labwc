@@ -3,5 +3,10 @@
 #
 # ::::| ~/.local/bin/gale-labwc
 #
-cd
-exec dbus-run-session labwc
+
+cd ~
+if [ -z "${DBUS_SESSION_BUS_ADDRESS-}" ] && command -v dbus-run-session > /dev/null 2>&1; then
+  exec dbus-run-session labwc
+else
+  exec labwc
+fi
