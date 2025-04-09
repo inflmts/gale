@@ -16,8 +16,8 @@ export XDG_STATE_HOME="$HOME/.state"
 export XDG_CACHE_HOME="$HOME/.cache"
 
 # create fallback $XDG_RUNTIME_DIR if necessary
-if [ -z "$XDG_RUNTIME_DIR" ]; then
-  export XDG_RUNTIME_DIR="/tmp/user/$(id -u)"
+if [ -z "${XDG_RUNTIME_DIR-}" ]; then
+  export XDG_RUNTIME_DIR="/tmp/daniel"
   mkdir -p "$XDG_RUNTIME_DIR"
 fi
 
@@ -31,19 +31,20 @@ gale_add_path() {
   esac
 }
 
-# add standard executable directory
-gale_add_path ~/.local/bin
-
-# autodetect nodenv
-if [ -d ~/.nodenv ]; then
-  gale_add_path ~/.nodenv/bin
-  gale_add_path ~/.nodenv/shims
-fi
-
 # autodetect pnpm
 if [ -d ~/.data/pnpm ]; then
+  export PNPM_HOME="$HOME/.data/pnpm"
   gale_add_path ~/.data/pnpm
 fi
+
+# autodetect bun
+if [ -d ~/.bun ]; then
+  export BUN_INSTALL="$HOME/.bun"
+  gale_add_path ~/.bun/bin
+fi
+
+# add standard executable directory
+gale_add_path ~/.local/bin
 
 # if running in systemd, update the user manager environment
 systemctl --user import-environment >/dev/null 2>&1 \

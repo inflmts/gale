@@ -10,9 +10,6 @@
 [init]
   defaultBranch = main
 
-[push]
-  default = current
-
 [user]
   name = Daniel Li
   email = inflmts@gmail.com
