@@ -1,8 +1,7 @@
 #!/bin/sh
-# gale-term - launch a terminal
-#
-# ::::| ~/.local/bin/gale-term
-#
+# ---
+# ~/.local/bin/gale-term
+# ---
 
 set -ue
 

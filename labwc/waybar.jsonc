@@ -1,6 +1,6 @@
-//
-// ::::| ~/.config/labwc/waybar.jsonc
-//
+// ---
+// ~/.config/labwc/waybar.jsonc
+// ---
 {
   "position": "bottom",
   "height": 25,

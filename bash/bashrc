@@ -1,6 +1,6 @@
-#
-# ::::| ~/.bashrc
-#
+# ---
+# ~/.bashrc
+# ---
 
 # quit unless interactive
 # apparently needed for rcp or scp or something

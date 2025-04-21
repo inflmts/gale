@@ -1,6 +1,6 @@
-#
-# ::::| ~/.config/imv/config
-#
+# ---
+# ~/.config/imv/config
+# ---
 
 [options]
 overlay=true

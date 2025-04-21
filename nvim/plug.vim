@@ -1,12 +1,11 @@
-"#############################################################################
+" ---
+" ~/.config/nvim/plug.vim
+" ---
 "
-"   ::::| ~/.config/nvim/plug.vim
+" This script is sourced from init.vim between plug#begin() and plug#end().
+" This should contain a list of :Plug commands defining which plugins to
+" install.
 "
-"   This script is sourced from init.vim between plug#begin() and plug#end().
-"   This should contain a list of :Plug commands defining which plugins to
-"   install.
-"
-"#############################################################################
 
 Plug 'sainnhe/sonokai'
 Plug 'preservim/nerdtree'

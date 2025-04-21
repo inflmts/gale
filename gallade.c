@@ -1,29 +1,10 @@
-#define _ /*
-#-------------------------------------------------------------------------------
-#
-#   gallade - The Gale Installer
-#
-#   Copyright (c) 2025 Daniel Li
-#
-#   This software is licensed under the MIT License.
-#
-#-------------------------------------------------------------------------------
-set -ue
-flags="-O2"
-while [ $# -gt 0 ]; do
-  case $1 in
-    --debug) flags="-DGALLADE_DEBUG -g" ;;
-    --) shift; break ;;
-    *) echo >&2 "usage: sh $0 [--debug] -- [options]"; exit 2 ;;
-  esac
-  shift
-done
-bin=~/.local/bin/gallade
-mkdir -p ~/.local/bin
-gcc -std=c99 -Wall $flags -o "$bin.tmp" "$0"
-mv "$bin.tmp" "$bin"
-exec "$bin" "$@"
-*/
+/*
+ *  Gallade - The Gale Installer
+ *
+ *  Copyright (c) 2025 Daniel Li
+ *
+ *  This software is licensed under the MIT License.
+ */
 
 #define _DEFAULT_SOURCE
 #include <dirent.h>
@@ -36,10 +17,9 @@ exec "$bin" "$@"
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
-#include <sys/wait.h>
 #include <unistd.h>
 
-/*** UTILITIES ********************************************************* {{{1 */
+/*** UTILITIES ****************************************************************/
 
 #define GALLADE_CONFIG_READ_MAX 4096
 
@@ -53,8 +33,6 @@ exec "$bin" "$@"
 #define ISALNUM(c) (ISDIGIT(c) || ISUPPER(c) || ISLOWER(c))
 #define ISDIRECTIVE(c) ISLOWER(c)
 #define ISPATH(c) (ISALNUM(c) || (c) == '.' || (c) == '-' || (c) == '_')
-
-/*** LOGGING *********************************************************** {{{1 */
 
 #ifdef __GNUC__
 # define PRINTF(i, j) __attribute__((format(printf, i, j)))
@@ -100,13 +78,7 @@ static void enable_colors(void)
 #define WARN_SYS(...) msg_sys(prefix_warn, __VA_ARGS__)
 #define ERR(...) msg(prefix_err, __VA_ARGS__)
 #define ERR_SYS(...) msg_sys(prefix_err, __VA_ARGS__)
-#ifdef GALLADE_DEBUG
-# define DEBUG(...) msg(prefix_debug, __VA_ARGS__)
-#else
-# define DEBUG(...) (void)0
-#endif
-
-/*** MEMORY ************************************************************ {{{1 */
+#define DEBUG(...) msg(prefix_debug, __VA_ARGS__)
 
 static void *xmalloc(size_t size)
 {
@@ -134,46 +106,52 @@ static void *xrealloc(void *p, size_t size)
 #define xresize(p, n) (p = xrealloc(p, n))
 #define xresizev(p, n, type) (p = (type*)xrealloc(p, (n) * sizeof(type)))
 
-/*** STATE ************************************************************* {{{1 */
+/*** CONFIG *******************************************************************/
 
 enum output_type {
-  //OUTPUT_NONE,
-  OUTPUT_SYMLINK = 1
+  OUTPUT_NONE,
+  OUTPUT_SYMLINK
 };
 
 #define OUTPUT_LOGGED 0x1
 
+struct output_symlink
+{
+  char *target;
+};
+
 struct output
 {
   struct output *next;
+  char *path;
   enum output_type type;
   unsigned int flags;
-  char *path;
-  struct {
-    char *target;
-  } symlink;
+  union {
+    struct output_symlink symlink;
+  };
 };
 
-#define STATE_DRY 0x1
-#define STATE_VERBOSE 0x2
-#define STATE_NEED_UPDATE_LOG 0x4
+#define CONFIG_DRY (1 << 0)
+#define CONFIG_VERBOSE (1 << 1)
+#define CONFIG_NEED_UPDATE_LOG (1 << 2)
+#define CONFIG_BAD (1 << 3)
+#define CONFIG_DEBUG (1 << 4)
 
 struct config_file;
 
-struct state
+struct config
 {
   unsigned int flags;
   const char *srcroot;
   struct config_file *files;
   struct output *outputs;
-  unsigned int outputcnt;
 };
 
-/*** STATE / UTILITIES ************************************************* {{{1 */
+/*** OUTPUTS ******************************************************************/
 
-static struct output *output_get(struct state *state, const char *path)
+static struct output *output_get(struct config *config, const char *path)
 {
-  struct output *output = state->outputs;
+  struct output *output = config->outputs;
   while (output) {
     int diff = strcmp(path, output->path);
     if (diff < 0)
@@ -185,9 +163,9 @@ static struct output *output_get(struct state *state, const char *path)
   return NULL;
 }
 
-static struct output *output_add(struct state *state, const char *path)
+static struct output *output_add(struct config *config, const char *path)
 {
-  struct output **slot = &state->outputs;
+  struct output **slot = &config->outputs;
   while (*slot) {
     int diff = strcmp(path, (*slot)->path);
     if (diff < 0)
@@ -199,13 +177,15 @@ static struct output *output_add(struct state *state, const char *path)
 
   xdefine(output, struct output);
   output->next = *slot;
+  output->path = strdup(path);
+  output->type = OUTPUT_NONE;
+  output->flags = 0;
   *slot = output;
-  ++state->outputcnt;
   return output;
 }
 
-#define OUTPUT_ITER(state, item) \
-  for (struct output *item = (state)->outputs; item; item = item->next)
+#define OUTPUT_ITER(config, item) \
+  for (struct output *item = (config)->outputs; item; item = item->next)
 
 //static void output_destroy(struct output *output)
 //{
@@ -217,9 +197,9 @@ static struct output *output_add(struct state *state, const char *path)
 //  }
 //}
 //
-//static void state_free(struct state *state)
+//static void config_free(struct config *config)
 //{
-//  struct output *output = state->outputs, *next;
+//  struct output *output = config->outputs, *next;
 //  while (output) {
 //    next = output->next;
 //    output_destroy(output);
@@ -227,24 +207,7 @@ static struct output *output_add(struct state *state, const char *path)
 //  }
 //}
 
-/*** CONFIG ************************************************************ {{{1 */
-
-enum config_directive_type
-{
-  CONFIG_SYMLINK
-};
-
-struct config_directive
-{
-  struct config_directive *next;
-  enum config_directive_type type;
-  unsigned int lineno;
-  union {
-    struct {
-      char *path;
-    } symlink;
-  };
-};
+/*** CONFIG *******************************************************************/
 
 struct config_file
 {
@@ -254,32 +217,28 @@ struct config_file
   struct config_directive **tail;
 };
 
-/*** CONFIG / UTILITIES ************************************************ {{{1 */
-
-static struct config_directive *config_add_directive(struct config_file *file)
-{
-  xdefine(directive, struct config_directive);
-  directive->next = NULL;
-  *file->tail = directive;
-  file->tail = &directive->next;
-  return directive;
-}
-
-/*** CONFIG / PARSER *************************************************** {{{1 */
-
-#define CONFIG_HAS_DIRECTIVES 0x1
+/*** CONFIG PARSER ************************************************************/
 
 struct config_parser
 {
-  struct config_file *file;
+  struct config *config;
+  const char *filename;
   unsigned int lineno;
-  unsigned int flags;
-  const char *errmsg;
   const char *cur;
   const char *end;
 };
 
 #define s p->cur
+
+static void config_parse_error(struct config_parser *p, const char *format, ...)
+{
+  va_list ap;
+  va_start(ap, format);
+  fprintf(stderr, "%s%s: line %u: ", prefix_err, p->filename, p->lineno);
+  vfprintf(stderr, format, ap);
+  putc('\n', stderr);
+  va_end(ap);
+}
 
 static int config_parse_path(struct config_parser *p, char **pathp)
 {
@@ -304,15 +263,6 @@ static int config_parse_path(struct config_parser *p, char **pathp)
   return 0;
 }
 
-//static int config_parse_space(struct config_parser *p)
-//{
-//  if (!ISSPACE(*s))
-//    return -1;
-//  do ++s;
-//  while (ISSPACE(*s));
-//  return 0;
-//}
-
 static int config_parse_eol(struct config_parser *p)
 {
   while (ISSPACE(*s))
@@ -326,15 +276,39 @@ static int config_parse_eol(struct config_parser *p)
 
 static int config_parse_symlink(struct config_parser *p)
 {
-  unsigned int lineno = p->lineno;
   char *path = NULL;
   if (config_parse_path(p, &path)) goto fail;
   if (config_parse_eol(p)) goto fail;
 
-  struct config_directive *directive = config_add_directive(p->file);
-  directive->type = CONFIG_SYMLINK;
-  directive->lineno = lineno;
-  directive->symlink.path = path;
+  struct output *output = output_add(p->config, path);
+  if (!output) {
+    config_parse_error(p, "output already defined: %s", path);
+    goto fail;
+  }
+
+  // count the number of slashes in the path
+  int dircnt = 0;
+  char *t;
+  for (t = path; *t; ++t)
+    if (*t == '/')
+      ++dircnt;
+
+  // "../" * dircnt + srcroot + "/" + srcpath
+  size_t target_len = 3 * dircnt + strlen(p->config->srcroot) + 1 + strlen(p->filename);
+  char *target = xmalloc(target_len + 1);
+  t = target;
+  while (dircnt) {
+    *(t++) = '.';
+    *(t++) = '.';
+    *(t++) = '/';
+    --dircnt;
+  }
+  sprintf(t, "%s/%s", p->config->srcroot, p->filename);
+
+  output->type = OUTPUT_SYMLINK;
+  output->flags = 0;
+  output->path = path;
+  output->symlink.target = target;
   return 0;
 
 fail:
@@ -344,124 +318,106 @@ fail:
 
 static int config_parse_directive(struct config_parser *p)
 {
-  if (s[0] == '~' && s[1] == '/') {
-    s += 2;
+  // Currently, only the symlink directive is supported.
+  if (*s == '~') {
+    if (*(++s) != '/')
+      goto invalid;
+    ++s;
     return config_parse_symlink(p);
   }
 
-  //if (!ISLOWER(*s))
-  //  return -1;
-  //const char *name = s;
-  //do ++s;
-  //while (ISLOWER(*s));
-  //size_t len = s - name;
-
-  p->errmsg = "invalid command";
+invalid:
+  config_parse_error(p, "invalid directive");
   return -1;
 }
 
 static int config_parse_main(struct config_parser *p)
 {
-  while (s < p->end) {
+  const char *prefix_start = s;
+  const char *prefix_end;
+
+before_block:
+  // Find the start of the config block, a line ending in whitespace and "---".
+  if (!*s)
+    return 0;
+
+  if (*s == '\n') {
+    prefix_start = ++s;
     ++p->lineno;
+    goto before_block;
+  }
 
-    while (*s != '\n') {
-      // find directive signature (four colons, bar, and whitespace)
-      if (*(s++) != ':' ||
-          *s     != ':' ||
-          *(++s) != ':' ||
-          *(++s) != ':' ||
-          *(++s) != '|' ||
-          !ISSPACE(*(++s))) continue;
+  if ( *(s++) != ' ' ||
+      (*s     != '-' && *s != '+') ||
+      (*(++s) != '-' && *s != '+') ||
+      (*(++s) != '-' && *s != '+') ||
+       *(++s) != '\n') goto before_block;
 
-      do ++s;
-      while (ISSPACE(*s));
-      if (config_parse_directive(p))
-        return -1;
-      p->flags |= CONFIG_HAS_DIRECTIVES;
+  prefix_end = (++s) - 4;
+  ++p->lineno;
+
+inside_block:
+  // skip prefix
+  const char *t = prefix_start;
+  while (t < prefix_end) {
+    if (*t != *s) {
+      config_parse_error(p, "expected matching prefix");
+      return -1;
     }
+    ++t;
     ++s;
   }
-  return 0;
+
+  if (*s == '-' || *s == '+')
+    return 0;
+  if (config_parse_directive(p))
+    return -1;
+  goto inside_block;
 }
 
 #undef s
 
-static int config_parse(struct config_file *file, const char *buf, size_t size)
+static int config_parse(struct config *config, const char *filename, const char *buf)
 {
   struct config_parser p;
-  p.file = file;
+  p.config = config;
+  p.filename = filename;
   p.lineno = 0;
-  p.flags = 0;
-  p.errmsg = "invalid syntax";
   p.cur = buf;
-  p.end = buf + size;
-
-  if (config_parse_main(&p)) {
-    ERR("%s: line %u: %s", file->path, p.lineno, p.errmsg);
-    return -1;
-  }
-
-  if (!(p.flags & CONFIG_HAS_DIRECTIVES))
-    WARN("%s: no directives found", file->path);
-
-  return 0;
+  return config_parse_main(&p);
 }
 
-/*** CONFIG / LOADER *************************************************** {{{1 */
+/*** CONFIG LOADER ************************************************************/
 
-struct config_loader
+static void config_load_file(struct config *config, const char *path)
 {
-  struct state *state;
-  char *path;
-  size_t pathlen;
-  size_t pathcap;
-  size_t prefixlen;
-};
+  if (config->flags & CONFIG_DEBUG)
+    DEBUG("config: %s", path);
 
-static int config_load_alloc_path(struct config_loader *loader)
-{
-  if (loader->pathlen >= loader->pathcap) {
-    loader->pathcap = loader->pathlen + 1;
-    xresize(loader->path, loader->pathcap);
-  }
-  return 0;
-}
+  char *fullpath = xmalloc(strlen(config->srcroot) + 1 + strlen(path) + 1);
+  sprintf(fullpath, "%s/%s", config->srcroot, path);
 
-static int config_load_file(struct config_loader *loader, struct config_file *file)
-{
-  DEBUG("%s: %s", __func__, loader->path);
-
-  int fd = open(loader->path, O_RDONLY);
+  int fd = open(fullpath, O_RDONLY);
   if (fd < 0) {
-    ERR_SYS("failed to open '%s'", loader->path);
-    return -1;
+    ERR_SYS("failed to open '%s'", fullpath);
+    free(fullpath);
+    config->flags |= CONFIG_BAD;
+    return;
   }
+  free(fullpath);
 
-  int ret = -1;
   char buf[GALLADE_CONFIG_READ_MAX];
   ssize_t size = read(fd, buf, sizeof(buf) - 1);
   if (size < 0) {
     ERR_SYS("read");
-    goto finish;
-  }
-  if (size == 0) {
-    // empty file
-    goto finish;
-  }
-
-  close(fd);
-  fd = -1;
-
-  // pad with a newline
-  buf[size++] = '\n';
-
-  ret = config_parse(file, buf, size);
-
-finish:
-  if (fd >= 0)
     close(fd);
-  return ret;
+    return;
+  }
+  close(fd);
+
+  buf[size] = 0;
+  if (config_parse(config, path, buf))
+    config->flags |= CONFIG_BAD;
 }
 
 static int config_check_name(const char *name)
@@ -477,156 +433,125 @@ static int config_check_name(const char *name)
   return 1;
 }
 
-static int config_load_dir(struct config_loader *loader,
-                           struct config_file ***slotp, int root)
+static int qsort_strcmp(const void *lhs, const void *rhs)
 {
-  DEBUG("%s: %s", __func__, loader->path);
+  return strcmp(*(const char **)lhs, *(const char **)rhs);
+}
 
-  size_t pathlen = loader->pathlen;
-  loader->pathlen += 9;
-  config_load_alloc_path(loader);
-  memcpy(loader->path + pathlen, "/.disable", 10);
+static void config_load_dir(struct config *config, const char *path)
+{
+  if (path && config->flags & CONFIG_DEBUG)
+    DEBUG("config: %s/", path);
 
-  // check for disable file
-  struct stat st;
-  if (!lstat(loader->path, &st)) {
-    return 0;
-  } else if (errno != ENOENT) {
-    ERR_SYS("failed to lstat '%s'", loader->path);
-    return -1;
+  char *fullpath;
+  size_t pathlen;
+  if (path) {
+    pathlen = strlen(path);
+    fullpath = xmalloc(strlen(config->srcroot) + 1 + pathlen + 1);
+    sprintf(fullpath, "%s/%s", config->srcroot, path);
+  } else {
+    fullpath = strdup(config->srcroot);
   }
-
-  loader->path[pathlen] = '\0';
 
   struct dirent *dent;
-  DIR *d = opendir(loader->path);
-  if (!d) {
-    ERR_SYS("failed to open '%s'", loader->path);
-    return -1;
+  DIR *dir = opendir(fullpath);
+  if (!dir) {
+    ERR_SYS("failed to open '%s'", fullpath);
+    free(fullpath);
+    config->flags |= CONFIG_BAD;
+    return;
   }
+  free(fullpath);
 
-  struct config_file *end = **slotp;
-  loader->path[pathlen] = '/';
+  char **entries = NULL;
+  size_t entrycnt = 0;
+  size_t entrycap = 0;
 
-  while (errno = 0, dent = readdir(d)) {
+  while (errno = 0, dent = readdir(dir)) {
     const char *name = dent->d_name;
 
     // ignore invalid filenames
     if (!config_check_name(name))
       continue;
 
-    int type = dent->d_type;
-
-    // skip entries that are not directories or non-toplevel files
-    if (type != DT_UNKNOWN && type != DT_DIR && (root || type != DT_REG))
-      continue;
-
-    // construct pathname
-    size_t namelen = strlen(name);
-    loader->pathlen = pathlen + 1 + namelen;
-    config_load_alloc_path(loader);
-    memcpy(loader->path + pathlen + 1, name, namelen + 1);
-
-    if (type == DT_UNKNOWN) {
-      // determine type using lstat()
-      if (lstat(loader->path, &st)) {
-        ERR_SYS("failed to lstat '%s'", loader->path);
-        return -1;
-      }
-      if (S_ISDIR(st.st_mode))
-        type = DT_DIR;
-      else if (!root && S_ISREG(st.st_mode))
-        type = DT_REG;
+    if (entrycnt == entrycap) {
+      if (entrycap)
+        entrycap *= 2;
       else
-        continue;
+        entrycap = 4;
+      xresizev(entries, entrycap, char *);
     }
 
-    struct config_file **slot = *slotp;
-    while (*slot != end) {
-      int diff = strcmp(name, (*slot)->path + pathlen + 1 - loader->prefixlen);
-      if (diff < 0) {
-        break;
-      } else if (diff == 0) {
-        ERR("readdir returned duplicate entry '%s'", name);
-        return -1;
-      }
-      slot = &(*slot)->next;
-    }
-
-    // construct pathname
-    size_t basesize = pathlen - loader->prefixlen + 1 + namelen + 1;
-    char *base = memcpy(xmalloc(basesize), loader->path + loader->prefixlen, basesize);
-
-    // insert file
-    xdefine(file, struct config_file);
-    file->next = *slot;
-    file->path = base;
-    file->head = NULL;
-    file->tail = type == DT_DIR ? NULL : &file->head;
-    *slot = file;
+    size_t namesize = strlen(name) + 1;
+    entries[entrycnt++] = memcpy(xmalloc(namesize), name, namesize);
   }
 
   if (errno) {
     ERR_SYS("readdir");
-    closedir(d);
-    return -1;
+    config->flags |= CONFIG_BAD;
+    goto finish;
   }
 
-  closedir(d);
-  d = NULL;
+  closedir(dir);
+  dir = NULL;
 
-  struct config_file *file;
-  while ((file = **slotp) != end) {
-    // construct pathname
-    const char *name = file->path + pathlen + 1 - loader->prefixlen;
+  qsort(entries, entrycnt, sizeof(char *), qsort_strcmp);
+
+  char *subpath;
+  size_t subpathlen;
+
+  for (size_t i = 0; i < entrycnt; i++) {
+    char *name = entries[i];
     size_t namelen = strlen(name);
-    loader->pathlen = pathlen + 1 + namelen;
-    config_load_alloc_path(loader);
-    memcpy(loader->path + pathlen + 1, name, namelen + 1);
 
-    if (file->tail) {
-      // file
-      config_load_file(loader, file);
-      *slotp = &file->next;
+    // construct pathname
+    if (path) {
+      subpathlen = pathlen + 1 + namelen;
+      subpath = xmalloc(subpathlen + 1);
+      sprintf(subpath, "%s/%s", path, name);
     } else {
-      // directory
-      **slotp = file->next;
-      free(file->path);
-      free(file);
-      config_load_dir(loader, slotp, 0);
+      subpathlen = namelen;
+      subpath = name;
     }
+
+    fullpath = xmalloc(strlen(config->srcroot) + 1 + subpathlen + 1);
+    sprintf(fullpath, "%s/%s", config->srcroot, subpath);
+
+    struct stat st;
+    if (lstat(fullpath, &st)) {
+      ERR_SYS("failed to lstat '%s'", fullpath);
+      free(fullpath);
+      if (subpath != name)
+        free(subpath);
+      config->flags |= CONFIG_BAD;
+      continue;
+    }
+    free(fullpath);
+
+    if (S_ISDIR(st.st_mode))
+      config_load_dir(config, subpath);
+    else if (path && S_ISREG(st.st_mode))
+      config_load_file(config, subpath);
+
+    if (subpath != name)
+      free(subpath);
   }
 
-  loader->path[pathlen] = '\0';
-  loader->pathlen = pathlen;
-
-  return 0;
+finish:
+  while (entrycnt)
+    free(entries[--entrycnt]);
+  free(entries);
+  if (dir)
+    closedir(dir);
 }
 
-static int config_load(struct state *state)
+static int config_load(struct config *config)
 {
-  struct stat st;
-  if (stat(state->srcroot, &st)) {
-    ERR_SYS("failed to stat '%s'", state->srcroot);
-    return -1;
-  }
-
-  size_t rootlen = strlen(state->srcroot);
-
-  struct config_loader loader;
-  loader.state = state;
-  loader.path = memcpy(xmalloc(4096), state->srcroot, rootlen + 1);
-  loader.pathlen = rootlen;
-  loader.pathcap = 4096;
-  loader.prefixlen = rootlen + 1;
-
-  struct config_file **slot = &state->files;
-  int ret = config_load_dir(&loader, &slot, 1);
-  free(loader.path);
-  return ret;
+  config_load_dir(config, NULL);
+  return config->flags & CONFIG_BAD;
 }
 
-/*** LOG / PARSER ****************************************************** {{{1 */
+/*** LOG READER ***************************************************************/
 
 /*
  * Make a best-effort attempt to remove the parent directories of the specified
@@ -671,7 +596,7 @@ static void remove_output_safe(char *path)
   remove_parent_directories(path);
 }
 
-static int log_parse(struct state *state, const char *s, size_t len)
+static int log_parse(struct config *config, const char *s, size_t len)
 {
   const char *end = s + len;
   unsigned int lineno = 1;
@@ -705,21 +630,20 @@ static int log_parse(struct state *state, const char *s, size_t len)
     memcpy(path, begin, len);
     path[len] = '\0';
 
-    struct output *output = output_get(state, path);
+    struct output *output = output_get(config, path);
     if (output) {
       if (output->flags & OUTPUT_LOGGED) {
-        state->flags |= STATE_NEED_UPDATE_LOG;
+        config->flags |= CONFIG_NEED_UPDATE_LOG;
       } else {
         output->flags |= OUTPUT_LOGGED;
-        --state->outputcnt;
       }
       goto next;
     }
 
     // remove
-    state->flags |= STATE_NEED_UPDATE_LOG;
+    config->flags |= CONFIG_NEED_UPDATE_LOG;
     MSG("Removing: %s", path);
-    if (!(state->flags & STATE_DRY))
+    if (!(config->flags & CONFIG_DRY))
       remove_output_safe(path);
     goto next;
 
@@ -737,9 +661,7 @@ next:
   return 0;
 }
 
-/*** LOG / READER ****************************************************** {{{1 */
-
-static int log_read(struct state *state, const char *filename)
+static int log_read(struct config *config, const char *filename)
 {
   struct stat st;
   if (stat(filename, &st)) {
@@ -790,7 +712,7 @@ static int log_read(struct state *state, const char *filename)
   if (buf[size - 1] != '\n')
     buf[size++] = '\n';
 
-  ret = log_parse(state, buf, size);
+  ret = log_parse(config, buf, size);
 
 finish:
   if (fd >= 0)
@@ -799,9 +721,9 @@ finish:
   return ret;
 }
 
-/*** LOG / WRITER ****************************************************** {{{1 */
+/*** LOG WRITER ***************************************************************/
 
-static int log_write(struct state *state, const char *filename)
+static int log_write(struct config *config, const char *filename)
 {
   int ret = -1;
   FILE *f = NULL;
@@ -826,7 +748,7 @@ static int log_write(struct state *state, const char *filename)
   }
 
   // write outputs
-  OUTPUT_ITER(state, output) {
+  OUTPUT_ITER(config, output) {
     fprintf(f, "%s\n", output->path);
   }
 
@@ -851,72 +773,7 @@ finish:
   return ret;
 }
 
-/*** RESOLVER ********************************************************** {{{1 */
-
-static int resolve_symlink(struct state *state, struct config_file *file,
-                           struct config_directive *directive)
-{
-  char *path = directive->symlink.path;
-  struct output *output = output_add(state, path);
-  if (!output) {
-    ERR("multiple definitions for '%s'", path);
-    return -1;
-  }
-
-  // count the number of slashes in the path
-  int dircnt = 0;
-  char *s;
-  for (s = path; *s; ++s)
-    if (*s == '/')
-      ++dircnt;
-
-  // "../" * dircnt + srcroot + "/" + srcpath
-  size_t target_len = 3 * dircnt + strlen(state->srcroot) + 1 + strlen(file->path);
-  char *target = xmalloc(target_len + 1);
-  s = target;
-  while (dircnt) {
-    *(s++) = '.';
-    *(s++) = '.';
-    *(s++) = '/';
-    --dircnt;
-  }
-  sprintf(s, "%s/%s", state->srcroot, file->path);
-
-  path = strdup(path);
-  output->type = OUTPUT_SYMLINK;
-  output->flags = 0;
-  output->path = path;
-  output->symlink.target = target;
-  return 0;
-}
-
-static int resolve_file(struct state *state, struct config_file *file)
-{
-  struct config_directive *directive = file->head;
-  while (directive) {
-    switch (directive->type) {
-      case CONFIG_SYMLINK:
-        if (resolve_symlink(state, file, directive))
-          return -1;
-        break;
-    }
-    directive = directive->next;
-  }
-  return 0;
-}
-
-static int resolve(struct state *state)
-{
-  struct config_file *file = state->files;
-  while (file) {
-    if (resolve_file(state, file))
-      return -1;
-    file = file->next;
-  }
-  return 0;
-}
-
-/*** EXECUTOR ********************************************************** {{{1 */
+/*** EXECUTOR *****************************************************************/
 
 static int create_parent_directories(char *path)
 {
@@ -934,7 +791,7 @@ static int create_parent_directories(char *path)
   return 0;
 }
 
-static int execute_symlink(struct state *state, struct output *output)
+static int execute_symlink(struct config *config, struct output *output)
 {
   char existing[PATH_MAX];
   const char *target = output->symlink.target;
@@ -951,18 +808,18 @@ static int execute_symlink(struct state *state, struct output *output)
     }
     MSG("Creating symlink: %s -> %s", output->path, target);
   } else if (existing_len == target_len && !memcmp(existing, target, target_len)) {
-    if (state->flags & STATE_VERBOSE)
+    if (config->flags & CONFIG_VERBOSE)
       MSG("Skipping symlink: %s -> %s", output->path, target);
     return 0;
   } else {
     MSG("Replacing symlink: %s -> %s", output->path, target);
-    if (!(state->flags & STATE_DRY) && unlink(output->path)) {
+    if (!(config->flags & CONFIG_DRY) && unlink(output->path)) {
       ERR_SYS("failed to unlink '%s'", output->path);
       return -1;
     }
   }
 
-  if (state->flags & STATE_DRY)
+  if (config->flags & CONFIG_DRY)
     return 0;
 
   if (!symlink(target, output->path))
@@ -984,13 +841,15 @@ symlink_failed:
   return -1;
 }
 
-static int execute(struct state *state)
+static int execute(struct config *config)
 {
   int ret = 0;
-  OUTPUT_ITER(state, output) {
+  OUTPUT_ITER(config, output) {
     switch (output->type) {
+      case OUTPUT_NONE:
+        break;
       case OUTPUT_SYMLINK:
-        if (execute_symlink(state, output))
+        if (execute_symlink(config, output))
           ret = -1;
         break;
     }
@@ -998,100 +857,58 @@ static int execute(struct state *state)
   return ret;
 }
 
-/*** AUTOCOMPILE ******************************************************* {{{1 */
+/*** OPTPARSE *****************************************************************/
 
-/*
- * Because the Gale configuration language is closely tied to the Gallade
- * implementation, Gallade will attempt to recompile itself if it detects it is
- * out of date.
- */
-static void autocompile(int argc, char **argv)
+struct optspec
 {
-  static char *const srcfile = ".gale/gallade.c";
-  static char *const exefile = ".local/bin/gallade";
+  int value;
+  const char *name;
+};
 
-  if (argc > 27) {
-    WARN("too many arguments");
-    return;
+struct optstate
+{
+  char **args;
+  char *clump;
+  int index;
+  int count;
+};
+
+#define OPTINIT(args, count) { (args), NULL, 0, (count) }
+
+int optparse(struct optstate *o, const struct optspec *options)
+{
+  if (!o->clump) {
+    if (o->index >= o->count)
+      return 0;
+    char *arg = o->args[o->index++];
+    if (*arg != '-' || !*(++arg)) {
+      ERR("invalid argument: '%s'", arg);
+      return -1;
+    }
+    if (*arg == '-') {
+      ++arg;
+      for (const struct optspec *option = options; option->value; ++option)
+        if (!strcmp(option->name, arg))
+          return option->value;
+      ERR("invalid option: --%s", arg);
+      return -1;
+    }
+    o->clump = arg;
   }
-
-  struct stat st;
-  long long srctime, exetime;
-  if (stat(srcfile, &st)) {
-    WARN_SYS("failed to stat '%s'", srcfile);
-    return;
-  }
-  srctime = st.st_mtime;
-  if (stat(exefile, &st)) {
-    WARN_SYS("failed to stat '%s'", exefile);
-    return;
-  }
-  exetime = st.st_mtime;
-  if (srctime <= exetime)
-    return;
-
-  MSG("Recompiling...");
-
-  char *exec_argv[32];
-  int i = 0;
-  exec_argv[i++] = "sh";
-  exec_argv[i++] = srcfile;
-#ifdef GALLADE_DEBUG
-  exec_argv[i++] = "--debug";
-#endif
-  exec_argv[i++] = "--";
-  for (int j = 0; j < argc; j++)
-    exec_argv[i++] = argv[j];
-  exec_argv[i] = NULL;
-
-  execv("/bin/sh", exec_argv);
-  ERR_SYS("execv");
-  exit(-1);
+  int value = *o->clump;
+  if (!*(++o->clump))
+    o->clump = NULL;
+  for (const struct optspec *option = options; option->value; ++option)
+    if (option->value == value)
+      return value;
+  ERR("invalid option: -%c", value);
+  return -1;
 }
 
-/*** OPTION PARSER ***************************************************** {{{1 */
-
-// Screw getopt! This is a lot more painful to read and a lot more fun to use.
-
-#define OPTBEGIN(argv) \
-  for (char **_argv = (argv), *_clump = NULL, *_arg, _s;;) { \
-    if (_clump) { \
-      _s = *_clump; \
-      if (!*(++_clump)) \
-        _clump = NULL; \
-    } else if ((_arg = *_argv)) { \
-      ++_argv; \
-      if (_arg[0] != '-' || _arg[1] == 0) \
-        ERR("invalid argument: '%s'", _arg), exit(2); \
-      ++_arg; _s = *_arg; ++_arg; \
-      if (_s == '-') _s = 0; \
-      else if (*_arg) _clump = _arg; \
-    } else break; \
-    if (0)
-
-#define OPT(s, l) \
-  } else if (_s ? _s == s : !strcmp(_arg, l)) {
-
-#define OPTLONG(l) \
-  } else if (!_s && !strcmp(_arg, l)) {
-
-#define OPTEND \
-  else { \
-    if (_s) ERR("invalid option: -%c", _s); \
-    else ERR("invalid option: --%s", _arg); \
-    exit(2); \
-  }}
-
-/*** MAIN ************************************************************** {{{1 */
-
-#ifdef GALLADE_DEBUG
-# define GALLADE_DEBUG_INDICATOR " (debug build)"
-#else
-# define GALLADE_DEBUG_INDICATOR
-#endif
+/*** MAIN *********************************************************************/
 
 static const char usage[] = "\
-usage: gallade [options]" GALLADE_DEBUG_INDICATOR "\n\
+usage: gallade [options]\n\
 \n\
 Options:\n\
   -h, --help        show this help and exit\n\
@@ -1114,58 +931,48 @@ int main(int argc, char **argv)
     return 1;
   }
 
-  autocompile(argc - 1, argv + 1);
-
   unsigned int flags = 0;
+  struct optstate optstate = OPTINIT(argv + 1, argc - 1);
+  int opt;
 
-  OPTBEGIN(argv + 1) {
-    OPT('h', "help") fputs(usage, stdout); return 0;
-    OPT('n', "dry-run") flags |= STATE_DRY;
-    OPT('v', "verbose") flags |= STATE_VERBOSE;
-  } OPTEND
+  static const struct optspec options[] = {
+    { 'h', "help" },
+    { 'n', "dry-run" },
+    { 'v', "verbose" },
+    { 'd', "debug" },
+    { 0 }
+  };
 
-  //= Putting it all together: =================================================
+  while ((opt = optparse(&optstate, options)) != 0) {
+    switch (opt) {
+      case 'h': fputs(usage, stdout); return 0;
+      case 'n': flags |= CONFIG_DRY; break;
+      case 'v': flags |= CONFIG_VERBOSE; break;
+      case 'd': flags |= CONFIG_DEBUG; break;
+      default:  return 2;
+    }
+  }
 
-  struct state state;
-  state.flags = flags;
-  state.srcroot = ".gale";
-  state.files = NULL;
-  state.outputs = NULL;
-  state.outputcnt = 0;
+  struct config config;
+  config.flags = flags;
+  config.srcroot = ".gale";
+  config.files = NULL;
+  config.outputs = NULL;
 
-  // 1. Load the config. -------------------------------------------------------
-
-  if (config_load(&state))
+  if (config_load(&config))
     return 1;
 
-  // 2. Resolve the config. ----------------------------------------------------
-
-  if (resolve(&state))
+  if (log_read(&config, ".gale.log"))
     return 1;
 
-  // 3. Load the log and remove stale entries. ---------------------------------
-
-  if (log_read(&state, ".gale.log"))
-    return 1;
-
-  // 4. Update the log if necessary. -------------------------------------------
-
-  if (state.outputcnt || state.flags & STATE_NEED_UPDATE_LOG) {
+  if (config.flags & CONFIG_NEED_UPDATE_LOG) {
     MSG("Updating log...");
-    if (!(state.flags & STATE_DRY) && log_write(&state, ".gale.log"))
+    if (!(config.flags & CONFIG_DRY) && log_write(&config, ".gale.log"))
       return 1;
   }
 
-  // 5. Update the home directory. ---------------------------------------------
-
-  if (execute(&state))
+  if (execute(&config))
     return 1;
-
-  // ...maybe clean up one day. ------------------------------------------------
 
   return 0;
 }
-
-/*********************************************************************** }}}1 */
-
-// vim:fo+=n:fdm=marker

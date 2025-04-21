@@ -1,6 +1,6 @@
-#
-# ::::| ~/.config/lf/colors
-#
+# ---
+# ~/.config/lf/colors
+# ---
 
 ln      01;36       # LINK
 or      01;38;5;196 # ORPHAN

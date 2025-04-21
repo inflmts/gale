@@ -1,6 +1,6 @@
-#
-# ::::| ~/.bash_profile
-#
+# ---
+# ~/.bash_profile
+# ---
 
 # source profile script
 . ~/.profile

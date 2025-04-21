@@ -1,6 +1,6 @@
-#
-# ::::| ~/.profile
-#
+# ---
+# ~/.profile
+# ---
 
 # autodetect $EDITOR
 if command -v nvim >/dev/null; then

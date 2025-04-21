@@ -1,11 +1,10 @@
 #!/bin/sh
-# gale-power - shutdown, reboot, suspend, or hibernate
-#
-# ::::| ~/.local/bin/gale-shutdown
-# ::::| ~/.local/bin/gale-reboot
-# ::::| ~/.local/bin/gale-sleep
-# ::::| ~/.local/bin/gale-hibernate
-#
+# ---
+# ~/.local/bin/gale-shutdown
+# ~/.local/bin/gale-reboot
+# ~/.local/bin/gale-sleep
+# ~/.local/bin/gale-hibernate
+# ---
 
 set -ue
 

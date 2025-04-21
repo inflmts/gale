@@ -1,8 +1,7 @@
 #!/bin/sh
-# gale-labwc
-#
-# ::::| ~/.local/bin/gale-labwc
-#
+# ---
+# ~/.local/bin/gale-labwc
+# ---
 
 cd ~
 if [ -z "${DBUS_SESSION_BUS_ADDRESS-}" ] && command -v dbus-run-session > /dev/null 2>&1; then

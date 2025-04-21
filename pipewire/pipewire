@@ -1,4 +1,6 @@
 #!/bin/sh
-# ::::| ~/.config/gale-svc/pipewire
+# ---
+# ~/.config/gale-svc/pipewire
+# ---
 
 exec pipewire

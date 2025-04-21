@@ -1,7 +1,8 @@
-#
-# vim:ft=dosini
-# ::::| ~/.config/swayimg/config
-#
+# ---
+# ~/.config/swayimg/config
+# ---
 
 [viewer]
 window = #181824
+
+# vim:ft=dosini

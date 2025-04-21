@@ -1,6 +1,6 @@
-#
-# ::::| ~/.config/labwc/themerc-override
-#
+# ---
+# ~/.config/labwc/themerc-override
+# ---
 
 window.button.height: 22
 

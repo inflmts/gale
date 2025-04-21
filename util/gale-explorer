@@ -1,8 +1,7 @@
 #!/bin/sh
-# gale-explorer - launch a file explorer
-#
-# ::::| ~/.local/bin/gale-explorer
-#
+# ---
+# ~/.local/bin/gale-explorer
+# ---
 
 if [ $# -ne 0 ]; then
   echo >&2 "usage: ${0##*/}"

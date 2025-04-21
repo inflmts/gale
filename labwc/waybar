@@ -1,9 +1,8 @@
 #!/bin/sh
-# labwc-waybar
-#
-# ::::| ~/.config/gale-svc/labwc-waybar
-# ::::| ~/.local/bin/gale-labwc-waybar
-#
+# ---
+# ~/.config/gale-svc/labwc-waybar
+# ~/.local/bin/gale-labwc-waybar
+# ---
 
 # workaround for wlr/taskbar because waybar 0.12.0 doesn't use
 # $XDG_DATA_HOME but does respect $XDG_DATA_DIRS

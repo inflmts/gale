@@ -1,9 +1,8 @@
 #!/bin/sh
-# open - open a file sanely
-#
-# ::::| ~/.local/bin/open
-# ::::| ~/.local/bin/xdg-open
-#
+# ---
+# ~/.local/bin/open
+# ~/.local/bin/xdg-open
+# ---
 
 set -ue
 

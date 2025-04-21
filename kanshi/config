@@ -1,6 +1,6 @@
-#
-# ::::| ~/.config/kanshi/config
-#
+# ---
+# ~/.config/kanshi/config
+# ---
 
 profile single {
   output "Chimei Innolux Corporation 0x14E7 Unknown" scale 1.25

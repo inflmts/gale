@@ -1,6 +1,6 @@
-#
-# ::::| ~/.config/git/config.shared
-#
+# ---
+# ~/.config/git/config.shared
+# ---
 
 [alias]
   ac = !git add -A && git commit
