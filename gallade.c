@@ -19,12 +19,10 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-/*** UTILITIES ****************************************************************/
-
 #define GALLADE_CONFIG_READ_MAX 4096
 
-#define containerof(p, type, member) \
-  ((type *)((char *)(p) - offsetof(type, member)))
+static const char *log_file = ".data/gale/gallade.log";
+static const char *srcroot = ".gale";
 
 #define ISSPACE(c) ((c) == ' ')
 #define ISDIGIT(c) ((c) >= '0' && (c) <= '9')
@@ -113,8 +111,6 @@ enum output_type {
   OUTPUT_SYMLINK
 };
 
-#define OUTPUT_LOGGED 0x1
-
 struct output_symlink
 {
   char *target;
@@ -125,26 +121,21 @@ struct output
   struct output *next;
   char *path;
   enum output_type type;
-  unsigned int flags;
+  int logged;
   union {
     struct output_symlink symlink;
   };
 };
 
-#define CONFIG_DRY (1 << 0)
-#define CONFIG_VERBOSE (1 << 1)
-#define CONFIG_NEED_UPDATE_LOG (1 << 2)
-#define CONFIG_BAD (1 << 3)
-#define CONFIG_DEBUG (1 << 4)
-
-struct config_file;
 
 struct config
 {
-  unsigned int flags;
-  const char *srcroot;
-  struct config_file *files;
+  int dry;
+  int verbose;
+  int debug;
+  int need_update_log;
   struct output *outputs;
+  unsigned int new_outputs;
 };
 
 /*** OUTPUTS ******************************************************************/
@@ -179,8 +170,9 @@ static struct output *output_add(struct config *config, const char *path)
   output->next = *slot;
   output->path = strdup(path);
   output->type = OUTPUT_NONE;
-  output->flags = 0;
+  output->logged = 0;
   *slot = output;
+  ++config->new_outputs;
   return output;
 }
 
@@ -206,16 +198,6 @@ static struct output *output_add(struct config *config, const char *path)
 //    output = next;
 //  }
 //}
-
-/*** CONFIG *******************************************************************/
-
-struct config_file
-{
-  struct config_file *next;
-  char *path;
-  struct config_directive *head;
-  struct config_directive **tail;
-};
 
 /*** CONFIG PARSER ************************************************************/
 
@@ -294,7 +276,7 @@ static int config_parse_symlink(struct config_parser *p)
       ++dircnt;
 
   // "../" * dircnt + srcroot + "/" + srcpath
-  size_t target_len = 3 * dircnt + strlen(p->config->srcroot) + 1 + strlen(p->filename);
+  size_t target_len = 3 * dircnt + strlen(srcroot) + 1 + strlen(p->filename);
   char *target = xmalloc(target_len + 1);
   t = target;
   while (dircnt) {
@@ -303,11 +285,9 @@ static int config_parse_symlink(struct config_parser *p)
     *(t++) = '/';
     --dircnt;
   }
-  sprintf(t, "%s/%s", p->config->srcroot, p->filename);
+  sprintf(t, "%s/%s", srcroot, p->filename);
 
   output->type = OUTPUT_SYMLINK;
-  output->flags = 0;
-  output->path = path;
   output->symlink.target = target;
   return 0;
 
@@ -389,20 +369,19 @@ static int config_parse(struct config *config, const char *filename, const char 
 
 /*** CONFIG LOADER ************************************************************/
 
-static void config_load_file(struct config *config, const char *path)
+static int config_load_file(struct config *config, const char *path)
 {
-  if (config->flags & CONFIG_DEBUG)
+  if (config->debug)
     DEBUG("config: %s", path);
 
-  char *fullpath = xmalloc(strlen(config->srcroot) + 1 + strlen(path) + 1);
-  sprintf(fullpath, "%s/%s", config->srcroot, path);
+  char *fullpath = xmalloc(strlen(srcroot) + 1 + strlen(path) + 1);
+  sprintf(fullpath, "%s/%s", srcroot, path);
 
   int fd = open(fullpath, O_RDONLY);
   if (fd < 0) {
     ERR_SYS("failed to open '%s'", fullpath);
     free(fullpath);
-    config->flags |= CONFIG_BAD;
-    return;
+    return -1;
   }
   free(fullpath);
 
@@ -411,13 +390,12 @@ static void config_load_file(struct config *config, const char *path)
   if (size < 0) {
     ERR_SYS("read");
     close(fd);
-    return;
+    return -1;
   }
   close(fd);
 
   buf[size] = 0;
-  if (config_parse(config, path, buf))
-    config->flags |= CONFIG_BAD;
+  return config_parse(config, path, buf);
 }
 
 static int config_check_name(const char *name)
@@ -425,12 +403,9 @@ static int config_check_name(const char *name)
   // ignore names that begin with a dot
   if (*name == '.')
     return 0;
-  while (*name) {
-    if (!(ISALNUM(*name) || *name == '.' || *name == '-'))
-      return 0;
+  while (ISPATH(*name))
     ++name;
-  }
-  return 1;
+  return *name == '\0';
 }
 
 static int qsort_strcmp(const void *lhs, const void *rhs)
@@ -438,31 +413,29 @@ static int qsort_strcmp(const void *lhs, const void *rhs)
   return strcmp(*(const char **)lhs, *(const char **)rhs);
 }
 
-static void config_load_dir(struct config *config, const char *path)
+static int config_load_dir(struct config *config, const char *path)
 {
-  if (path && config->flags & CONFIG_DEBUG)
+  if (path && config->debug)
     DEBUG("config: %s/", path);
 
   char *fullpath;
-  size_t pathlen;
   if (path) {
-    pathlen = strlen(path);
-    fullpath = xmalloc(strlen(config->srcroot) + 1 + pathlen + 1);
-    sprintf(fullpath, "%s/%s", config->srcroot, path);
+    fullpath = xmalloc(strlen(srcroot) + 1 + strlen(path) + 1);
+    sprintf(fullpath, "%s/%s", srcroot, path);
   } else {
-    fullpath = strdup(config->srcroot);
+    fullpath = (char *)srcroot;
   }
 
   struct dirent *dent;
   DIR *dir = opendir(fullpath);
-  if (!dir) {
+  if (!dir)
     ERR_SYS("failed to open '%s'", fullpath);
+  if (fullpath != srcroot)
     free(fullpath);
-    config->flags |= CONFIG_BAD;
-    return;
-  }
-  free(fullpath);
+  if (!dir)
+    return -1;
 
+  int ret = 0;
   char **entries = NULL;
   size_t entrycnt = 0;
   size_t entrycap = 0;
@@ -486,14 +459,11 @@ static void config_load_dir(struct config *config, const char *path)
     entries[entrycnt++] = memcpy(xmalloc(namesize), name, namesize);
   }
 
-  if (errno) {
+  if (errno)
     ERR_SYS("readdir");
-    config->flags |= CONFIG_BAD;
-    goto finish;
-  }
-
   closedir(dir);
-  dir = NULL;
+  if (errno)
+    goto finish;
 
   qsort(entries, entrycnt, sizeof(char *), qsort_strcmp);
 
@@ -506,7 +476,7 @@ static void config_load_dir(struct config *config, const char *path)
 
     // construct pathname
     if (path) {
-      subpathlen = pathlen + 1 + namelen;
+      subpathlen = strlen(path) + 1 + namelen;
       subpath = xmalloc(subpathlen + 1);
       sprintf(subpath, "%s/%s", path, name);
     } else {
@@ -514,25 +484,22 @@ static void config_load_dir(struct config *config, const char *path)
       subpath = name;
     }
 
-    fullpath = xmalloc(strlen(config->srcroot) + 1 + subpathlen + 1);
-    sprintf(fullpath, "%s/%s", config->srcroot, subpath);
+    fullpath = xmalloc(strlen(srcroot) + 1 + subpathlen + 1);
+    sprintf(fullpath, "%s/%s", srcroot, subpath);
 
     struct stat st;
     if (lstat(fullpath, &st)) {
       ERR_SYS("failed to lstat '%s'", fullpath);
-      free(fullpath);
-      if (subpath != name)
-        free(subpath);
-      config->flags |= CONFIG_BAD;
-      continue;
+      ret = -1;
+    } else if (S_ISDIR(st.st_mode)) {
+      if (config_load_dir(config, subpath))
+        ret = -1;
+    } else if (path && S_ISREG(st.st_mode)) {
+      if (config_load_file(config, subpath))
+        ret = -1;
     }
+
     free(fullpath);
-
-    if (S_ISDIR(st.st_mode))
-      config_load_dir(config, subpath);
-    else if (path && S_ISREG(st.st_mode))
-      config_load_file(config, subpath);
-
     if (subpath != name)
       free(subpath);
   }
@@ -541,14 +508,12 @@ finish:
   while (entrycnt)
     free(entries[--entrycnt]);
   free(entries);
-  if (dir)
-    closedir(dir);
+  return ret;
 }
 
 static int config_load(struct config *config)
 {
-  config_load_dir(config, NULL);
-  return config->flags & CONFIG_BAD;
+  return config_load_dir(config, NULL);
 }
 
 /*** LOG READER ***************************************************************/
@@ -596,129 +561,86 @@ static void remove_output_safe(char *path)
   remove_parent_directories(path);
 }
 
-static int log_parse(struct config *config, const char *s, size_t len)
+static int log_check_path(const char *s)
 {
-  const char *end = s + len;
-  unsigned int lineno = 1;
-  char path[PATH_MAX];
-
-  while (s < end) {
-    const char *begin = s;
-    // path must begin with a dot
-    if (*s != '.')
-      goto invalid_path;
-    while (1) {
-      while (*s == '.')
-        ++s;
-      // path component cannot contain only dots
-      if (!ISPATH(*s))
-        goto invalid_path;
-      do ++s;
-      while (ISPATH(*s));
-      if (*s != '/')
-        break;
-      ++s;
-    }
-    if (*s != '\n')
-      goto invalid_path;
-
-    size_t len = s - begin;
-    if (len >= sizeof(path)) {
-      ERR("log: path too long at line %u", lineno);
-      return -1;
-    }
-    memcpy(path, begin, len);
-    path[len] = '\0';
-
-    struct output *output = output_get(config, path);
-    if (output) {
-      if (output->flags & OUTPUT_LOGGED) {
-        config->flags |= CONFIG_NEED_UPDATE_LOG;
-      } else {
-        output->flags |= OUTPUT_LOGGED;
-      }
-      goto next;
-    }
-
-    // remove
-    config->flags |= CONFIG_NEED_UPDATE_LOG;
-    MSG("Removing: %s", path);
-    if (!(config->flags & CONFIG_DRY))
-      remove_output_safe(path);
-    goto next;
-
-invalid_path:
-    while (*s != '\n')
-      ++s;
-    ERR("log: invalid path at line %u", lineno);
-    return -1;
-
-next:
+begin:
+  while (*s == '.')
     ++s;
-    ++lineno;
+  // path component cannot contain only dots
+  if (!ISPATH(*s))
+    return 0;
+  do ++s;
+  while (ISPATH(*s));
+  if (*s == '/') {
+    ++s;
+    goto begin;
+  }
+  return *s == '\0';
+}
+
+static int log_process_path(struct config *config, char *path)
+{
+  if (!log_check_path(path)) {
+    ERR("log: invalid path '%s'", path);
+    return -1;
   }
 
+  struct output *output = output_get(config, path);
+  if (!output) {
+    config->need_update_log = 1;
+    MSG("Removing: %s", path);
+    if (!config->dry)
+      remove_output_safe(path);
+  } else if (!output->logged) {
+    output->logged = 1;
+    --config->new_outputs;
+  }
   return 0;
 }
 
-static int log_read(struct config *config, const char *filename)
+static int log_load(struct config *config, const char *filename)
 {
-  struct stat st;
-  if (stat(filename, &st)) {
-    if (errno == ENOENT)
-      return 0;
-    ERR_SYS("failed to stat '%s'", filename);
-    return -1;
-  }
+  char buf[4096];
 
-  size_t size = st.st_size;
-  if (size == 0)
-    // empty log file
-    return 0;
-
-  // allocate extra byte for terminating newline
-  char *buf = malloc(size + 1);
-  if (!buf) {
-    ERR("log file too large");
-    return -1;
-  }
-
-  int ret = -1;
   int fd = open(filename, O_RDONLY);
   if (fd < 0) {
+    if (errno == ENOENT)
+      return 0;
     ERR_SYS("failed to open '%s'", filename);
-    goto finish;
+    return -1;
   }
 
-  char *cur = buf;
-  char *end = buf + size;
-  while (cur < end) {
-    ssize_t readsize = read(fd, cur, end - cur);
-    if (readsize < 0) {
+  char *start = buf;
+  char *end;
+  ssize_t size = sizeof(buf);
+  while ((size = read(fd, start, size)) != 0) {
+    if (size < 0) {
       ERR_SYS("read");
-      goto finish;
+      goto fail;
     }
-    if (readsize == 0) {
-      // log file shrank?
-      size = cur - buf;
-      break;
+    start = buf;
+    while ((end = memchr(start, '\n', size)) != NULL) {
+      *end = '\0';
+      if (log_process_path(config, start))
+        goto fail;
+      size -= end + 1 - start;
+      start = end + 1;
     }
-    cur += readsize;
+    if (start == buf) {
+      ERR("log: path too long");
+      goto fail;
+    }
+    memmove(buf, start, size);
+    start = buf + size;
+    size = sizeof(buf) - size;
   }
 
   close(fd);
-  fd = -1;
+  return 0;
 
-  if (buf[size - 1] != '\n')
-    buf[size++] = '\n';
-
-  ret = log_parse(config, buf, size);
-
-finish:
-  if (fd >= 0)
-    close(fd);
-  free(buf);
-  return ret;
+fail:
+  close(fd);
+  return -1;
 }
 
 /*** LOG WRITER ***************************************************************/
@@ -808,18 +730,18 @@ static int execute_symlink(struct config *config, struct output *output)
     }
     MSG("Creating symlink: %s -> %s", output->path, target);
   } else if (existing_len == target_len && !memcmp(existing, target, target_len)) {
-    if (config->flags & CONFIG_VERBOSE)
+    if (config->verbose)
       MSG("Skipping symlink: %s -> %s", output->path, target);
     return 0;
   } else {
     MSG("Replacing symlink: %s -> %s", output->path, target);
-    if (!(config->flags & CONFIG_DRY) && unlink(output->path)) {
+    if (!config->dry && unlink(output->path)) {
       ERR_SYS("failed to unlink '%s'", output->path);
       return -1;
     }
   }
 
-  if (config->flags & CONFIG_DRY)
+  if (config->dry)
     return 0;
 
   if (!symlink(target, output->path))
@@ -913,7 +835,7 @@ usage: gallade [options]\n\
 Options:\n\
   -h, --help        show this help and exit\n\
   -n, --dry-run     don't do anything, only show what would happen\n\
-  -v, --verbose     be verbose\n\
+  -v, --verbose     be verbose (-vv for debug)\n\
 ";
 
 int main(int argc, char **argv)
@@ -931,7 +853,8 @@ int main(int argc, char **argv)
     return 1;
   }
 
-  unsigned int flags = 0;
+  int dry = 0;
+  int verbose = 0;
   struct optstate optstate = OPTINIT(argv + 1, argc - 1);
   int opt;
 
@@ -939,35 +862,33 @@ int main(int argc, char **argv)
     { 'h', "help" },
     { 'n', "dry-run" },
     { 'v', "verbose" },
-    { 'd', "debug" },
     { 0 }
   };
 
   while ((opt = optparse(&optstate, options)) != 0) {
     switch (opt) {
       case 'h': fputs(usage, stdout); return 0;
-      case 'n': flags |= CONFIG_DRY; break;
-      case 'v': flags |= CONFIG_VERBOSE; break;
-      case 'd': flags |= CONFIG_DEBUG; break;
+      case 'n': dry = 1; break;
+      case 'v': ++verbose; break;
       default:  return 2;
     }
   }
 
-  struct config config;
-  config.flags = flags;
-  config.srcroot = ".gale";
-  config.files = NULL;
-  config.outputs = NULL;
+  struct config config = {
+    .dry = dry,
+    .verbose = verbose >= 1,
+    .debug = verbose >= 2
+  };
 
   if (config_load(&config))
     return 1;
 
-  if (log_read(&config, ".gale.log"))
+  if (log_load(&config, log_file))
     return 1;
 
-  if (config.flags & CONFIG_NEED_UPDATE_LOG) {
+  if (config.need_update_log || config.new_outputs) {
     MSG("Updating log...");
-    if (!(config.flags & CONFIG_DRY) && log_write(&config, ".gale.log"))
+    if (!config.dry && log_write(&config, log_file))
       return 1;
   }
 
