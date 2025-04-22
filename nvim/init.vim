@@ -28,14 +28,14 @@ command! PlugSetup call s:install_vim_plug()
 
 " indentation
 set et sw=2 sts=2 sta ai si
-" searching
-set is ic
-" editing
+" incremental search
+set incsearch
+" formatting
 set fo=tcqroj nojs
 " scrolling
 set nowrap so=5 ss=10 siso=10
-" display
-set number fillchars=vert:│
+" line numbers
+set number
 " automatically re-read a file if it's changed externally
 set autoread
 " vsplit appears on right
@@ -122,10 +122,6 @@ cnoremap <C-N> <Down>
 " NERDTree bindings
 nnoremap <C-T> <Cmd>NERDTreeToggle<CR>
 
-" omni completion
-inoremap <expr> <C-N> !pumvisible() && !empty(&omnifunc) ? "\<C-X>\<C-O>" : "\<C-N>"
-inoremap <expr> <C-P> !pumvisible() && !empty(&omnifunc) ? "\<C-X>\<C-O>" : "\<C-P>"
-
 " nvim diagnostics
 nnoremap # <Cmd>lua vim.diagnostic.open_float()<CR>
 
@@ -173,13 +169,15 @@ let g:sonokai_disable_terminal_colors = 1
 let g:sonokai_better_performance = 1
 silent! colorscheme sonokai
 
-hi Normal ctermbg=NONE guibg=#181824
-hi NormalNC ctermbg=NONE guibg=#202030
-
-hi Error ctermfg=7 ctermbg=203
+" color integration
+hi Normal ctermbg=NONE guibg=#202030
+hi NormalNC ctermbg=NONE guibg=#181824
+hi StatusLine guibg=#34344e
+hi StatusLineNC guibg=#28283c
+hi Error ctermfg=7 ctermbg=203 guifg=#ff507c guibg=#501030
 hi ErrorText cterm=underline ctermfg=203
 hi! link SignColumn LineNr
-hi Whitespace ctermfg=NONE ctermbg=1 guibg=#ff0000
+hi Whitespace ctermfg=NONE ctermbg=1 guifg=#606090 guibg=#404060
 
 if $TERM ==# "linux"
   hi Visual cterm=reverse ctermfg=NONE ctermbg=NONE

@@ -1,52 +1,58 @@
 // ---
 // ~/.config/labwc/waybar.jsonc
 // ---
+// vim: ft=json5
 {
   "position": "bottom",
   "height": 25,
-  "modules-center": [
+
+  "modules-left": [
     "network",
+    "bluetooth"
+  ],
+  "network": {
+    "format": "<span alpha='55%'>{ifname}</span> {ipaddr}",
+    "format-wifi": "<span alpha='55%'>wifi</span> {essid}",
+    "format-disconnected": "no internet",
+    "max-length": 32
+  },
+  "bluetooth": {
+    "format": "<span alpha='55%'>bt</span> {status}",
+    "format-connected": "<span alpha='55%'>bt</span> {device_alias}",
+    "max-length": 32
+  },
+
+  "modules-center": [
+    "clock"
+  ],
+  "clock": {
+    "format": "{:%a %m/%d/%Y \u2014 %I:%M %p}"
+  },
+
+  "modules-right": [
     "cpu",
     "memory",
-    "bluetooth",
     "pulseaudio",
     "backlight",
     "battery"
   ],
-  "modules-right": [
-    "clock"
-  ],
-  "network": {
-    "format": "<span alpha=\"#808090\">{ifname}</span> {ipaddr}",
-    "format-wifi": "<span color=\"#808090\">wi</span> {essid}",
-    "format-disconnected": "no internet",
-    "max-length": 32
-  },
   "cpu": {
     "interval": 5,
-    "format": "<span color=\"#808090\">cpu</span> {usage}%"
+    "format": "<span alpha='55%'>cpu</span> {usage}%"
   },
   "memory": {
     "interval": 5,
-    "format": "<span color=\"#808090\">mem</span> {used}G"
-  },
-  "bluetooth": {
-    "format": "<span color=\"#808090\">bt</span> {status}",
-    "format-connected": "<span color=\"#009999\">bt</span> {device_alias}",
-    "max-length": 32
+    "format": "<span alpha='55%'>mem</span> {used}G"
   },
   "pulseaudio": {
-    "format": "<span color=\"#808090\">vol</span> {volume}%",
-    "format-muted": "<span color=\"#998700\">vol</span> <s>{volume}%</s>"
+    "format": "<span alpha='55%'>vol</span> {volume}%",
+    "format-muted": "<span alpha='55%'>vol</span> <s>{volume}%</s>"
   },
   "backlight": {
-    "format": "<span color=\"#808090\">br</span> {percent}%"
+    "format": "<span alpha='55%'>br</span> {percent}%"
   },
   "battery": {
-    "format": "<span color=\"#808090\">ch</span> {capacity}%",
-    "format-discharging": "<span color=\"#998700\">ch</span> {capacity}%"
-  },
-  "clock": {
-    "format": "<span color=\"#e080ff\">{:%a %m/%d/%Y</span> %I:%M %p}"
+    "format": "<span alpha='55%'>ch</span> {capacity}%",
+    "format-discharging": "<span alpha='55%'>ch</span> {capacity}%"
   }
 }

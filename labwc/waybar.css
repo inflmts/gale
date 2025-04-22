@@ -2,17 +2,29 @@
  * ---
  * ~/.config/labwc/waybar.css
  * ---
+ * man: waybar(5)
+ * man: waybar-styles(5)
+ *
+ * - https://github.com/Alexays/Waybar/wiki/Styling
  */
 
 * {
-  font-family: system;
-  font-size: 11pt;
+  font-family: Montserrat, system;
+  font-weight: 600;
+  font-size: 13px;
   transition: none;
+  border: none;
+  border-radius: 0;
 }
 
 #waybar {
   background-color: #101018;
   color: #ffffff;
+  border-top: 1px solid #28283c;
+}
+
+tooltip {
+  background-color: #101018;
 }
 
 button {
@@ -26,9 +38,16 @@ button {
 }
 
 .module {
-  color: #ffffff;
   padding: 0;
   margin: 0 5px;
+}
+
+.modules-left > :first-child > .module {
+  margin-left: 10px;
+}
+
+.modules-right > :last-child > .module {
+  margin-right: 10px;
 }
 
 #network.disconnected {
