@@ -1,71 +1,60 @@
-<h1 align="center">Gale</h1>
+# Gale
 
-<p align="center">
-  Daniel Li &mdash; <a href="https://inflmts.com">inflmts.com</a>
-</p>
+Daniel Li &mdash; [inflmts.com](https://inflmts.com)
 
-## Overview
+## Introduction
 
 **Gale** is my personal configuration system. The purpose of Gale is to collect
 my configuration files and scripts (my "dotfiles") in a single repository to be
-shared between computers using Git.
-
-Gale is primarily targeted towards Linux systems. An exception is the Neovim
-configuration file, which also works on Windows.
-
-Gale uses a symlink approach to put files into the home directory. The `galinst`
-script (the "Gale installer") loads the manifest defined in `install.conf` and
-makes the filesystem match the manifest by creating new symlinks, fixing
-incorrect symlinks, and deleting old symlinks that are no longer in the manifest
-(and their empty parent directories). Currently, `install.conf` does not support
-any conditional logic, although this will likely be implemented in the future to
-dynamically alter the manifest based on the Gale profile and other
-characteristics of the running machine.
+shared between computers using Git. Gale system is designed to be used on Linux,
+although some configuration files will also work on Windows (without Gale
+integration, of course), for example the Neovim configuration file.
 
 ## Getting Started
 
-1. Clone this repository to `~/gale`.
+The only requirements are Git and a C compiler (currently GCC).
 
-2. Set `~/.config/gale/profile` to the profile you want to use.
+```
+cd ~
+git clone https://github.com/inflmts/gale.git
+ln -s gale .gale
+gale/util/gallade
+```
 
-3. Install Gale using `galinst`.
+## Gallade
 
-4. Log out and log back in to pick up environment variables.
+Gale uses a symlink approach to put files into the home directory. The core of
+the Gale system is **Gallade**, the installer, which is written in C (see
+`gallade.c`). Gallade scans each file in the source repository and looks for a
+_config block_, which contains directives for specifying where to install the
+file. A config block begins and ends with a line containing three consecutive
+dashes (`---`). The dashes must be at the end of the line and must be preceded
+by whitespace. The text before the dashes is stripped from each line in the
+config block and must be the same for every line in the block. Empty lines are
+currently not supported. Comments are not supported either because the config
+block is usually already embedded in a comment.
 
-`galinst` will automatically install itself into `~/.local/bin`, which should be
-available in `$PATH`. Once installed, Gale can be updated simply by running
-`galinst`. `galinst` supports verbose and dry-run options; see `galinst --help`
-for more information.
+Gallade then makes the filesystem match the configuration by creating new
+symlinks, fixing incorrect symlinks, and deleting old symlinks that are no
+longer defined in the configuration (and their empty parent directories).
+Currently, Gallade does not support conditional logic, but this will likely be
+implemented in the future to allow different configurations on different
+machines. Other features that are not implemented yet include templates and
+hooks.
 
-## Details
+The Gallade wrapper script (`util/gallade`) automatically recompiles Gallade if
+it detects that the source files have changed. The real Gallade is at
+`~/.data/gale/gallade`, next to the log file `~/.data/gale/gallade.log`. Gallade
+will install the wrapper script in `~/.local/bin` so it is possible to run with
+just `gallade`.
 
-### Repository Location
+Yes, [that Gallade](https://www.pokemon.com/us/pokedex/gallade).
 
-This repository must be placed at `~/gale`. Previously, it was located at
-`~/.gale` (with a dot), similar to how other programs store user files. However,
-since the purpose of Gale is to manage configuration files, placing Gale itself
-in a configuration-like location seemed inappropriate. Directories beginning
-with a dot are usually managed by the program; Gale on the other hand is
-entirely user-maintained, so it made sense to put it in a prominently visible
-location.
+## XDG Base Directories
 
-### Host-Specific Configuration
-
-Although I try to use the same configuration across as many systems as possible,
-there will be cases where this is not possible. For these files, `galinst` can
-be instructed to install different symlinks based on the system.
-
-Every host is assigned a unique profile, a string identifier stored at
-`~/.config/gale/profile`. This is useful when autodetection would be difficult
-or unnecessarily complicated. Other than this, Gale has zero external
-configuration, eliminating the need to maintain a standard configuration format.
-
-### XDG Base Directories
-
-The [XDG Base Directory
-Specification](https://specifications.freedesktop.org/basedir-spec/basedir-spec-latest.html)
+The [XDG Base Directory Specification](https://specifications.freedesktop.org/basedir-spec/basedir-spec-latest.html)
 variables `$XDG_CONFIG_HOME` and `$XDG_DATA_HOME` are **hardcoded** in Gale and
-cannot be changed. For example, `galinst` does not use these variables at all.
+cannot be changed. For instance, Gallade does not use these variables at all.
 Their values are:
 
 ```
@@ -73,22 +62,24 @@ $XDG_CONFIG_HOME    ~/.config
 $XDG_DATA_HOME      ~/.data
 ```
 
-Other variables, however, are read from the environment. Their default values
-are:
+Other variables are read from the environment. Their default values are:
 
 ```
 $XDG_STATE_HOME     ~/.state
 $XDG_CACHE_HOME     ~/.cache
 ```
 
-Note that the value of `$XDG_DATA_HOME` and the default value of
-`$XDG_STATE_HOME` differ from the standard.
+Note that the values of `$XDG_DATA_HOME` and `$XDG_STATE_HOME` differ from the
+standard. I think that `~/.local` should be like `/usr/local`, not `/var`.
 
-## Trivia
+In addition, a if `$XDG_RUNTIME_DIR` isn't set at login, a fallback directory
+will be created at `/tmp/daniel`.
 
-* I went through many, many different personal configuration systems, often
-  experimenting with vastly different management schemes, before settling on
-  Gale. These included, in not very strict order, Psi, Zeta, DMM, Corecon, and
-  Storm. In fact, the name "Gale" was chosen to mean "the wind before the
-  storm."
+## Why "Gale?"
 
+I went through many, many different personal configuration systems, often
+experimenting with vastly different management schemes, before settling on Gale.
+The names I gave them were equally colorful: Psi, Zeta, Omega, DMM (Dynamic
+Module Manager), and more. Before Gale, there was Corecon ("core console"), and
+Storm (everything else). These two were eventually merged into one repository
+and renamed "Gale" &mdash; "the wind before the storm."
