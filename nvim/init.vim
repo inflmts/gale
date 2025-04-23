@@ -3,7 +3,6 @@
 " ---
 "
 " This works on both Linux and Windows.
-"
 
 "-- PLUGINS ------------------------------------------------------------------
 
@@ -48,18 +47,24 @@ set wildmenu wildmode=longest:full,full
 set nohidden
 " enable the mouse in all modes
 set mouse=a
-" always use unix line endings
-set fileformats=unix,dos
 " show various types of whitespace
 set list listchars=trail:\ ,tab:-->
+
 " show title if the terminal supports it
 if $TERM !=# "linux"
   set title
 endif
 
+" always use unix line endings
+if has('win32')
+  set fileformats=unix
+else
+  set fileformats=unix,dos
+endif
+
 "-- KEYBINDINGS --------------------------------------------------------------
 "
-" TIP: See |map-table| for all map modes in a convenient table.
+" See `:h map-table` for all map modes in a convenient table.
 "
 
 " in normal mode, CTRL-X clears search highlighting (see :nohlsearch)
@@ -124,6 +129,10 @@ nnoremap <C-T> <Cmd>NERDTreeToggle<CR>
 
 " nvim diagnostics
 nnoremap # <Cmd>lua vim.diagnostic.open_float()<CR>
+
+" simpler copy and paste
+vnoremap <C-S-C> "+y
+inoremap <C-S-V> <C-R><C-O>+
 
 "-- AUTOCOMMANDS -------------------------------------------------------------
 
