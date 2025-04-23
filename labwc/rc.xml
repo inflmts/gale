@@ -22,7 +22,7 @@
     <titlebar layout=":" />
     <cornerRadius>0</cornerRadius>
     <keepBorder>no</keepBorder>
-    <font name="Montserrat" size="9" weight="bold" />
+    <font name="Montserrat SemiBold" size="9" />
   </theme>
 
   <keyboard>
