@@ -3,6 +3,13 @@
 # ~/.local/bin/open
 # ~/.local/bin/xdg-open
 # ---
+#
+# xdg-open is a nightmare. gale-open is a drop-in replacement for xdg-open
+# that's designed to be simple and explicit. It doesn't read any .desktop files
+# or delegate to any desktop environment-specific handlers, instead all file
+# associations are explicitly spelled out in the script. This offers more
+# flexibility and control at the expense of some manual work required to add
+# new file types.
 
 set -ue
 
@@ -15,7 +22,7 @@ usage() {
 usage: $progname [options] <file> | <url>
 
 Options:
-  -q, --query     print the application that would be opened
+  -q, --query     print the command that would be run
   -b, --browser   open browser
       --help      show this help
       --version   display version information
@@ -23,6 +30,9 @@ EOF
 }
 
 if [ "$progname" = xdg-open ]; then
+  # xdg-open is documented not to fork, so we follow that if invoked as xdg-open.
+  # Some programs don't expect that, though, so in the future gale-open might
+  # be changed to always fork a new process.
   exec=exec
 else
   exec=fork
@@ -80,7 +90,7 @@ try() {
 }
 
 query() {
-  echo "$id"
+  echo "$*"
   exit
 }
 
@@ -154,6 +164,12 @@ open_imv() {
 open_mpv() {
   if has_command mpv; then
     $exec mpv --player-operation-mode=pseudo-gui -- "$file"
+  fi
+}
+
+open_libreoffice() {
+  if has_command libreoffice; then
+    $exec libreoffice "$file"
   fi
 }
 
@@ -241,6 +257,9 @@ case $file in
   *.txt)
     mimetype=text/plain
     ;;
+  *.md)
+    mimetype=text/markdown
+    ;;
   *.svg)
     mimetype=image/svg+xml
     ;;
@@ -250,9 +269,6 @@ case $file in
 esac
 
 case $mimetype in
-  application/pdf)
-    try browser
-    ;;
   image/svg+xml)
     try browser image
     ;;
@@ -265,10 +281,17 @@ case $mimetype in
   video/*)
     try video
     ;;
-  *)
-    try text
+  application/pdf | text/html | text/markdown)
+    try browser
+    ;;
+  application/vnd.oasis.opendocument.* | \
+  application/vnd.openxmlformats-officedocument.*)
+    try libreoffice
     ;;
 esac
+
+# try text as a last resort (and for other types)
+try text
 
 err "could not find a way to open '$file', sorry"
 exit 127
