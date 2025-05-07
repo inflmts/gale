@@ -8,8 +8,8 @@
 # that's designed to be simple and explicit. It doesn't read any .desktop files
 # or delegate to any desktop environment-specific handlers, instead all file
 # associations are explicitly spelled out in the script. This offers more
-# flexibility and control at the expense of some manual work required to add
-# new file types.
+# flexibility and control (and performance) at the expense of some manual work
+# required to add new file types.
 
 set -ue
 
@@ -161,6 +161,12 @@ open_imv() {
   fi
 }
 
+open_gimp() {
+  if has_command gimp; then
+    $exec gimp "$file"
+  fi
+}
+
 open_mpv() {
   if has_command mpv; then
     $exec mpv --player-operation-mode=pseudo-gui -- "$file"
@@ -203,12 +209,8 @@ open_browser() {
   try chromium firefox
 }
 
-open_text() {
-  try neovide neovim_qt nvim vim vi nano less
-}
-
 open_image() {
-  try swayimg imv_dir imv browser
+  try swayimg imv_dir imv gimp browser
 }
 
 open_audio() {
@@ -253,45 +255,26 @@ if [ -d "$file" ]; then
   $exec gale-term
 fi
 
-case $file in
-  *.txt)
-    mimetype=text/plain
-    ;;
-  *.md)
-    mimetype=text/markdown
-    ;;
-  *.svg)
-    mimetype=image/svg+xml
-    ;;
-  *)
-    mimetype=$(file -Lb --mime-type -- "$file") || mimetype=text/plain
-    ;;
-esac
-
-case $mimetype in
-  image/svg+xml)
-    try browser image
-    ;;
-  image/*)
+# match file extension
+case ${file##*.} in
+  avif | bmp | gif | jpeg | jpg | png | webp)
     try image
     ;;
-  audio/*)
+  flac | mp3 | ogg | opus | wav)
     try audio
     ;;
-  video/*)
+  avi | mov | mp4 | webm | wmv)
     try video
     ;;
-  application/pdf | text/html | text/markdown)
+  html | md | pdf | svg)
     try browser
     ;;
-  application/vnd.oasis.opendocument.* | \
-  application/vnd.openxmlformats-officedocument.*)
+  odt | odp | ods | doc | docx | ppt | pptx | xls | xlsx)
     try libreoffice
     ;;
 esac
 
-# try text as a last resort (and for other types)
-try text
+try neovide neovim_qt nvim vim vi nano less
 
 err "could not find a way to open '$file', sorry"
 exit 127
