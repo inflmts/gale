@@ -1,0 +1,79 @@
+#!/bin/sh
+# ---
+# ~/.local/bin/galcheck
+# ---
+
+set -u
+
+if [ -t 1 ]; then
+  cbold='\033[1m'
+  cboldred='\033[1;31m'
+  cboldgreen='\033[1;32m'
+  creset='\033[0m'
+else
+  cbold=
+  cboldred=
+  cboldgreen=
+  creset=
+fi
+
+section() {
+  printf "${cbold}%s:${creset}\\n" "$1"
+}
+
+check_program() {
+  local path
+  if path=$(command -v "$1"); then
+    printf "  %s: ${cboldgreen}yes${creset} (%s)\n" "$1" "$path"
+  else
+    printf "  %s: ${cboldred}no${creset}\n" "$1"
+  fi
+}
+
+section 'Essentials'
+check_program git
+check_program curl
+check_program nvim
+echo
+
+section 'Development'
+check_program gcc
+check_program gdb
+check_program meson
+check_program ninja
+check_program python3
+check_program java
+check_program jq
+check_program fzf
+check_program zip
+check_program unzip
+check_program adb
+echo
+
+section 'Multimedia'
+check_program magick
+check_program gimp
+check_program imv
+check_program swayimg
+check_program ffmpeg
+check_program mpv
+check_program libreoffice
+echo
+
+section 'Wayland'
+check_program labwc
+check_program waybar
+check_program Xwayland
+check_program wl-copy
+check_program wl-paste
+check_program swayidle
+check_program wlr-randr
+check_program neovide
+echo
+
+section 'Miscellaneous'
+check_program font-manager
+check_program htop
+check_program lf
+check_program yt-dlp
+echo
