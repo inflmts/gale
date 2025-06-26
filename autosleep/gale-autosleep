@@ -1,6 +1,6 @@
 #!/bin/sh
 # ---
-# ~/.config/gale-svc/autosleep
+# ~/.local/bin/gale-autosleep
 # ---
 #
 # This is a simple front-end to swayidle that puts the computer to sleep after a

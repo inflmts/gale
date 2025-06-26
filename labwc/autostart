@@ -3,7 +3,7 @@
 # ~/.config/labwc/autostart
 # ---
 
-gale-svc start kanshi
-gale-svc start pipewire
-gale-svc start autosleep
-gale-svc start labwc-waybar
+kanshi &
+pipewire &
+gale-autosleep &
+waybar &

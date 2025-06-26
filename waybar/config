@@ -1,7 +1,6 @@
 // ---
-// ~/.config/labwc/waybar.jsonc
+// ~/.config/waybar/config
 // ---
-// vim: ft=json5
 {
   "position": "bottom",
   "height": 25,
@@ -56,3 +55,4 @@
     "format-discharging": "<span alpha='55%'>ch</span> {capacity}%"
   }
 }
+// vim: ft=json5
