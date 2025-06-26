@@ -119,6 +119,21 @@
       <action name="MoveToOutput" direction="right" />
     </keybind>
 
+    <!-- kanshi -->
+
+    <keybind key="W-1">
+      <action name="Execute" command="kanshictl switch 1" />
+    </keybind>
+    <keybind key="W-2">
+      <action name="Execute" command="kanshictl switch 2" />
+    </keybind>
+    <keybind key="W-3">
+      <action name="Execute" command="kanshictl switch 3" />
+    </keybind>
+    <keybind key="W-4">
+      <action name="Execute" command="kanshictl switch 4" />
+    </keybind>
+
     <!-- terminal -->
 
     <keybind key="W-Return">

@@ -1,12 +1,17 @@
 # ---
+# host seele
 # ~/.config/kanshi/config
 # ---
 
-profile single {
+profile 1 {
   output "Chimei Innolux Corporation 0x14E7 Unknown" scale 1.25
 }
 
-profile double {
+profile 2 {
   output "Chimei Innolux Corporation 0x14E7 Unknown" scale 1.25
   output "Dell Inc. DELL E2318HR 5JDGK96EC44L" position 1536,0
+}
+
+profile 3 {
+  output "Chimei Innolux Corporation 0x14E7 Unknown" scale 1
 }
