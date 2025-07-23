@@ -238,6 +238,9 @@ case ${file%%/*} in
     err "could not find browser to open '$file'"
     exit 127
     ;;
+  prismlauncher:*)
+    $exec prismlauncher "$file"
+    ;;
   *:*)
     err "unrecognized schema '${file%%:*}'"
     exit 127
