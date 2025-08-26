@@ -1,6 +1,11 @@
-# ---
-# ~/.bashrc
-# ---
+#
+# Bash initialization file
+#
+
+# So apparently Bash when accessed over ssh will sometimes source ~/.bashrc
+# even when the session is not interactive. In that case we have to be careful
+# not to output anything or it might confuse the client program. The safest
+# thing to do, as found in many bashrc templates, is to just...
 
 # quit unless interactive
 # apparently needed for rcp or scp or something
@@ -10,20 +15,9 @@
 # -u    fail on undefined variable references
 set +H -u
 
-echo() { printf '%s\n' "$*"; }
 msg() { printf >&2 '%s\n' "$*"; }
 warn() { printf >&2 '\033[1;33mwarning:\033[0m %s\n' "$*"; }
 err() { printf >&2 '\033[1;31merror:\033[0m %s\n' "$*"; }
-
-# assume anything that isn't lame has 256 color support
-case ${TERM-} in
-  linux|dumb|"")
-    gale_colorful=
-    ;;
-  *)
-    gale_colorful=1
-    ;;
-esac
 
 # setup colors for ls (and tree)
 if gale_dircolors=$(dircolors 2>/dev/null); then
@@ -123,23 +117,16 @@ gale_spawn() {
 alias grep='grep --color=auto'
 alias md='mkdir -pv'
 
-gale_ls() {
-  LC_COLLATE=C command ls -hv --group-directories-first --color=auto "$@"
-}
+alias ls='LC_COLLATE=C ls -hv --group-directories-first --color=auto'
+alias la='ls -A'
+alias lsa='ls -A'
+alias ll='ls -l'
+alias lla='ls -lA'
 
-alias ls='gale_ls'
-alias lsa='gale_ls -A'
-alias ll='gale_ls -l'
-alias lla='gale_ls -lA'
-
-gale_tree() {
-  LC_COLLATE=C command tree --dirsfirst "$@"
-}
-
-alias tree='gale_tree'
-alias treea='gale_tree -a'
-alias treed='gale_tree -d'
-alias treeda='gale_tree -da'
+alias tree='LC_COLLATE=C tree --dirsfirst'
+alias treea='tree -a'
+alias treed='tree -d'
+alias treeda='tree -da'
 
 clock() {
   printf '%(%a %m/%d/%Y)T \033[1m%(%I:%M %p)T\033[0m\n'
@@ -290,30 +277,30 @@ r() {
 #-- PROMPT ---------------------------------------------------------------------
 
 before_prompt() {
-  local status=$?
-  if [[ $status -ne 0 ]]; then
-    gale_exit_status=" $status "
-  else
-    gale_exit_status=""
-  fi
-  # get ourselves on a new line
-  printf '\e[7m%%\e[0m%'$((COLUMNS-1))'s\r'
   # update terminal title
   printf '\033]2;%s\007' "${USER}@${HOSTNAME%%.*} ${PWD/#$HOME/\~}"
 }
 
 PROMPT_COMMAND=before_prompt
 
-if [[ $gale_colorful ]]; then
-  PS1='\[\e[0;1;37;48;5;196m\] \u@\h '
-  PS1=$PS1'\[\e[48;5;124m\] \w '
-  PS1=$PS1'\[\e[22;38;5;203;48;5;88m\]$gale_exit_status\[\e[0m\]'
-  PS1=$PS1'\n\[\e[38;5;167m\]\$\[\e[0m\] '
-else
-  PS1='\[\e[0;1;41m\] \u@\h '
-  PS1=$PS1'\[\e[44m\] \w '
-  PS1=$PS1'\[\e[0;47;31m\]$gale_exit_status\[\e[0m\]'
-  PS1=$PS1'\n\$ '
-fi
+basic_prompt='\[\e[0;1;41m\] \u@\h \[\e[47;30m\] \w \[\e[0m\] ~$?\n\$ '
+basic_ssh_prompt='\[\e[0;1;45m\] \u@\h \[\e[47;30m\] \w \[\e[0m\] ~$?\n\$ '
+fancy_prompt='\[\e[0;1;37;48;5;196m\] \u@\h \[\e[48;5;124m\] \w \[\e[0;38;5;203m\] ~$?\[\e[0m\]\n\$ '
+fancy_ssh_prompt='\[\e[0;1;37;48;5;129m\] \u@\h \[\e[48;5;55m\] \w \[\e[0;38;5;171m\] ~$?\[\e[0m\]\n\$ '
+
+case $TERM in
+linux|dumb)
+  if [[ -n ${SSH_CONNECTION-} ]]; then
+    PS1=$basic_ssh_prompt
+  else
+    PS1=$basic_prompt
+  fi ;;
+*)
+  if [[ -n ${SSH_CONNECTION-} ]]; then
+    PS1=$fancy_ssh_prompt
+  else
+    PS1=$fancy_prompt
+  fi ;;
+esac
 
 # vim:ft=bash
