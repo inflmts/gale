@@ -1,19 +1,24 @@
-// ---
-// ~/.config/waybar/config
-// ---
+//
+// Waybar configuration file
+// vim:ft=json5
+//
 {
   "position": "bottom",
   "height": 25,
+
+  // Left
+  // ----
 
   "modules-left": [
     "network",
     "bluetooth"
   ],
   "network": {
-    "format": "<span alpha='55%'>{ifname}</span> {ipaddr}",
-    "format-wifi": "<span alpha='55%'>wifi</span> {essid}",
+    "format": "{ifname}",
+    "format-wifi": "<span alpha='55%'>wifi</span> {ipaddr}",
+    "format-ethernet": "<span alpha='55%'>eth</span> {ipaddr}",
     "format-disconnected": "no internet",
-    "max-length": 32
+    "format-disabled": "rfkill"
   },
   "bluetooth": {
     "format": "<span alpha='55%'>bt</span> {status}",
@@ -21,12 +26,18 @@
     "max-length": 32
   },
 
+  // Center
+  // ------
+
   "modules-center": [
     "clock"
   ],
   "clock": {
     "format": "{:%a %m/%d/%Y \u2014 %I:%M %p}"
   },
+
+  // Right
+  // -----
 
   "modules-right": [
     "cpu",
@@ -55,4 +66,3 @@
     "format-discharging": "<span alpha='55%'>ch</span> {capacity}%"
   }
 }
-// vim: ft=json5

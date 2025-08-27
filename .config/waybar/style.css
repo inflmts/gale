@@ -1,11 +1,10 @@
 /*
- * ---
- * ~/.config/waybar/style.css
- * ---
- * man: waybar(5)
- * man: waybar-styles(5)
+ * Waybar CSS stylesheet
  *
- * - https://github.com/Alexays/Waybar/wiki/Styling
+ * Documentation:
+ *   - waybar(5)
+ *   - waybar-styles(5)
+ *   - https://github.com/Alexays/Waybar/wiki/Styling
  */
 
 * {
@@ -49,8 +48,13 @@ button {
   margin-right: 10px;
 }
 
-#network.disconnected {
+#network {
   color: #ffe000;
+}
+
+#network.wifi,
+#network.ethernet {
+  color: #ffffff;
 }
 
 #bluetooth.connected {
