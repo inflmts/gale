@@ -276,30 +276,25 @@ r() {
 
 #-- PROMPT ---------------------------------------------------------------------
 
-before_prompt() {
-  # update terminal title
-  printf '\033]2;%s\007' "${USER}@${HOSTNAME%%.*} ${PWD/#$HOME/\~}"
-}
-
-PROMPT_COMMAND=before_prompt
-
+set_title_prompt='\[\e]2;\u@\h \w\a\]'
 basic_prompt='\[\e[0;1;41m\] \u@\h \[\e[47;30m\] \w \[\e[0m\] ~$?\n\$ '
 basic_ssh_prompt='\[\e[0;1;45m\] \u@\h \[\e[47;30m\] \w \[\e[0m\] ~$?\n\$ '
 fancy_prompt='\[\e[0;1;37;48;5;196m\] \u@\h \[\e[48;5;124m\] \w \[\e[0;38;5;203m\] ~$?\[\e[0m\]\n\$ '
 fancy_ssh_prompt='\[\e[0;1;37;48;5;129m\] \u@\h \[\e[48;5;55m\] \w \[\e[0;38;5;171m\] ~$?\[\e[0m\]\n\$ '
 
+PS1=$set_title_prompt
 case $TERM in
 linux|dumb)
   if [[ -n ${SSH_CONNECTION-} ]]; then
-    PS1=$basic_ssh_prompt
+    PS1+=$basic_ssh_prompt
   else
-    PS1=$basic_prompt
+    PS1+=$basic_prompt
   fi ;;
 *)
   if [[ -n ${SSH_CONNECTION-} ]]; then
-    PS1=$fancy_ssh_prompt
+    PS1+=$fancy_ssh_prompt
   else
-    PS1=$fancy_prompt
+    PS1+=$fancy_prompt
   fi ;;
 esac
 
