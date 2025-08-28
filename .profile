@@ -1,6 +1,6 @@
-# ---
+#
 # ~/.profile
-# ---
+#
 
 # autodetect $EDITOR
 if command -v nvim >/dev/null; then
@@ -16,7 +16,7 @@ export XDG_STATE_HOME="$HOME/.state"
 export XDG_CACHE_HOME="$HOME/.cache"
 
 # create fallback $XDG_RUNTIME_DIR if necessary
-if [ -z "${XDG_RUNTIME_DIR-}" ]; then
+if [ -z "$XDG_RUNTIME_DIR" ]; then
   export XDG_RUNTIME_DIR="/tmp/daniel"
   mkdir -p "$XDG_RUNTIME_DIR"
 fi
@@ -54,3 +54,6 @@ systemctl --user import-environment >/dev/null 2>&1 \
   XDG_DATA_HOME \
   XDG_STATE_HOME \
   XDG_CACHE_HOME
+
+# bash doesn't source ~/.bashrc for login shells, do that here
+[ -n "$BASH_VERSION" ] && . ~/.bashrc

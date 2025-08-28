@@ -1,9 +1,0 @@
-# ---
-# ~/.bash_profile
-# ---
-
-# source profile script
-. ~/.profile
-
-# source bashrc
-. ~/.bashrc
