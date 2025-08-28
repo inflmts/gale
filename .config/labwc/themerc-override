@@ -1,7 +1,7 @@
-# ---
-# ~/.config/labwc/themerc-override
-# ---
-# man: labwc-theme(5)
+#
+# Labwc theme file
+# See labwc-theme(5)
+#
 
 window.button.height: 22
 

@@ -1,6 +1,7 @@
-# ---
-# ~/.config/labwc/environment
-# ---
+#
+# Labwc environment variables
+# See labwc-config(5)
+#
 _JAVA_AWT_WM_NONREPARENTING=1
 GALE_SVC_CONTEXT=${WAYLAND_DISPLAY}
 MOZ_ENABLE_WAYLAND=1

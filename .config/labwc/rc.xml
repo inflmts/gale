@@ -1,8 +1,7 @@
 <?xml version="1.0"?>
 <!--
-  +++
-  ~/.config/labwc/rc.xml
-  +++
+Labwc configuration file
+See labwc-config(5), labwc-actions(5)
 -->
 <labwc_config>
 
@@ -22,6 +21,7 @@
     <titlebar layout=":" />
     <cornerRadius>0</cornerRadius>
     <keepBorder>no</keepBorder>
+    <dropShadows>yes</dropShadows>
     <font name="Montserrat SemiBold" size="9" />
   </theme>
 

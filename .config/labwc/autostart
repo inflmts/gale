@@ -1,7 +1,6 @@
 #!/bin/sh
-# ---
-# ~/.config/labwc/autostart
-# ---
+# Labwc initialization script
+# See labwc-config(5)
 
 kanshi &
 pipewire &
