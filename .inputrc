@@ -1,37 +1,33 @@
-# ---
-# ~/.inputrc
-# ---
+#
+# Readline configuration file
 #
 # Documentation:
+#   - bash(1)
 #   - readline(3)
 #
 
 # behavior
 set editing-mode emacs
-set show-all-if-unmodified on
+set show-all-if-ambiguous on
 set skip-completed-text on
 set revert-all-at-newline on
-
-# appearance
-#set show-mode-in-prompt on
-#set vi-ins-mode-string "\1\e[0;30;47m\2[i]\1\e[0m\2 "
-#set vi-cmd-mode-string "\1\e[0m\2[c] "
-#set colored-stats on
 
 "\C-r": re-read-init-file
 
 # this also clears scrollback history
 "\C-l": clear-display
 
-"\eh": backward-char
-"\ej": next-history
-"\ek": previous-history
-"\el": forward-char
-"\eb": vi-prev-word
-"\eB": vi-prev-word
-"\ee": vi-end-word
-"\eE": vi-end-word
-"\ew": vi-next-word
-"\eW": vi-next-word
+# this makes going up and down in history behave more like vim,
+# only select lines that match the current text
+"\C-p": history-search-backward
+"\C-n": history-search-forward
 
-# vim:ft=readline
+# vi-like convenience bindings
+"\ea": beginning-of-line
+"\ee": end-of-line
+"\eh": backward-char
+"\ej": history-search-forward
+"\ek": history-search-backward
+"\el": forward-char
+
+"\e[": skip-csi-sequence
