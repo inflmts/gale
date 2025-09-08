@@ -87,8 +87,15 @@ query() {
 }
 
 fork() {
-  setsid nohup "$@" <&- > /dev/null 2>&1 &
+  # setsid runs the process in a new session,
+  # and detaches from the shell once we exit
+  setsid "$@" <&- > /dev/null 2>&1 &
   exit
+}
+
+abort() {
+  err "could not find a way to open '$file', sorry"
+  exit 127
 }
 
 # applications
@@ -217,8 +224,7 @@ open_video() {
 
 if [ -n "$browser" ]; then
   try browser
-  err "could not find browser to open '$file'"
-  exit 127
+  abort
 fi
 
 case ${file%%/*} in
@@ -227,14 +233,13 @@ case ${file%%/*} in
     ;;
   http:*|https:*)
     try browser
-    err "could not find browser to open '$file'"
-    exit 127
+    abort
     ;;
   prismlauncher:*)
     $exec prismlauncher "$file"
     ;;
   *:*)
-    err "unrecognized schema '${file%%:*}'"
+    err "unrecognized schema '$file'"
     exit 127
     ;;
 esac
@@ -270,6 +275,4 @@ case ${file##*.} in
 esac
 
 try neovide neovim_qt nvim vim vi nano less
-
-err "could not find a way to open '$file', sorry"
-exit 127
+abort
