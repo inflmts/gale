@@ -1,51 +1,40 @@
 //
 // Waybar configuration file
-// vim:ft=json5
+// vim:ft=jsonc
+//
+// https://github.com/alexays/waybar
+// See waybar(5), waybar-<module>(5)
 //
 {
   "position": "bottom",
   "height": 25,
 
   // Left
-  // ----
-
-  "modules-left": [
-    "network",
-    "bluetooth"
-  ],
+  "modules-left": ["network", "bluetooth"],
   "network": {
-    "format": "{ifname}",
+    "format": "{ifname}", // not sure if this can ever match
     "format-wifi": "<span alpha='55%'>wifi</span> {ipaddr}",
     "format-ethernet": "<span alpha='55%'>eth</span> {ipaddr}",
     "format-disconnected": "no internet",
-    "format-disabled": "rfkill"
+    "format-disabled": "<span alpha='55%'>wifi</span> disabled",
+    "tooltip-format-wifi": "{ifname} / {essid} [{signalStrength}%]"
   },
   "bluetooth": {
     "format": "<span alpha='55%'>bt</span> {status}",
     "format-connected": "<span alpha='55%'>bt</span> {device_alias}",
-    "max-length": 32
+    "tooltip-format-connected": "{device_alias}",
+    "tooltip-format-connected-battery": "{device_alias} [{device_battery_percentage}%]",
+    "max-width": 24
   },
 
   // Center
-  // ------
-
-  "modules-center": [
-    "clock"
-  ],
+  "modules-center": ["clock"],
   "clock": {
     "format": "{:%a %m/%d/%Y \u2014 %I:%M %p}"
   },
 
   // Right
-  // -----
-
-  "modules-right": [
-    "cpu",
-    "memory",
-    "pulseaudio",
-    "backlight",
-    "battery"
-  ],
+  "modules-right": ["cpu", "memory", "pulseaudio", "backlight", "battery"],
   "cpu": {
     "interval": 5,
     "format": "<span alpha='55%'>cpu</span> {usage}%"

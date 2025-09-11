@@ -1,11 +1,11 @@
 #!/bin/sh
-# ---
-# ~/.local/bin/gale-labwc
-# ---
+# labwc wrapper
 
-cd ~
-if [ -z "${DBUS_SESSION_BUS_ADDRESS-}" ] && command -v dbus-run-session > /dev/null 2>&1; then
-  exec dbus-run-session labwc
-else
-  exec labwc
+dbus=
+if [ -z "$DBUS_SESSION_BUS_ADDRESS" ] && command -v dbus-run-session > /dev/null 2>&1; then
+  dbus=dbus-run-session
 fi
+cd
+# detach from the terminal and silence all output
+# this is intended to be run from a tty, use plain `labwc` for debugging
+setsid $dbus labwc <&- > /dev/null 2>&1 &

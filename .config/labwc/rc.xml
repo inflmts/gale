@@ -1,7 +1,14 @@
 <?xml version="1.0"?>
 <!--
 Labwc configuration file
-See labwc-config(5), labwc-actions(5)
+
+Documentation:
+  - https://github.com/labwc/labwc
+  - https://labwc.github.io
+  - labwc-config(5)
+  - labwc-actions(5)
+  - labwc-menu(5)
+  - labwc-theme(5)
 -->
 <labwc_config>
 
@@ -12,8 +19,8 @@ See labwc-config(5), labwc-actions(5)
   <windowSwitcher>
     <fields>
       <field content="type_short" width="5%" />
-      <field content="trimmed_identifier" width="15%" />
-      <field content="title" width="80%" />
+      <field content="trimmed_identifier" width="20%" />
+      <field content="title" width="75%" />
     </fields>
   </windowSwitcher>
 
@@ -25,21 +32,34 @@ See labwc-config(5), labwc-actions(5)
     <font name="Montserrat SemiBold" size="9" />
   </theme>
 
+  <!--
+  Modifier keys:
+    - W (super)
+    - C (control)
+    - A (alt)
+    - S (shift)
+  -->
   <keyboard>
     <repeatRate>25</repeatRate>
     <repeatDelay>300</repeatDelay>
 
-    <!-- compositor control -->
-
-    <keybind key="W-S-Backspace">
+    <!-- exit labwc -->
+    <keybind key="W-C-x">
       <action name="Exit" />
     </keybind>
+
+    <!-- reload config -->
     <keybind key="W-r">
       <action name="Reconfigure" />
     </keybind>
 
-    <!-- window switcher (don't ask why there are so many) -->
+    <!-- reload config & restart waybar -->
+    <keybind key="W-S-r">
+      <action name="Reconfigure" />
+      <action name="Execute" command="sh -c 'pkill waybar; exec waybar'" />
+    </keybind>
 
+    <!-- window switcher (don't ask why there are so many) -->
     <keybind key="W-Tab">
       <action name="NextWindow" />
     </keybind>
@@ -59,16 +79,17 @@ See labwc-config(5), labwc-actions(5)
       <action name="PreviousWindow" />
     </keybind>
 
-    <!-- window management -->
-
+    <!-- close window -->
     <keybind key="W-q">
       <action name="Close" />
     </keybind>
 
+    <!-- toggle server-side decorations -->
     <keybind key="W-S-d">
       <action name="ToggleDecorations" />
     </keybind>
 
+    <!-- resize window to half of screen -->
     <keybind key="W-S-h">
       <action name="SnapToEdge" direction="left" />
     </keybind>
@@ -82,10 +103,11 @@ See labwc-config(5), labwc-actions(5)
       <action name="SnapToEdge" direction="right" />
     </keybind>
 
-    <keybind key="W-Minus">
+    <!-- change window state -->
+    <keybind key="W-m">
       <action name="Iconify" />
     </keybind>
-    <keybind key="W-Space">
+    <keybind key="W-space">
       <action name="ToggleMaximize" />
     </keybind>
     <keybind key="W-f">
@@ -93,7 +115,6 @@ See labwc-config(5), labwc-actions(5)
     </keybind>
 
     <!-- reveal all windows -->
-
     <keybind key="W-a">
       <action name="ForEach">
         <query iconified="yes" />
@@ -104,14 +125,15 @@ See labwc-config(5), labwc-actions(5)
       </action>
     </keybind>
 
-    <!-- outputs -->
-
+    <!-- focus left/right output -->
     <keybind key="W-bracketleft">
       <action name="FocusOutput" direction="left" />
     </keybind>
     <keybind key="W-bracketright">
       <action name="FocusOutput" direction="right" />
     </keybind>
+
+    <!-- move window to left/right output -->
     <keybind key="W-S-bracketleft">
       <action name="MoveToOutput" direction="left" />
     </keybind>
@@ -119,8 +141,12 @@ See labwc-config(5), labwc-actions(5)
       <action name="MoveToOutput" direction="right" />
     </keybind>
 
-    <!-- kanshi -->
+    <!-- summon cursor -->
+    <keybind key="W-c">
+      <action name="WarpCursor" to="window" />
+    </keybind>
 
+    <!-- kanshi profiles -->
     <keybind key="W-1">
       <action name="Execute" command="kanshictl switch 1" />
     </keybind>
@@ -135,13 +161,11 @@ See labwc-config(5), labwc-actions(5)
     </keybind>
 
     <!-- terminal -->
-
     <keybind key="W-Return">
       <action name="Execute" command="gale-term" />
     </keybind>
 
-    <!-- explorer -->
-
+    <!-- file explorer -->
     <keybind key="W-e">
       <action name="ForEach">
         <query identifier="gale-explorer" />
@@ -155,14 +179,17 @@ See labwc-config(5), labwc-actions(5)
       </action>
     </keybind>
 
-    <!-- firefox -->
+    <!-- neovide -->
+    <keybind key="W-w">
+      <action name="Execute" command="neovide" />
+    </keybind>
 
+    <!-- firefox -->
     <keybind key="W-S-f">
       <action name="Execute" command="firefox" />
     </keybind>
 
     <!-- chromium -->
-
     <keybind key="W-S-c">
       <action name="ForEach">
         <query identifier="chromium" />
@@ -177,19 +204,16 @@ See labwc-config(5), labwc-actions(5)
     </keybind>
 
     <!-- top -->
-
     <keybind key="W-t">
       <action name="Execute" command="gale-term -t top top" />
     </keybind>
 
     <!-- bluetoothctl -->
-
     <keybind key="W-S-b">
       <action name="Execute" command="gale-term -t bluetoothctl bluetoothctl" />
     </keybind>
 
     <!-- power management -->
-
     <keybind key="W-S-s">
       <action name="Execute" command="gale-sleep" />
     </keybind>
@@ -201,7 +225,6 @@ See labwc-config(5), labwc-actions(5)
     </keybind>
 
     <!-- volume control -->
-
     <keybind key="XF86AudioLowerVolume">
       <action name="Execute" command="pamixer -d 5" />
     </keybind>
@@ -211,19 +234,40 @@ See labwc-config(5), labwc-actions(5)
     <keybind key="XF86AudioMute">
       <action name="Execute" command="pamixer -t" />
     </keybind>
+    <keybind key="W-minus">
+      <action name="Execute" command="pamixer -d 5" />
+    </keybind>
+    <keybind key="W-equal">
+      <action name="Execute" command="pamixer -i 5" />
+    </keybind>
+    <keybind key="W-BackSpace">
+      <action name="Execute" command="pamixer -t" />
+    </keybind>
+
+    <!-- brightness control -->
+    <keybind key="W-comma">
+      <action name="Execute" command="brightnessctl --min-value=1 set 5%-" />
+    </keybind>
+    <keybind key="W-period">
+      <action name="Execute" command="brightnessctl set +5%" />
+    </keybind>
+    <keybind key="W-S-comma">
+      <action name="Execute" command="brightnessctl set 1" />
+    </keybind>
+    <keybind key="W-S-period">
+      <action name="Execute" command="brightnessctl set 100%" />
+    </keybind>
   </keyboard>
 
   <mouse>
-    <!-- desktop -->
-
+    <!-- desktop, not over any window -->
     <context name="Desktop">
       <mousebind button="Right" action="Press">
         <action name="ShowMenu" menu="root-menu" />
       </mousebind>
     </context>
 
-    <!-- "Frame" bindings aren't sent to the client -->
-
+    <!-- anywhere in the window, not sent to the client -->
     <context name="Frame">
       <mousebind button="W-Left" action="Press">
         <action name="Focus" />
@@ -241,13 +285,9 @@ See labwc-config(5), labwc-actions(5)
       <mousebind button="W-Right" action="Press">
         <action name="Iconify" />
       </mousebind>
-      <mousebind button="W-Right" action="Drag">
-        <action name="Resize" />
-      </mousebind>
     </context>
 
     <!-- space between the buttons on the titlebar -->
-
     <context name="Title">
       <mousebind button="Left" action="Press">
         <action name="Focus" />
@@ -264,8 +304,7 @@ See labwc-config(5), labwc-actions(5)
       </mousebind>
     </context>
 
-    <!-- "Client" bindings _are_ sent to the client -->
-
+    <!-- area of the window inside decorations, also sent to the client -->
     <context name="Client">
       <mousebind button="Left" action="Press">
         <action name="Focus" />

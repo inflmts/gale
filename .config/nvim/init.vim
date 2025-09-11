@@ -1,8 +1,8 @@
-" ---
-" ~/.config/nvim/init.vim
-" ---
+"
+" Neovim configuration file
 "
 " This works on both Linux and Windows.
+"
 
 "-- PLUGINS ------------------------------------------------------------------
 
@@ -10,7 +10,13 @@
 runtime autoload/plug.vim
 if exists('*plug#begin')
   call plug#begin()
-  source ~/.config/nvim/plug.vim
+  Plug 'sainnhe/sonokai'
+  Plug 'preservim/nerdtree'
+  Plug 'neovim/nvim-lspconfig'
+  Plug 'pangloss/vim-javascript'
+  Plug 'alvan/vim-closetag'
+  Plug 'HerringtonDarkholme/yats.vim'
+  Plug 'brianhuster/live-preview.nvim'
   call plug#end()
 endif
 
@@ -43,24 +49,18 @@ set splitright
 set completeopt=menu,preview,longest
 " command line completion
 set wildmenu wildmode=longest:full,full
-" don't automatically hide windows
-set nohidden
+" hide buffers when switching to another buffer
+set hidden
 " enable the mouse in all modes
 set mouse=a
 " show various types of whitespace
-set list listchars=trail:\ ,tab:-->
-
-" show title if the terminal supports it
-if $TERM !=# "linux"
-  set title
-endif
-
+set list listchars=trail:\ ,tab:>-
+" set terminal/gui title
+set title
 " always use unix line endings
-if has('win32')
-  set fileformats=unix
-else
-  set fileformats=unix,dos
-endif
+set fileformats=unix
+" do not attempt to use 24-bit color in the terminal
+set notermguicolors
 
 "-- KEYBINDINGS --------------------------------------------------------------
 "
@@ -127,6 +127,11 @@ cnoremap <C-N> <Down>
 " NERDTree bindings
 nnoremap <C-T> <Cmd>NERDTreeToggle<CR>
 
+" Use <S-Tab> to trigger omni completion.
+" While the popup menu is open, <Tab> and <S-Tab> cycle through entries.
+inoremap <expr> <Tab> pumvisible() ? "\<C-N>" : "\<Tab>"
+inoremap <expr> <S-Tab> pumvisible() ? "\<C-P>" : "\<C-X><C-O>"
+
 " nvim diagnostics
 nnoremap # <Cmd>lua vim.diagnostic.open_float()<CR>
 
@@ -137,58 +142,45 @@ inoremap <C-S-V> <C-R><C-O>+
 "-- AUTOCOMMANDS -------------------------------------------------------------
 
 augroup init
-
   " clear previously defined autocommands
   au!
-
   au FileType asciidoc setlocal nosi comments=fb:-,fb:*,fb://
   au FileType cs,java setlocal sw=4 sts=4
   au FileType make setlocal noet
   au FileType markdown setlocal et sw=2 sts=2 tw=80
   au FileType python,sh setlocal fo-=t
-
 augroup END
 
 "-- GUI ----------------------------------------------------------------------
 
-if has('gui_running')
-  if exists('g:neovide')
-    " Neovide supports ligatures
-    set guifont=Cascadia\ Code:h10
-  else
-    set guifont=Cascadia\ Mono:h10
-  endif
-endif
+set guifont=Cascadia\ Mono:h10
 
 "-- NEOVIDE ------------------------------------------------------------------
 
 if exists('g:neovide')
   let g:neovide_cursor_animation_length = 0.05
   let g:neovide_cursor_trail_size = 0.5
+  " Neovide supports ligatures
+  set guifont=Cascadia\ Code:h10
 endif
 
 "-- COLORS -------------------------------------------------------------------
 
-let g:sonokai_disable_italic_comment = 1
-if !has('gui_running')
-  let g:sonokai_transparent_background = 1
-  let g:sonokai_spell_foreground = 'colored'
-endif
-let g:sonokai_disable_terminal_colors = 1
-let g:sonokai_better_performance = 1
-silent! colorscheme sonokai
+if has('gui_running') || &term !=# "linux"
+  let g:sonokai_disable_italic_comment = 1
+  let g:sonokai_disable_terminal_colors = 1
+  silent! colorscheme sonokai
 
-" color integration
-hi Normal ctermbg=NONE guibg=#202030
-hi NormalNC ctermbg=NONE guibg=#181824
-hi StatusLine guibg=#34344e
-hi StatusLineNC guibg=#28283c
-hi Error ctermfg=7 ctermbg=203 guifg=#ff507c guibg=#501030
-hi ErrorText cterm=underline ctermfg=203
-hi! link SignColumn LineNr
-hi Whitespace ctermfg=NONE ctermbg=1 guifg=#606090 guibg=#404060
-
-if $TERM ==# "linux"
+  hi Normal ctermbg=NONE guibg=#202030
+  hi NormalNC ctermbg=NONE guibg=#181824
+  hi StatusLine guibg=#34344e
+  hi StatusLineNC guibg=#28283c
+  hi Error ctermfg=7 ctermbg=203 guifg=#ff507c guibg=#501030
+  hi ErrorText cterm=underline ctermfg=203
+  hi! link SignColumn LineNr
+  hi Whitespace guifg=#606090 guibg=#404060
+else
+  " light ctermbg is not visible on virtual console
   hi Visual cterm=reverse ctermfg=NONE ctermbg=NONE
 endif
 
@@ -214,26 +206,9 @@ command! Restart call s:restart()
 " The :Resume command loads the session file.
 command! Resume call s:resume()
 
-"-- GALLADE ------------------------------------------------------------------
-
-function s:gallade() abort
-  if exists('g:gallade_buffer') && bufexists(g:gallade_buffer)
-    let switchbuf = &switchbuf
-    let &switchbuf = 'useopen'
-    execute 'sbuffer' g:gallade_buffer
-    let &switchbuf = switchbuf
-  else
-    horizontal terminal gallade
-    let g:gallade_buffer = bufnr()
-    nnoremap <buffer> q <c-w>q
-  endif
-endfunction
-
-command! Gallade call s:gallade()
-nnoremap <c-g> <cmd>Gallade<cr>
-
 "-- LSP ----------------------------------------------------------------------
 
+if has('gui_running')
 lua << EOF
 local ok
 ok, lspconfig = pcall(require, 'lspconfig')
@@ -241,3 +216,4 @@ if ok then
   lspconfig.ts_ls.setup {}
 end
 EOF
+endif
