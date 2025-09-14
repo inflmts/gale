@@ -6,6 +6,7 @@
 // See waybar(5), waybar-<module>(5)
 //
 {
+  "layer": "top",
   "position": "bottom",
   "height": 25,
 
@@ -30,7 +31,8 @@
   // Center
   "modules-center": ["clock"],
   "clock": {
-    "format": "{:%a %m/%d/%Y \u2014 %I:%M %p}"
+    "format": "{:%a %m/%d/%Y \u2014 %I:%M %p}",
+    "tooltip-format": "Zero to infinity"
   },
 
   // Right
@@ -48,6 +50,7 @@
     "format-muted": "<span alpha='55%'>vol</span> <s>{volume}%</s>"
   },
   "backlight": {
+    "interval": 5,
     "format": "<span alpha='55%'>br</span> {percent}%"
   },
   "battery": {

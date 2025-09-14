@@ -98,7 +98,7 @@ map o push &<space>"$f"<c-a>
 map <enter> open
 
 # terminal
-map <c-t> &dir=$PWD; cd && exec gale-term -d "$dir"
+map <c-t> &exec foot
 
 # open in browser
 map <a-b> &exec gale-open --browser "$f"

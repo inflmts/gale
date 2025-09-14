@@ -20,7 +20,7 @@ warn() { printf >&2 '\033[1;33mwarning:\033[0m %s\n' "$*"; }
 err() { printf >&2 '\033[1;31merror:\033[0m %s\n' "$*"; }
 
 # setup colors for ls (and tree)
-if gale_dircolors=$(dircolors 2>/dev/null); then
+if gale_dircolors=$(dircolors 2> /dev/null); then
   eval "$gale_dircolors"
 fi
 unset gale_dircolors
@@ -69,7 +69,7 @@ gale_menu() {
 gale_menu_desktop() {
   local key
 
-  printf '\033[1mLaunch desktop:\033[0m [q] abort [s] sway [h] hyprland '
+  printf '\033[1mLaunch desktop:\033[0m [q] abort [s] sway [h] hyprland [l] labwc '
   read -rsN1 key
   printf '\r\033[K'
 
@@ -79,6 +79,9 @@ gale_menu_desktop() {
       ;;
     h)
       gale-hyprland
+      ;;
+    l)
+      gale-labwc
       ;;
   esac
 }
@@ -94,24 +97,21 @@ gale_menu_confirm() {
   esac
 }
 
-# Bind F5 to the Gale menu
-bind -x '"\e[15~": gale_menu'
-bind -x '"\e[[E": gale_menu'
-
 #-- FUNCTIONS & ALIASES --------------------------------------------------------
+
+r() {
+  echo "Reloading initialization script..."
+  source ~/.bashrc
+}
 
 # gale_spawn <command> [<args>...]
 #
-#   Fork a command using setsid(1).
+#   Fork a command using setsid(1). This detaches the process from the terminal
+#   and prevents it from receiving SIGHUP when the session leader exits.
+#   The process itself is forked from a subshell to hide it from job control.
 #
 gale_spawn() {
-  local path
-  if ! path=$(type -P "$1") &>/dev/null; then
-    err "command not found: $1"
-    return 1
-  fi
-  shift
-  setsid -- "$path" "$@" <&- &>/dev/null & disown
+  (setsid -- "$@" <&- &> /dev/null &)
 }
 
 alias grep='grep --color=auto'
@@ -131,8 +131,6 @@ alias treeda='tree -da'
 clock() {
   printf '%(%a %m/%d/%Y)T \033[1m%(%I:%M %p)T\033[0m\n'
 }
-
-bind -x '"\C-t": clock'
 
 # display the function's arguments
 argv() {
@@ -269,33 +267,66 @@ rot13() {
   tr 'A-Za-z' 'N-ZA-Mn-za-m'
 }
 
-r() {
-  echo "Reloading initialization script..."
-  source ~/.bashrc
+lfcd() {
+  local dir
+  dir=$(command lf -print-last-dir "$@") && cd "$dir"
 }
+
+edit() {
+  if [[ -n ${WAYLAND_DISPLAY-} ]]; then
+    neovide --fork "$@"
+  else
+    nvim "$@"
+  fi
+}
+
+wman() {
+  if [[ -n ${WAYLAND_DISPLAY-} ]]; then
+    gale_spawn foot -W 80x30 -T "man $*" man "$@"
+  fi
+}
+
+#-- KEYBINDINGS ----------------------------------------------------------------
+
+bind -x '"\e[15~": gale_menu'
+bind -x '"\e[[E": gale_menu'
+bind -x '"\C-t": clock'
+bind -x '"\C-x?": echo "Last process exited $?"'
+bind    '"\C-xb": "\C-a\C-kbluetoothctl\r"'
+bind    '"\C-xe": "\C-a\C-klfcd\r"'
+bind    '"\C-xi": "\C-a\C-kip -4 -br addr show scope global\r"'
+bind    '"\C-xp": "\C-a\C-kpython3 -q\r"'
+bind    '"\C-xt": "\C-a\C-ktop\r"'
+bind    '"\C-xu": "\C-a\C-kcd ..\r"'
+bind    '"\C-xw": "\C-a\C-kwpa_cli\r"'
+
+if [[ -n ${WAYLAND_DISPLAY-} ]]; then
+  bind -x '"\C-xn": gale_spawn foot'
+  bind -x '"\C-xw": gale_spawn neovide'
+fi
 
 #-- PROMPT ---------------------------------------------------------------------
 
+# these values map nicely on linux virtual consoles
 set_title_prompt='\[\e]2;\u@\h \w\a\]'
-basic_prompt='\[\e[0;1;41m\] \u@\h \[\e[47;30m\] \w \[\e[0m\] ~$?\n\$ '
-basic_ssh_prompt='\[\e[0;1;45m\] \u@\h \[\e[47;30m\] \w \[\e[0m\] ~$?\n\$ '
-fancy_prompt='\[\e[0;1;37;48;5;196m\] \u@\h \[\e[48;5;124m\] \w \[\e[0;38;5;203m\] ~$?\[\e[0m\]\n\$ '
-fancy_ssh_prompt='\[\e[0;1;37;48;5;129m\] \u@\h \[\e[48;5;55m\] \w \[\e[0;38;5;171m\] ~$?\[\e[0m\]\n\$ '
+local_prompt='\[\e[0;1;37;48;5;196m\] \u@\h \[\e[48;5;124m\] \w \[\e[0m\]\n\[\e[1;38;5;203m\]$prompt_token\[\e[0m\] '
+ssh_prompt='\[\e[0;1;37;48;5;165m\] \u@\h \[\e[48;5;91m\] \w \[\e[0m\]\n\[\e[1;38;5;171m\]$prompt_token\[\e[0m\] '
 
+before_prompt() {
+  if [[ $? -eq 0 ]]; then
+    prompt_token='$'
+  else
+    prompt_token='!'
+  fi
+}
+
+PROMPT_COMMAND=before_prompt
 PS1=$set_title_prompt
-case $TERM in
-linux|dumb)
-  if [[ -n ${SSH_CONNECTION-} ]]; then
-    PS1+=$basic_ssh_prompt
-  else
-    PS1+=$basic_prompt
-  fi ;;
-*)
-  if [[ -n ${SSH_CONNECTION-} ]]; then
-    PS1+=$fancy_ssh_prompt
-  else
-    PS1+=$fancy_prompt
-  fi ;;
-esac
+
+if [[ -n ${SSH_CONNECTION-} ]]; then
+  PS1+=$ssh_prompt
+else
+  PS1+=$local_prompt
+fi
 
 # vim:ft=bash

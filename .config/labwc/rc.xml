@@ -27,7 +27,6 @@ Documentation:
   <theme>
     <titlebar layout=":" />
     <cornerRadius>0</cornerRadius>
-    <keepBorder>no</keepBorder>
     <dropShadows>yes</dropShadows>
     <font name="Montserrat SemiBold" size="9" />
   </theme>
@@ -38,6 +37,8 @@ Documentation:
     - C (control)
     - A (alt)
     - S (shift)
+
+  So many possible combinations! What shall we bind next?
   -->
   <keyboard>
     <repeatRate>25</repeatRate>
@@ -59,23 +60,14 @@ Documentation:
       <action name="Execute" command="sh -c 'pkill waybar; exec waybar'" />
     </keybind>
 
-    <!-- window switcher (don't ask why there are so many) -->
+    <!-- window switcher -->
     <keybind key="W-Tab">
       <action name="NextWindow" />
     </keybind>
     <keybind key="W-S-Tab">
       <action name="PreviousWindow" />
     </keybind>
-    <keybind key="A-Tab">
-      <action name="NextWindow" />
-    </keybind>
-    <keybind key="A-S-Tab">
-      <action name="PreviousWindow" />
-    </keybind>
-    <keybind key="W-j">
-      <action name="NextWindow" />
-    </keybind>
-    <keybind key="W-k">
+    <keybind key="W-grave">
       <action name="PreviousWindow" />
     </keybind>
 
@@ -87,6 +79,20 @@ Documentation:
     <!-- toggle server-side decorations -->
     <keybind key="W-S-d">
       <action name="ToggleDecorations" />
+    </keybind>
+
+    <!-- move window -->
+    <keybind key="W-h">
+      <action name="MoveRelative" x="-50" />
+    </keybind>
+    <keybind key="W-j">
+      <action name="MoveRelative" y="50" />
+    </keybind>
+    <keybind key="W-k">
+      <action name="MoveRelative" y="-50" />
+    </keybind>
+    <keybind key="W-l">
+      <action name="MoveRelative" x="50" />
     </keybind>
 
     <!-- resize window to half of screen -->
@@ -103,8 +109,36 @@ Documentation:
       <action name="SnapToEdge" direction="right" />
     </keybind>
 
+    <!-- grow window in direction -->
+    <keybind key="W-A-h">
+      <action name="ResizeRelative" left="50" />
+    </keybind>
+    <keybind key="W-A-j">
+      <action name="ResizeRelative" bottom="50" />
+    </keybind>
+    <keybind key="W-A-k">
+      <action name="ResizeRelative" top="50" />
+    </keybind>
+    <keybind key="W-A-l">
+      <action name="ResizeRelative" right="50" />
+    </keybind>
+
+    <!-- shrink window in direction -->
+    <keybind key="W-A-S-h">
+      <action name="ResizeRelative" right="-50" />
+    </keybind>
+    <keybind key="W-A-S-j">
+      <action name="ResizeRelative" top="-50" />
+    </keybind>
+    <keybind key="W-A-S-k">
+      <action name="ResizeRelative" bottom="-50" />
+    </keybind>
+    <keybind key="W-A-S-l">
+      <action name="ResizeRelative" left="-50" />
+    </keybind>
+
     <!-- change window state -->
-    <keybind key="W-m">
+    <keybind key="W-z">
       <action name="Iconify" />
     </keybind>
     <keybind key="W-space">
@@ -113,16 +147,8 @@ Documentation:
     <keybind key="W-f">
       <action name="ToggleFullscreen" />
     </keybind>
-
-    <!-- reveal all windows -->
-    <keybind key="W-a">
-      <action name="ForEach">
-        <query iconified="yes" />
-        <then>
-          <action name="Focus" />
-          <action name="Raise" />
-        </then>
-      </action>
+    <keybind key="W-S-space">
+      <action name="UnSnap" />
     </keybind>
 
     <!-- focus left/right output -->
@@ -146,75 +172,8 @@ Documentation:
       <action name="WarpCursor" to="window" />
     </keybind>
 
-    <!-- kanshi profiles -->
-    <keybind key="W-1">
-      <action name="Execute" command="kanshictl switch 1" />
-    </keybind>
-    <keybind key="W-2">
-      <action name="Execute" command="kanshictl switch 2" />
-    </keybind>
-    <keybind key="W-3">
-      <action name="Execute" command="kanshictl switch 3" />
-    </keybind>
-    <keybind key="W-4">
-      <action name="Execute" command="kanshictl switch 4" />
-    </keybind>
-
-    <!-- terminal -->
-    <keybind key="W-Return">
-      <action name="Execute" command="gale-term" />
-    </keybind>
-
-    <!-- file explorer -->
-    <keybind key="W-e">
-      <action name="ForEach">
-        <query identifier="gale-explorer" />
-        <then>
-          <action name="Focus" />
-          <action name="Raise" />
-        </then>
-        <none>
-          <action name="Execute" command="gale-explorer" />
-        </none>
-      </action>
-    </keybind>
-
-    <!-- neovide -->
-    <keybind key="W-w">
-      <action name="Execute" command="neovide" />
-    </keybind>
-
-    <!-- firefox -->
-    <keybind key="W-S-f">
-      <action name="Execute" command="firefox" />
-    </keybind>
-
-    <!-- chromium -->
-    <keybind key="W-S-c">
-      <action name="ForEach">
-        <query identifier="chromium" />
-        <then>
-          <action name="Focus" />
-          <action name="Raise" />
-        </then>
-        <none>
-          <action name="Execute" command="chromium" />
-        </none>
-      </action>
-    </keybind>
-
-    <!-- top -->
-    <keybind key="W-t">
-      <action name="Execute" command="gale-term -t top top" />
-    </keybind>
-
-    <!-- bluetoothctl -->
-    <keybind key="W-S-b">
-      <action name="Execute" command="gale-term -t bluetoothctl bluetoothctl" />
-    </keybind>
-
     <!-- power management -->
-    <keybind key="W-S-s">
+    <keybind key="W-S-z">
       <action name="Execute" command="gale-sleep" />
     </keybind>
     <keybind key="W-C-o">
@@ -240,7 +199,7 @@ Documentation:
     <keybind key="W-equal">
       <action name="Execute" command="pamixer -i 5" />
     </keybind>
-    <keybind key="W-BackSpace">
+    <keybind key="W-0">
       <action name="Execute" command="pamixer -t" />
     </keybind>
 
@@ -256,6 +215,73 @@ Documentation:
     </keybind>
     <keybind key="W-S-period">
       <action name="Execute" command="brightnessctl set 100%" />
+    </keybind>
+
+    <!-- kanshi profiles -->
+    <keybind key="W-1">
+      <action name="Execute" command="kanshictl switch 1" />
+    </keybind>
+    <keybind key="W-2">
+      <action name="Execute" command="kanshictl switch 2" />
+    </keybind>
+    <keybind key="W-3">
+      <action name="Execute" command="kanshictl switch 3" />
+    </keybind>
+    <keybind key="W-4">
+      <action name="Execute" command="kanshictl switch 4" />
+    </keybind>
+
+    <!-- terminal -->
+    <keybind key="W-Return">
+      <action name="Execute" command="foot" />
+    </keybind>
+
+    <!-- lf -->
+    <keybind key="W-e">
+      <action name="ForEach">
+        <query identifier="lf" />
+        <then>
+          <action name="Focus" />
+          <action name="Raise" />
+        </then>
+        <none>
+          <action name="Execute" command="foot -a lf -T lf lf" />
+        </none>
+      </action>
+    </keybind>
+
+    <!-- neovide -->
+    <keybind key="W-n">
+      <action name="Execute" command="neovide" />
+    </keybind>
+
+    <!-- firefox -->
+    <keybind key="W-S-f">
+      <action name="Execute" command="firefox" />
+    </keybind>
+
+    <!-- chromium -->
+    <keybind key="W-S-c">
+      <action name="ForEach">
+        <query identifier="chromium" />
+        <then>
+          <action name="Focus" />
+          <action name="Raise" />
+        </then>
+        <none>
+          <action name="Execute" command="chromium" />
+        </none>
+      </action>
+    </keybind>
+
+    <!-- top -->
+    <keybind key="W-t">
+      <action name="Execute" command="foot -T top top" />
+    </keybind>
+
+    <!-- bluetoothctl -->
+    <keybind key="W-S-b">
+      <action name="Execute" command="foot -T bluetoothctl bluetoothctl" />
     </keybind>
   </keyboard>
 

@@ -17,7 +17,7 @@ window.inactive.button.unpressed.image.color: #60606c
 
 osd.bg.color: #8000aa
 osd.border.color: #c000ff
-osd.border.width: 2
+osd.border.width: 1
 osd.label.text.color: #ffffff
-osd.window-switcher.preview.border.width: 50
-osd.window-switcher.preview.border.color: #c000ff60
+osd.window-switcher.preview.border.width: 25
+osd.window-switcher.preview.border.color: #c000ff80,#c000ffff

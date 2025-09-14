@@ -114,31 +114,31 @@ open_neovim_qt() {
 
 open_nvim() {
   if has_command nvim; then
-    $exec gale-term nvim "$file"
+    $exec foot nvim "$file"
   fi
 }
 
 open_vim() {
   if has_command vim; then
-    $exec gale-term vim "$file"
+    $exec foot vim "$file"
   fi
 }
 
 open_vi() {
   if has_command vi; then
-    $exec gale-term vi "$file"
+    $exec foot vi "$file"
   fi
 }
 
 open_nano() {
   if has_command nano; then
-    $exec gale-term nano "$file"
+    $exec foot nano "$file"
   fi
 }
 
 open_less() {
   if has_command less; then
-    $exec gale-term less "$file"
+    $exec foot less "$file"
   fi
 }
 
@@ -180,7 +180,7 @@ open_libreoffice() {
 
 open_lf() {
   if has_command lf; then
-    $exec gale-term lf -- "$file"
+    $exec foot lf -- "$file"
   fi
 }
 
@@ -252,7 +252,7 @@ fi
 if [ -d "$file" ]; then
   try lf nautilus
   cd "$file"
-  $exec gale-term
+  $exec foot
 fi
 
 # match file extension

@@ -1,14 +1,12 @@
-# ---
-# ~/.config/swayimg/config
-# ---
-# vim: ft=dosini
-# man: swayimg(1)
-# man: swayimgrc(5)
 #
-# Swayimg is a lightweight image viewer for Wayland.
+# Swayimg configuration file
 #
-# - https://github.com/artemsen/swayimg
-# - https://github.com/swaywm/sway/wiki/Useful-add-ons-for-sway#image-viewers
+# See also:
+#   - swayimg(1)
+#   - swayimgrc(5)
+#   - https://github.com/artemsen/swayimg
+#   - https://github.com/swaywm/sway/wiki/Useful-add-ons-for-sway#image-viewers
+#
 
 [general]
 decoration = yes
@@ -16,7 +14,6 @@ size = 800,600
 
 [viewer]
 window = #000000
-keep_zoom = yes
 
 [font]
 color = #ffffffff
@@ -31,5 +28,14 @@ h = step_left 10
 j = step_down 10
 k = step_up 10
 l = step_right 10
+i = zoom +10
+o = zoom -10
 ScrollUp = zoom +10
 ScrollDown = zoom -10
+Tab = info
+Left = prev_file
+Right = next_file
+Up = none
+Down = none
+
+# vim:ft=dosini
