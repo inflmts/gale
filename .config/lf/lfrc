@@ -1,13 +1,14 @@
-# ---
-# ~/.config/lf/lfrc
-# ---
+#
+# lf configuration file
 #
 # Documentation:
 #   - lf(1)
 #   - https://github.com/gokcehan/lf
 #
 
-#== OPTIONS ====================================================================
+# -------
+# OPTIONS
+# -------
 
 # set $IFS to newline in subshells
 set ifs "\n"
@@ -40,7 +41,11 @@ set borderfmt "\033[38;5;240m"
 # enable mouse
 set mouse
 
-#== COMMANDS & MAPPINGS ========================================================
+# -----------
+# KEYBINDINGS
+# -----------
+
+map <c-o> quit
 
 # remove some default commands
 map zh
@@ -66,17 +71,6 @@ map <space> page-down
 map <tab> :toggle; down
 
 set statfmt "\033[1m%p\033[0m| %c| %u:%g| %s| %t| \033[36m-> %l\033[0m"
-
-# command to generate the status line
-cmd statfmt &{{
-  fmt="\\033[1m%p\\033[0m| %c| %u:%g| %s| %t| \\033[36m-> %l\\033[0m"
-  mode=
-  [ "$lf_sortby" != natural ] && mode="$mode $lf_sortby"
-  [ "$lf_reverse" = true ] && mode="$mode rev"
-  [ "$lf_hidden" = false ] && mode="$mode hid"
-  [ -n "$mode" ] && fmt="\\033[7m$mode \\033[0m |$fmt"
-  "$lf" -remote "send $id set statfmt \"$fmt\""
-}}
 
 # sort commands
 map O :set sortby natural; statfmt
@@ -110,3 +104,18 @@ map <a-d> &exec dragon-drop -x $fx
 #map <c-x>au &audacity "$f"
 
 cmap <c-x> cmd-interrupt
+
+# --------
+# COMMANDS
+# --------
+
+# command to generate the status line
+cmd statfmt &{{
+  fmt="\\033[1m%p\\033[0m| %c| %u:%g| %s| %t| \\033[36m-> %l\\033[0m"
+  mode=
+  [ "$lf_sortby" != natural ] && mode="$mode $lf_sortby"
+  [ "$lf_reverse" = true ] && mode="$mode rev"
+  [ "$lf_hidden" = false ] && mode="$mode hid"
+  [ -n "$mode" ] && fmt="\\033[7m$mode \\033[0m |$fmt"
+  "$lf" -remote "send $id set statfmt \"$fmt\""
+}}

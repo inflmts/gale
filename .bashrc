@@ -290,10 +290,10 @@ wman() {
 
 bind -x '"\e[15~": gale_menu'
 bind -x '"\e[[E": gale_menu'
+bind    '"\C-o": "\C-a\C-klfcd\r"'
 bind -x '"\C-t": clock'
 bind -x '"\C-x?": echo "Last process exited $?"'
 bind    '"\C-xb": "\C-a\C-kbluetoothctl\r"'
-bind    '"\C-xe": "\C-a\C-klfcd\r"'
 bind    '"\C-xi": "\C-a\C-kip -4 -br addr show scope global\r"'
 bind    '"\C-xp": "\C-a\C-kpython3 -q\r"'
 bind    '"\C-xt": "\C-a\C-ktop\r"'
