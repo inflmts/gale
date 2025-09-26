@@ -1,17 +1,27 @@
-# ---
-# host seele
-# ~/.config/kanshi/config
-# ---
+#
+# kanshi configuration file
+# See kanshi(5)
+#
+# Different profiles can have the same name as long as they target different outputs,
+# and `kanshictl switch` will decide based on what's currently connected.
+#
+
+# Host: seele
 
 profile 1 {
   output "Chimei Innolux Corporation 0x14E7 Unknown" scale 1.25
 }
 
 profile 2 {
+  output "Chimei Innolux Corporation 0x14E7 Unknown" scale 1
+}
+
+profile 1 {
   output "Chimei Innolux Corporation 0x14E7 Unknown" scale 1.25
   output "Dell Inc. DELL E2318HR 5JDGK96EC44L" position 1536,0
 }
 
-profile 3 {
+profile 2 {
   output "Chimei Innolux Corporation 0x14E7 Unknown" scale 1
+  output "Dell Inc. DELL E2318HR 5JDGK96EC44L" position 1920,0
 }

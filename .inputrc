@@ -12,7 +12,7 @@ set show-all-if-unmodified on
 set skip-completed-text on
 set revert-all-at-newline on
 
-"\C-r": re-read-init-file
+"\C-x\C-r": re-read-init-file
 
 # this also clears scrollback history
 "\C-l": clear-display

@@ -19,8 +19,8 @@ Documentation:
   <windowSwitcher>
     <fields>
       <field content="type_short" width="5%" />
-      <field content="trimmed_identifier" width="20%" />
-      <field content="title" width="75%" />
+      <field content="trimmed_identifier" width="35%" />
+      <field content="title" width="60%" />
     </fields>
   </windowSwitcher>
 
@@ -58,6 +58,12 @@ Documentation:
     <keybind key="W-S-r">
       <action name="Reconfigure" />
       <action name="Execute" command="sh -c 'pkill waybar; exec waybar'" />
+    </keybind>
+
+    <!-- open the osd without actually switching windows -->
+    <keybind key="W-Escape">
+      <action name="NextWindow" />
+      <action name="PreviousWindow" />
     </keybind>
 
     <!-- window switcher -->

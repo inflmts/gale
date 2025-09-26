@@ -3,27 +3,25 @@
 #
 
 # So apparently Bash when accessed over ssh will sometimes source ~/.bashrc
-# even when the session is not interactive. In that case we have to be careful
-# not to output anything or it might confuse the client program. The safest
-# thing to do, as found in many bashrc templates, is to just...
+# even when the session is not interactive. In that case,
+# much of the stuff below is not useful, and we have to be careful
+# not to read or output anything or it might confuse the client program.
 
 # quit unless interactive
 # apparently needed for rcp or scp or something
 [[ $- != *i* ]] && return
 
-# +H    disable history substitution with '!'
-# -u    fail on undefined variable references
-set +H -u
+# disable history substitution with '!'
+set +H
 
 msg() { printf >&2 '%s\n' "$*"; }
 warn() { printf >&2 '\033[1;33mwarning:\033[0m %s\n' "$*"; }
 err() { printf >&2 '\033[1;31merror:\033[0m %s\n' "$*"; }
 
-# setup colors for ls (and tree)
-if gale_dircolors=$(dircolors 2> /dev/null); then
-  eval "$gale_dircolors"
-fi
-unset gale_dircolors
+# Disable flow control, which can be confusing for new users,
+# and is generally not useful with a scrollback buffer.
+# This also allows us to bind CTRL-S and CTRL-Q.
+stty -ixon
 
 #-- MENU -----------------------------------------------------------------------
 
@@ -97,25 +95,10 @@ gale_menu_confirm() {
   esac
 }
 
-#-- FUNCTIONS & ALIASES --------------------------------------------------------
-
-r() {
-  echo "Reloading initialization script..."
-  source ~/.bashrc
-}
-
-# gale_spawn <command> [<args>...]
-#
-#   Fork a command using setsid(1). This detaches the process from the terminal
-#   and prevents it from receiving SIGHUP when the session leader exits.
-#   The process itself is forked from a subshell to hide it from job control.
-#
-gale_spawn() {
-  (setsid -- "$@" <&- &> /dev/null &)
-}
+#-- ALIASES --------------------------------------------------------------------
 
 alias grep='grep --color=auto'
-alias md='mkdir -pv'
+alias md='mkdir -p'
 
 alias ls='LC_COLLATE=C ls -hv --group-directories-first --color=auto'
 alias la='ls -A'
@@ -128,8 +111,30 @@ alias treea='tree -a'
 alias treed='tree -d'
 alias treeda='tree -da'
 
-clock() {
-  printf '%(%a %m/%d/%Y)T \033[1m%(%I:%M %p)T\033[0m\n'
+alias py='python3'
+alias ip4='ip -4 -br addr show scope global'
+
+alias lsfs='lsblk -o NAME,FSTYPE,LABEL,FSUSED,FSUSE%,FSSIZE,MOUNTPOINTS'
+alias lsgpt='lsblk -o NAME,TYPE,RM,SIZE,PARTUUID,PARTLABEL'
+
+#-- FUNCTIONS ------------------------------------------------------------------
+
+# __spawn <command> [<args>...]
+#
+#   Fork a command using setsid(1). This detaches the process from the terminal
+#   and prevents it from receiving SIGHUP when the session leader exits.
+#   The process itself is forked from a subshell to hide it from job control.
+#
+__spawn() {
+  if [[ $# -eq 0 ]]; then
+    err "expected command"
+    return 2
+  fi
+  (setsid -- "$@" <&- &> /dev/null &)
+}
+
+adate() {
+  date +%Y%m%d-%H%M%S "$@"
 }
 
 # display the function's arguments
@@ -145,95 +150,38 @@ argc() {
   echo "$# argument(s)"
 }
 
-f() {
-  if [[ $# -eq 0 ]]; then
-    err "expected command"
-    return 1
+colors() {
+  local i
+  for i in {0..255}; do
+    printf '\033[38;5;%sm%3s ' $i $i
+    ((i == 255 || (i + 1) % 20 == 0)) && printf '\033[0m\n'
+  done
+}
+
+edit() {
+  if [[ -n ${WAYLAND_DISPLAY-} ]] && command -v neovide &> /dev/null; then
+    neovide --fork "$@"
+  else
+    nvim "$@"
   fi
-  gale_spawn "$@"
+}
+
+editx() {
+  edit "$@" && exit
+}
+
+f() {
+  __spawn "$@"
 }
 
 fx() {
-  if [[ $# -eq 0 ]]; then
-    err "expected command"
-    return 1
-  fi
-  gale_spawn "$@" && exit
+  __spawn "$@" && exit
 }
 
-# include file system information
-lsfs() {
-  command lsblk -o NAME,FSTYPE,LABEL,FSUSED,FSUSE%,FSSIZE,MOUNTPOINTS "$@"
+lsenv() {
+  env | LC_ALL=C sort
 }
 
-# include GPT partition information
-lsgpt() {
-  command lsblk -o NAME,TYPE,RM,SIZE,PARTUUID,PARTLABEL "$@"
-}
-
-# cdnew <dir>
-#
-#   Create (recursively) and change to directory <dir>.
-#
-cdnew() {
-  if [[ $# -eq 1 ]]; then
-    mkdir -vp -- "$1" && cd -- "$1"
-  else
-    msg 'usage: cdnew <dir>'
-    return 1
-  fi
-}
-
-gale_resolve_block_device() {
-  case $1 in
-    l=*)
-      echo "/dev/disk/by-label/${1#*=}"
-      ;;
-    pl=*)
-      echo "/dev/disk/by-partlabel/${1#*=}"
-      ;;
-    /*)
-      echo "$1"
-      ;;
-    *)
-      err "invalid block device: $1"
-      return 1
-      ;;
-  esac
-}
-
-# udmount <source>
-#
-#   Mount <source> with udisksctl.
-#
-udmount() {
-  local source
-  if [[ $# -ne 1 ]]; then
-    msg 'usage: udmount <source>'
-    return 1
-  fi
-  source=$(gale_resolve_block_device "$1") || return
-  udisksctl mount -b "$source"
-}
-
-# udumount <source>
-#
-#   Unmount <source> with udisksctl.
-#
-udumount() {
-  local source
-  if [[ $# -ne 1 ]]; then
-    msg 'usage: udeject <source>'
-    return 1
-  fi
-  source=$(gale_resolve_block_device "$1") || return
-  udisksctl unmount -b "$source"
-}
-
-# lspath
-#
-#   List the contents of the $PATH environment variable.
-#
 lspath() {
   local -
   local ifs ent
@@ -246,73 +194,59 @@ lspath() {
   IFS=$ifs
 }
 
-# lsenv
+# mcd <dir>
 #
-#   Sorts and lists exported environment variables.
+#   Change to the specified directory, creating it if needed.
 #
-lsenv() {
-  env | LC_ALL=C sort -t '=' -k 1
+mcd() {
+  if [[ $# -ne 1 ]]; then
+    echo >&2 "usage: $FUNCNAME <dir>"
+    return 2
+  fi
+  mkdir -p -- "$1" && cd -- "$1"
 }
 
-cdcode() {
-  local name
-  name=$(ls ~/code | fzf) && cd ~/code/"$name"
-}
-
-adate() {
-  date +%Y%m%d-%H%M%S "$@"
+r() {
+  echo "Reloading initialization script..."
+  source ~/.bashrc
 }
 
 rot13() {
   tr 'A-Za-z' 'N-ZA-Mn-za-m'
 }
 
-lfcd() {
-  local dir
-  dir=$(command lf -print-last-dir "$@") && cd "$dir"
-}
-
-edit() {
-  if [[ -n ${WAYLAND_DISPLAY-} ]]; then
-    neovide --fork "$@"
-  else
-    nvim "$@"
-  fi
-}
-
-wman() {
-  if [[ -n ${WAYLAND_DISPLAY-} ]]; then
-    gale_spawn foot -W 80x30 -T "man $*" man "$@"
-  fi
-}
-
 #-- KEYBINDINGS ----------------------------------------------------------------
+
+__lf() {
+  local old dir
+  old=$PWD
+  dir=$(command lf -print-last-dir "$@") && cd "$dir"
+  [[ $PWD = $old ]] || __status
+}
+
+__status() {
+  echo -n "${__status@P}"
+}
+
+__time() {
+  printf '\e[7m %(%a %m/%d/%Y)T -- %(%I:%M %p)T \e[0m\n'
+}
 
 bind -x '"\e[15~": gale_menu'
 bind -x '"\e[[E": gale_menu'
-bind    '"\C-o": "\C-a\C-klfcd\r"'
-bind -x '"\C-t": clock'
+bind -x '"\C-o": __lf'
+bind -x '"\C-r": __status'
+bind -x '"\C-t": __time'
 bind -x '"\C-x?": echo "Last process exited $?"'
-bind    '"\C-xb": "\C-a\C-kbluetoothctl\r"'
-bind    '"\C-xi": "\C-a\C-kip -4 -br addr show scope global\r"'
-bind    '"\C-xp": "\C-a\C-kpython3 -q\r"'
-bind    '"\C-xt": "\C-a\C-ktop\r"'
-bind    '"\C-xu": "\C-a\C-kcd ..\r"'
-bind    '"\C-xw": "\C-a\C-kwpa_cli\r"'
 
 if [[ -n ${WAYLAND_DISPLAY-} ]]; then
-  bind -x '"\C-xn": gale_spawn foot'
-  bind -x '"\C-xw": gale_spawn neovide'
+  bind -x '"\C-xn": __spawn foot'
+  bind -x '"\C-xe": __spawn neovide'
 fi
 
 #-- PROMPT ---------------------------------------------------------------------
 
-# these values map nicely on linux virtual consoles
-set_title_prompt='\[\e]2;\u@\h \w\a\]'
-local_prompt='\[\e[0;1;37;48;5;196m\] \u@\h \[\e[48;5;124m\] \w \[\e[0m\]\n\[\e[1;38;5;203m\]$prompt_token\[\e[0m\] '
-ssh_prompt='\[\e[0;1;37;48;5;165m\] \u@\h \[\e[48;5;91m\] \w \[\e[0m\]\n\[\e[1;38;5;171m\]$prompt_token\[\e[0m\] '
-
-before_prompt() {
+__before_prompt() {
   if [[ $? -eq 0 ]]; then
     prompt_token='$'
   else
@@ -320,13 +254,13 @@ before_prompt() {
   fi
 }
 
-PROMPT_COMMAND=before_prompt
-PS1=$set_title_prompt
+PROMPT_COMMAND=__before_prompt
 
+# these colors work nicely on linux virtual consoles
 if [[ -n ${SSH_CONNECTION-} ]]; then
-  PS1+=$ssh_prompt
+  __status='\[\e]2;\u@\h \w\a\e[0;1;37;48;5;165m\] \u@\h \[\e[48;5;91m\] \w \[\e[0m\]\n'
+  PS1=$__status'\[\e[1;38;5;171;48;5;54m\]$prompt_token\[\e[0m\] '
 else
-  PS1+=$local_prompt
+  __status='\[\e]2;\u@\h \w\a\e[0;1;37;48;5;196m\] \u@\h \[\e[48;5;124m\] \w \[\e[0m\]\n'
+  PS1=$__status'\[\e[1;38;5;203;48;5;88m\]$prompt_token\[\e[0m\] '
 fi
-
-# vim:ft=bash

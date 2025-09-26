@@ -1,11 +1,13 @@
-# ---
-# ~/.config/git/config.shared
-# ---
+#
+# Git configuration file
+#
 
 [alias]
   ac = !git add -A && git commit
-  s = status
   dir = rev-parse --git-dir
+  ls = ls-files
+  s = status
+  su = status -u
 
 [init]
   defaultBranch = main

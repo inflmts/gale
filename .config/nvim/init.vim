@@ -7,17 +7,19 @@
 "-- PLUGINS ------------------------------------------------------------------
 
 " load vim-plug if available
-runtime autoload/plug.vim
-if exists('*plug#begin')
-  call plug#begin()
-  Plug 'sainnhe/sonokai'
-  Plug 'preservim/nerdtree'
-  Plug 'neovim/nvim-lspconfig'
-  Plug 'pangloss/vim-javascript'
-  Plug 'alvan/vim-closetag'
-  Plug 'HerringtonDarkholme/yats.vim'
-  Plug 'brianhuster/live-preview.nvim'
-  call plug#end()
+if !v:vim_did_enter
+  runtime autoload/plug.vim
+  if exists('*plug#begin')
+    call plug#begin()
+    Plug 'sainnhe/sonokai'
+    Plug 'preservim/nerdtree'
+    Plug 'neovim/nvim-lspconfig'
+    Plug 'pangloss/vim-javascript'
+    Plug 'alvan/vim-closetag'
+    Plug 'HerringtonDarkholme/yats.vim'
+    Plug 'brianhuster/live-preview.nvim'
+    call plug#end()
+  endif
 endif
 
 function s:install_vim_plug()
@@ -53,14 +55,14 @@ set wildmenu wildmode=longest:full,full
 set hidden
 " enable the mouse in all modes
 set mouse=a
-" show various types of whitespace
-set list listchars=trail:\ ,tab:>-
 " set terminal/gui title
 set title
 " always use unix line endings
 set fileformats=unix
 " do not attempt to use 24-bit color in the terminal
-set notermguicolors
+"set notermguicolors
+" gui font
+set guifont=Cascadia\ Mono:h10
 
 "-- KEYBINDINGS --------------------------------------------------------------
 "
@@ -77,10 +79,10 @@ snoremap <C-X> <Esc>
 onoremap <C-X> <Esc>
 
 " space and backspace scroll the window, like info
-nnoremap <Space> <C-D>
-xnoremap <Space> <C-D>
-nnoremap <BS> <C-U>
-xnoremap <BS> <C-U>
+nnoremap <Space> <C-F>
+xnoremap <Space> <C-F>
+nnoremap <BS> <C-B>
+xnoremap <BS> <C-B>
 
 " j and k operate in screen lines (gj and gk),
 " while CTRL-J and CTRL-K do this but faster
@@ -145,15 +147,18 @@ augroup init
   " clear previously defined autocommands
   au!
   au FileType asciidoc setlocal nosi comments=fb:-,fb:*,fb://
-  au FileType cs,java setlocal sw=4 sts=4
-  au FileType make setlocal noet
+  au FileType cs,java setlocal et sw=4 sts=4
+  au FileType make setlocal noet sw=8 sts=8
   au FileType markdown setlocal et sw=2 sts=2 tw=80
   au FileType python,sh setlocal fo-=t
+  au VimEnter,WinNew * call matchadd('Whitespace', '\s\+$')
 augroup END
 
-"-- GUI ----------------------------------------------------------------------
+"-- OTHER SETTINGS -----------------------------------------------------------
 
-set guifont=Cascadia\ Mono:h10
+let g:is_bash = 1
+
+colorscheme gale
 
 "-- NEOVIDE ------------------------------------------------------------------
 
@@ -161,27 +166,7 @@ if exists('g:neovide')
   let g:neovide_cursor_animation_length = 0.05
   let g:neovide_cursor_trail_size = 0.5
   " Neovide supports ligatures
-  set guifont=Cascadia\ Code:h10
-endif
-
-"-- COLORS -------------------------------------------------------------------
-
-if has('gui_running') || &term !=# "linux"
-  let g:sonokai_disable_italic_comment = 1
-  let g:sonokai_disable_terminal_colors = 1
-  silent! colorscheme sonokai
-
-  hi Normal ctermbg=NONE guibg=#202030
-  hi NormalNC ctermbg=NONE guibg=#181824
-  hi StatusLine guibg=#34344e
-  hi StatusLineNC guibg=#28283c
-  hi Error ctermfg=7 ctermbg=203 guifg=#ff507c guibg=#501030
-  hi ErrorText cterm=underline ctermfg=203
-  hi! link SignColumn LineNr
-  hi Whitespace guifg=#606090 guibg=#404060
-else
-  " light ctermbg is not visible on virtual console
-  hi Visual cterm=reverse ctermfg=NONE ctermbg=NONE
+  "set guifont=Cascadia\ Code:h10
 endif
 
 "-- RESTART ------------------------------------------------------------------
@@ -210,10 +195,6 @@ command! Resume call s:resume()
 
 if has('gui_running')
 lua << EOF
-local ok
-ok, lspconfig = pcall(require, 'lspconfig')
-if ok then
-  lspconfig.ts_ls.setup {}
-end
+vim.lsp.enable('ts_ls')
 EOF
 endif
