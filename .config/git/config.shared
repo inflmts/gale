@@ -6,6 +6,7 @@
   ac = !git add -A && git commit
   dir = rev-parse --git-dir
   ls = ls-files
+  lt = ls-files --full-name :/
   s = status
   su = status -u
 
