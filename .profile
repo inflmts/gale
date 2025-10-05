@@ -16,9 +16,11 @@ export XDG_STATE_HOME="$HOME/.state"
 export XDG_CACHE_HOME="$HOME/.cache"
 
 # create fallback $XDG_RUNTIME_DIR if necessary
-if [ -z "$XDG_RUNTIME_DIR" ]; then
+if [ -z "$XDG_RUNTIME_DIR" ] && {
+    [ -d /tmp/daniel ] && [ -O /tmp/daniel ] ||
+    mkdir -m 700 /tmp/daniel > /dev/null 2>&1; }
+then
   export XDG_RUNTIME_DIR="/tmp/daniel"
-  mkdir -p "$XDG_RUNTIME_DIR"
 fi
 
 export PATH
