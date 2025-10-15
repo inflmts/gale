@@ -23,6 +23,7 @@
 
 tooltip {
   background-color: #101018;
+  border: 1px solid #28283c;
 }
 
 button {
@@ -61,14 +62,18 @@ button {
   color: #00ffff;
 }
 
+#pulseaudio {
+  color: #00ffff;
+}
+
 #pulseaudio.muted {
   color: #ffe000;
 }
 
-#battery.discharging {
-  color: #ffe000;
+#battery {
+  color: #00ffff;
 }
 
-#tray .active:hover {
-  background-color: rgba(255, 255, 255, 0.25);
+#battery.discharging {
+  color: #ffe000;
 }

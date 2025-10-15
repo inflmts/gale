@@ -1,10 +1,12 @@
-//
-// Waybar configuration file
-// vim:ft=jsonc
-//
-// https://github.com/alexays/waybar
-// See waybar(5), waybar-<module>(5)
-//
+/*
+ * Waybar configuration file
+ * vim:ft=jsonc
+ *
+ * Documentation:
+ *   - waybar(5)
+ *   - waybar-<module>(5)
+ *   - https://github.com/Alexays/Waybar
+ */
 {
   "layer": "top",
   "position": "bottom",
@@ -13,7 +15,7 @@
   // Left
   "modules-left": ["network", "bluetooth"],
   "network": {
-    "format": "{ifname}", // not sure if this can ever match
+    "format": "<span alpha='55%'>net</span> {ifname}",
     "format-wifi": "<span alpha='55%'>wifi</span> {ipaddr}",
     "format-ethernet": "<span alpha='55%'>eth</span> {ipaddr}",
     "format-disconnected": "no internet",
@@ -23,6 +25,7 @@
   "bluetooth": {
     "format": "<span alpha='55%'>bt</span> {status}",
     "format-connected": "<span alpha='55%'>bt</span> {device_alias}",
+    "format-no-controller": "",
     "tooltip-format-connected": "{device_alias}",
     "tooltip-format-connected-battery": "{device_alias} [{device_battery_percentage}%]",
     "max-width": 24
