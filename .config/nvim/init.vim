@@ -35,48 +35,54 @@ command! PlugSetup call s:install_vim_plug()
 
 " indentation
 set et sw=2 sts=2 sta ai si
-" incremental search
-set incsearch
-" formatting
-set fo=tcqroj nojs
-" scrolling
-set nowrap so=5 ss=10 siso=10
-" line numbers
-set number
 " automatically re-read a file if it's changed externally
 set autoread
-" vsplit appears on right
-set splitright
 " insert mode completion
 set completeopt=menu,preview,longest
-" command line completion
-set wildmenu wildmode=longest:full,full
-" hide buffers when switching to another buffer
-set hidden
-" enable the mouse in all modes
-set mouse=a
-" set terminal/gui title
-set title
 " always use unix line endings
 set fileformats=unix
-" do not attempt to use 24-bit color in the terminal
-"set notermguicolors
+" formatting
+set fo=tcqroj
 " gui font
 set guifont=Cascadia\ Mono:h10
+" hide buffers when switching to another buffer
+set hidden
+" incremental search
+set incsearch
+" never insert two spaces after punctuation
+set nojs
+" break lines at 'breakat' if wrapping is enabled
+set linebreak
+" enable the mouse in all modes
+set mouse=a
+" show line numbers
+set number
+" this gets annoying with the j/k bindings below
+set noshowcmd
+" vsplit appears on right
+set splitright
+" set terminal/gui title
+set title
+" command line completion
+set wildmenu wildmode=longest:full,full
+" disable text wrapping
+set nowrap
 
 "-- KEYBINDINGS --------------------------------------------------------------
-"
-" See `:h map-table` for all map modes in a convenient table.
-"
 
-" in normal mode, CTRL-X clears search highlighting (see :nohlsearch)
-" otherwise, CTRL-X acts as a general escape key
-nnoremap <C-X> <Cmd>noh<CR>
+" See :h map-table for all map modes in a convenient table.
+
+" In Normal mode, CTRL-X clears search highlighting (:nohlsearch) and clears
+" the screen (CTRL-L), which has the side effect of removing any cruft left
+" in the command-line area. Otherwise, CTRL-X acts as a general escape key,
+" even in the terminal as I don't know many programs that use it.
+nnoremap <C-X> <Cmd>noh<Bar>mode<CR>
 inoremap <C-X> <Esc>
 cnoremap <C-X> <C-C>
 xnoremap <C-X> <Esc>
 snoremap <C-X> <Esc>
 onoremap <C-X> <Esc>
+tnoremap <C-X> <C-\><C-N>
 
 " space and backspace scroll the window, like info
 nnoremap <Space> <C-F>
@@ -111,11 +117,24 @@ xnoremap M zz
 nnoremap L zb
 xnoremap L zb
 
+nnoremap z<BS> H
+xnoremap z<BS> H
+nnoremap z<CR> M
+xnoremap z<CR> M
+nnoremap z<Space> L
+xnoremap z<Space> L
+
 " save a few keystrokes for (un)indenting
 nnoremap < <<
 nnoremap > >>
 xnoremap < <gv
 xnoremap > >gv
+
+" compensate for CTRL-X binding
+nnoremap + <C-A>
+xnoremap + <C-A>
+nnoremap - <C-X>
+xnoremap - <C-X>
 
 " readline key bindings for command-line mode
 cnoremap <C-A> <Home>
@@ -128,11 +147,6 @@ cnoremap <C-N> <Down>
 
 " NERDTree bindings
 nnoremap <C-T> <Cmd>NERDTreeToggle<CR>
-
-" Use <S-Tab> to trigger omni completion.
-" While the popup menu is open, <Tab> and <S-Tab> cycle through entries.
-inoremap <expr> <Tab> pumvisible() ? "\<C-N>" : "\<Tab>"
-inoremap <expr> <S-Tab> pumvisible() ? "\<C-P>" : "\<C-X><C-O>"
 
 " nvim diagnostics
 nnoremap # <Cmd>lua vim.diagnostic.open_float()<CR>
@@ -151,6 +165,7 @@ augroup init
   au FileType make setlocal noet sw=8 sts=8
   au FileType markdown setlocal et sw=2 sts=2 tw=80
   au FileType python,sh setlocal fo-=t
+  au LspAttach * inoremap <buffer> <C-N> <C-X><C-O>
   au VimEnter,WinNew * call matchadd('Whitespace', '\s\+$')
 augroup END
 
@@ -160,41 +175,14 @@ let g:is_bash = 1
 
 colorscheme gale
 
+if has('gui_running')
+  lua vim.lsp.enable('ts_ls')
+endif
+
 "-- NEOVIDE ------------------------------------------------------------------
 
-if exists('g:neovide')
-  let g:neovide_cursor_animation_length = 0.05
-  let g:neovide_cursor_trail_size = 0.5
-  " Neovide supports ligatures
-  "set guifont=Cascadia\ Code:h10
-endif
+" One of the reasons why I originally wanted to use Neovide is because it
+" supports ligatures. But now I think it looks better without them.
 
-"-- RESTART ------------------------------------------------------------------
-"
-" This provides basic functionality to make restarting easier.
-"
-
-let s:restart_session_file = stdpath('state') .. '/restart-session.vim'
-
-function s:restart() abort
-  execute 'mksession! ' .. fnameescape(s:restart_session_file)
-  qall
-endfunction
-
-function s:resume() abort
-  execute 'source ' .. fnameescape(s:restart_session_file)
-endfunction
-
-" The :Restart command writes the session file and exits Nvim.
-command! Restart call s:restart()
-
-" The :Resume command loads the session file.
-command! Resume call s:resume()
-
-"-- LSP ----------------------------------------------------------------------
-
-if has('gui_running')
-lua << EOF
-vim.lsp.enable('ts_ls')
-EOF
-endif
+let g:neovide_cursor_animation_length = 0.05
+let g:neovide_cursor_trail_size = 0.5
