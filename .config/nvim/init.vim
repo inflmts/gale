@@ -59,6 +59,8 @@ set mouse=a
 set number
 " this gets annoying with the j/k bindings below
 set noshowcmd
+" show some context around the cursor
+set so=3 siso=6
 " vsplit appears on right
 set splitright
 " set terminal/gui title
