@@ -168,18 +168,29 @@ augroup init
   au FileType markdown setlocal et sw=2 sts=2 tw=80
   au FileType python,sh setlocal fo-=t
   au LspAttach * inoremap <buffer> <C-N> <C-X><C-O>
-  au VimEnter,WinNew * call matchadd('Whitespace', '\s\+$')
 augroup END
 
 "-- OTHER SETTINGS -----------------------------------------------------------
 
 let g:is_bash = 1
 
+" Highlight trailing whitespace. I really hate trailing whitespace.
+" I don't care if help buffers or terminal buffers get messed up.
+" Unfortunately, matchadd() only applies to the current window.
+" But that won't stop us.
+
+call matchadd('Whitespace', '\s\+$', -1, 25)
+augroup init
+  au WinNew * silent! call matchadd('Whitespace', '\s\+$', -1, 25)
+augroup END
+
 colorscheme gale
 
 if has('gui_running')
   lua vim.lsp.enable('ts_ls')
 endif
+
+let g:NERDTreeHijackNetrw = 0
 
 "-- NEOVIDE ------------------------------------------------------------------
 

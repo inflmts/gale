@@ -16,14 +16,14 @@
 }
 
 #waybar {
-  background-color: #101018;
+  background-color: #101014;
   color: #ffffff;
-  border-top: 1px solid #28283c;
+  border-top: 1px solid #282832;
 }
 
 tooltip {
-  background-color: #101018;
-  border: 1px solid #28283c;
+  background-color: #101014;
+  border: 1px solid #282832;
 }
 
 button {
