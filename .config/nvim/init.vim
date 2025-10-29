@@ -179,7 +179,7 @@ let g:is_bash = 1
 " Unfortunately, matchadd() only applies to the current window.
 " But that won't stop us.
 
-call matchadd('Whitespace', '\s\+$', -1, 25)
+silent! call matchadd('Whitespace', '\s\+$', -1, 25)
 augroup init
   au WinNew * silent! call matchadd('Whitespace', '\s\+$', -1, 25)
 augroup END
