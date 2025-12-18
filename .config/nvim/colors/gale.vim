@@ -17,10 +17,10 @@ endif
 hi ModeMsg gui=bold guifg=NONE
 hi NonText guifg=#54545f
 hi StatusLine guifg=#000000 guibg=#f0f0f0
-hi StatusLineNC guifg=#f0f0f0 guibg=#303036
+hi StatusLineNC guifg=#e7e7f0 guibg=#30303c
 hi Title cterm=bold gui=bold guifg=#d598ff
-hi Whitespace guibg=#404048
-hi WinSeparator guifg=#303036
+hi Whitespace guibg=#404050
+hi WinSeparator guifg=#30303c
 
 hi! link LineNr NonText
 hi! link SignColumn NonText
