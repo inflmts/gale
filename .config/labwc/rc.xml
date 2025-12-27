@@ -45,7 +45,7 @@ Documentation:
     <repeatDelay>300</repeatDelay>
 
     <!-- exit labwc -->
-    <keybind key="W-C-x">
+    <keybind key="W-S-Backspace">
       <action name="Exit" />
     </keybind>
 
