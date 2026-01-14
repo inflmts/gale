@@ -146,6 +146,8 @@ cnoremap <C-B> <Left>
 cnoremap <C-F> <Right>
 cnoremap <C-P> <Up>
 cnoremap <C-N> <Down>
+cnoremap <Esc>b <S-Left>
+cnoremap <Esc>f <S-Right>
 
 " NERDTree bindings
 nnoremap <C-T> <Cmd>NERDTreeToggle<CR>
@@ -162,12 +164,14 @@ inoremap <C-S-V> <C-R><C-O>+
 augroup init
   " clear previously defined autocommands
   au!
+  au BufEnter,TermOpen * call s:highlight_whitespace()
   au FileType asciidoc setlocal nosi comments=fb:-,fb:*,fb://
   au FileType cs,java setlocal et sw=4 sts=4
   au FileType make setlocal noet sw=8 sts=8
   au FileType markdown setlocal et sw=2 sts=2 tw=80
   au FileType python,sh setlocal fo-=t
   au LspAttach * inoremap <buffer> <C-N> <C-X><C-O>
+  au TermOpen * startinsert
 augroup END
 
 "-- OTHER SETTINGS -----------------------------------------------------------
@@ -175,14 +179,18 @@ augroup END
 let g:is_bash = 1
 
 " Highlight trailing whitespace. I really hate trailing whitespace.
-" I don't care if help buffers or terminal buffers get messed up.
-" Unfortunately, matchadd() only applies to the current window.
-" But that won't stop us.
+" Although we have to be careful not to mess up terminal buffers.
+" This function must also be called on TermOpen because for some reason
+" during BufEnter the buftype is not set correctly.
 
-silent! call matchadd('Whitespace', '\s\+$', -1, 25)
-augroup init
-  au WinNew * silent! call matchadd('Whitespace', '\s\+$', -1, 25)
-augroup END
+function s:highlight_whitespace()
+  if &buftype !=# 'terminal'
+    " Set priority less than zero to not override hlsearch
+    silent! call matchadd('Whitespace', '\s\+$', -1, 25)
+  else
+    silent! call matchdelete(25)
+  endif
+endfunction
 
 colorscheme gale
 
