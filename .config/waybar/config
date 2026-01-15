@@ -34,7 +34,7 @@
   // Center
   "modules-center": ["clock"],
   "clock": {
-    "format": "{:%a %m/%d/%Y \u2014 %I:%M %p}",
+    "format": "{:%a %b %d %Y %I:%M %p}",
     "tooltip-format": "Zero to infinity"
   },
 
