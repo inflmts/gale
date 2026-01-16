@@ -31,6 +31,8 @@ Documentation:
     <font name="Montserrat SemiBold" size="9" />
   </theme>
 
+  <margin bottom="25" />
+
   <!--
   Modifier keys:
     - W (super)
