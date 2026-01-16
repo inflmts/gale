@@ -289,6 +289,16 @@ Documentation:
     <keybind key="W-S-b">
       <action name="Execute" command="foot -T bluetoothctl bluetoothctl" />
     </keybind>
+
+    <!-- steam -->
+    <keybind key="W-A-s">
+      <action name="Execute" command="steam" />
+    </keybind>
+
+    <!-- geometry dash -->
+    <keybind key="W-A-g">
+      <action name="Execute" command="steam steam://rungameid/322170" />
+    </keybind>
   </keyboard>
 
   <mouse>
