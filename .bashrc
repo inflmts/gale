@@ -258,9 +258,9 @@ PROMPT_COMMAND=__before_prompt
 
 # these colors work nicely on linux virtual consoles
 if [[ -n ${SSH_CONNECTION-} ]]; then
-  __status='\[\e]2;\u@\h \w\a\e[0;1;37;48;5;165m\] \u@\h \[\e[48;5;91m\] \w \[\e[0m\]\n'
+  __status='\[\e]2;\u@\h \w\a\e[0;1;38;5;15;48;5;165m\] \u@\h \[\e[48;5;91m\] \w \[\e[0m\]\n'
   PS1=$__status'\[\e[1;38;5;171;48;5;54m\]$prompt_token\[\e[0m\] '
 else
-  __status='\[\e]2;\u@\h \w\a\e[0;1;37;48;5;196m\] \u@\h \[\e[48;5;124m\] \w \[\e[0m\]\n'
+  __status='\[\e]2;\u@\h \w\a\e[0;1;38;5;15;48;5;196m\] \u@\h \[\e[48;5;124m\] \w \[\e[0m\]\n'
   PS1=$__status'\[\e[1;38;5;203;48;5;88m\]$prompt_token\[\e[0m\] '
 fi
