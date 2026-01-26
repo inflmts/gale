@@ -1,12 +1,11 @@
 #!/bin/sh
-# gale-open
 #
-# xdg-open is a nightmare. gale-open is a drop-in replacement for xdg-open
-# that's designed to be simple and explicit. It doesn't read any .desktop files
-# or delegate to any desktop environment-specific handlers, instead all file
-# associations are explicitly spelled out in the script. This offers more
-# flexibility and control (and performance) at the expense of some manual work
-# required to add new file types.
+# gale-open is a drop-in replacement for xdg-open that's designed to be simple
+# and explicit. It doesn't read any .desktop files or try to figure out what
+# desktop environment it's in. gale-open only matches files by file extension,
+# which avoids having to open the file to figure out its type and handles files
+# that differ by extension but have the same underlying format.
+# Based on this, gale-open launches the appropriate application.
 
 set -ue
 
@@ -30,7 +29,7 @@ EOF
 # return immediately, so gale-open always creates a new process.
 exec=fork
 
-browser=
+browser=false
 
 while [ $# -gt 0 ]; do
   case $1 in
@@ -38,7 +37,7 @@ while [ $# -gt 0 ]; do
       exec=query
       ;;
     -b|--browser)
-      browser=1
+      browser=true
       ;;
     --help)
       usage
@@ -66,21 +65,6 @@ fi
 
 file=$1
 
-# utilities
-
-has_command() {
-  command -v "$1" > /dev/null 2>&1
-}
-
-try() {
-  for id; do
-    if eval "test -z \"\${tried_$id-}\""; then
-      eval "tried_$id=1"
-      "open_$id"
-    fi
-  done
-}
-
 query() {
   echo "$*"
   exit
@@ -93,154 +77,22 @@ fork() {
   exit
 }
 
-abort() {
-  err "could not find a way to open '$file', sorry"
-  exit 127
-}
-
-# applications
-
-open_neovide() {
-  if has_command neovide; then
-    $exec neovide "$file"
-  fi
-}
-
-open_neovim_qt() {
-  if has_command nvim-qt; then
-    $exec nvim-qt -- "$file"
-  fi
-}
-
-open_nvim() {
-  if has_command nvim; then
-    $exec foot nvim "$file"
-  fi
-}
-
-open_vim() {
-  if has_command vim; then
-    $exec foot vim "$file"
-  fi
-}
-
-open_vi() {
-  if has_command vi; then
-    $exec foot vi "$file"
-  fi
-}
-
-open_nano() {
-  if has_command nano; then
-    $exec foot nano "$file"
-  fi
-}
-
-open_less() {
-  if has_command less; then
-    $exec foot less "$file"
-  fi
-}
-
-open_swayimg() {
-  if has_command swayimg; then
-    $exec swayimg -- "$file"
-  fi
-}
-
-open_imv_dir() {
-  if has_command imv-dir; then
-    $exec imv-dir "$file"
-  fi
-}
-
-open_imv() {
-  if has_command imv; then
-    $exec imv "$file"
-  fi
-}
-
-open_gimp() {
-  if has_command gimp; then
-    $exec gimp "$file"
-  fi
-}
-
-open_mpv() {
-  if has_command mpv; then
-    $exec mpv --player-operation-mode=pseudo-gui -- "$file"
-  fi
-}
-
-open_libreoffice() {
-  if has_command libreoffice; then
-    $exec libreoffice "$file"
-  fi
-}
-
-open_lf() {
-  if has_command lf; then
-    $exec foot lf -- "$file"
-  fi
-}
-
-open_nautilus() {
-  if has_command nautilus; then
-    $exec nautilus -- "$file"
-  fi
-}
-
-open_chromium() {
-  if has_command chromium; then
-    $exec chromium "$file"
-  fi
-}
-
-open_firefox() {
-  if has_command firefox; then
-    $exec firefox "$file"
-  fi
-}
-
-# generic
-
-open_browser() {
-  try chromium firefox
-}
-
-open_image() {
-  try swayimg imv_dir imv gimp browser
-}
-
-open_audio() {
-  try mpv browser
-}
-
-open_video() {
-  try mpv browser
-}
-
-#
-
-if [ -n "$browser" ]; then
-  try browser
-  abort
+if $browser; then
+  $exec chromium "$file"
 fi
 
 case ${file%%/*} in
   file:*)
     file=${file#*:}
     ;;
-  http:*|https:*)
-    try browser
-    abort
+  http:* | https:*)
+    $exec chromium "$file"
     ;;
   prismlauncher:*)
     $exec prismlauncher "$file"
     ;;
-  *:*)
-    err "unrecognized schema '$file'"
-    exit 127
+  steam:*)
+    $exec steam "$file"
     ;;
 esac
 
@@ -250,29 +102,37 @@ if [ ! -e "$file" ]; then
 fi
 
 if [ -d "$file" ]; then
-  try lf nautilus
-  cd "$file"
-  $exec foot
+  $exec foot lf "$file"
 fi
 
-# match file extension
-case ${file##*.} in
+ext=${file##*.}
+
+case $ext in
   avif | bmp | gif | jpeg | jpg | png | webp)
-    try image
+    $exec swayimg -- "$file"
     ;;
-  flac | mp3 | ogg | opus | wav)
-    try audio
-    ;;
-  avi | mov | mp4 | webm | wmv)
-    try video
+  flac | mp3 | ogg | opus | wav | avi | mov | mp4 | webm | wmv)
+    $exec mpv --player-operation-mode=pseudo-gui -- "$file"
     ;;
   html | md | pdf | svg)
-    try browser
+    $exec chromium "$file"
     ;;
-  odt | odp | ods | doc | docx | ppt | pptx | xls | xlsx)
-    try libreoffice
+  odt | doc | docx)
+    $exec lowriter "$file"
+    ;;
+  odp | ppt | pptx)
+    $exec loimpress "$file"
+    ;;
+  ods | xls | xlsx)
+    $exec localc "$file"
+    ;;
+  aup3)
+    $exec audacity "$file"
+    ;;
+  mmp | mmpz)
+    $exec lmms "$file"
+    ;;
+  *)
+    $exec neovide "$file"
     ;;
 esac
-
-try neovide neovim_qt nvim vim vi nano less
-abort
