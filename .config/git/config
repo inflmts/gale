@@ -1,9 +1,12 @@
 #
 # Git configuration file
 #
+# Note: If both ~/.config/git/config and ~/.gitconfig exist,
+# Git will read from *both* files in that order.
+# git-config still writes to ~/.gitconfig.
+#
 
 [alias]
-  ac = !git add -A && git commit
   dir = rev-parse --git-dir
   ls = ls-files
   lt = ls-files --full-name :/
@@ -13,8 +16,9 @@
 [init]
   defaultBranch = main
 
+[status]
+  relativePaths = false
+
 [user]
   name = Daniel Li
   email = inflmts@gmail.com
-
-# vim:ft=gitconfig
