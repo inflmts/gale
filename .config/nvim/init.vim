@@ -11,7 +11,6 @@ if !v:vim_did_enter
   runtime autoload/plug.vim
   if exists('*plug#begin')
     call plug#begin()
-    Plug 'sainnhe/sonokai'
     Plug 'preservim/nerdtree'
     Plug 'neovim/nvim-lspconfig'
     Plug 'pangloss/vim-javascript'
