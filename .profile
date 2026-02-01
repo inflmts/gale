@@ -15,6 +15,10 @@ export XDG_DATA_HOME="$HOME/.data"
 export XDG_STATE_HOME="$HOME/.state"
 export XDG_CACHE_HOME="$HOME/.cache"
 
+# Force manual pages to 80 columns.
+# This only affects mandb, mandoc already does this.
+export MANWIDTH=80
+
 # create fallback $XDG_RUNTIME_DIR if necessary
 if [ -z "$XDG_RUNTIME_DIR" ] && {
     [ -d /tmp/daniel ] && [ -O /tmp/daniel ] ||
