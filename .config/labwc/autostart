@@ -5,4 +5,7 @@
 kanshi &
 pipewire &
 gale-autosleep &
+
+# hack to ensure waybar starts after pipewire
+sleep 1
 waybar &
