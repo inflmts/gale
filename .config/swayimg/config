@@ -14,6 +14,7 @@ size = 800,600
 
 [viewer]
 window = #000000
+antialiasing = box
 
 [font]
 color = #ffffffff
