@@ -59,7 +59,6 @@
     "format": "<span alpha='55%'>br</span> {percent}%"
   },
   "battery": {
-    "format": "<span alpha='55%'>ch</span> {capacity}%",
-    "format-discharging": "<span alpha='55%'>ch</span> {capacity}%"
+    "format": "<span alpha='55%'>ch</span> {capacity}%"
   }
 }

@@ -28,7 +28,7 @@ Documentation:
     <titlebar layout=":" />
     <cornerRadius>0</cornerRadius>
     <dropShadows>yes</dropShadows>
-    <font name="Montserrat SemiBold" size="9" />
+    <font weight="semibold" />
   </theme>
 
   <margin bottom="25" />

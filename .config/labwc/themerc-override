@@ -7,12 +7,12 @@ window.button.height: 22
 
 window.active.border.color: #30303c
 window.active.title.bg.color: #30303c
-window.active.label.text.color: #c0c0e0
+window.active.label.text.color: #e7e7f0
 window.active.button.unpressed.image.color: #808090
 
 window.inactive.border.color: #18181e
 window.inactive.title.bg.color: #18181e
-window.inactive.label.text.color: #606070
+window.inactive.label.text.color: #606078
 window.inactive.button.unpressed.image.color: #60606c
 
 osd.bg.color: #8000aa

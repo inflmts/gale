@@ -8,8 +8,7 @@
  */
 
 * {
-  font-family: 'Montserrat SemiBold', sans-serif;
-  font-size: 13px;
+  font-weight: 600;
   transition: none;
   border: none;
   border-radius: 0;
@@ -18,7 +17,7 @@
 #waybar {
   background-color: #101014;
   color: #ffffff;
-  border-top: 1px solid #282832;
+  border-top: 1px solid #30303c;
 }
 
 tooltip {
