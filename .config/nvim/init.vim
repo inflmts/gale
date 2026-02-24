@@ -166,6 +166,7 @@ augroup init
   au BufEnter,TermOpen * call s:highlight_whitespace()
   au FileType asciidoc setlocal nosi comments=fb:-,fb:*,fb://
   au FileType cs,java setlocal et sw=4 sts=4
+  au FileType html setlocal indentexpr=
   au FileType make setlocal noet sw=8 sts=8
   au FileType markdown setlocal et sw=2 sts=2 tw=80
   au FileType python,sh setlocal fo-=t
