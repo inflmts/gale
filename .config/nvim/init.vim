@@ -134,8 +134,10 @@ xnoremap > >gv
 " compensate for CTRL-X binding
 nnoremap + <C-A>
 xnoremap + <C-A>
+xnoremap g+ g<C-A>
 nnoremap - <C-X>
 xnoremap - <C-X>
+xnoremap g- g<C-X>
 
 " readline key bindings for command-line mode
 cnoremap <C-A> <Home>
@@ -157,6 +159,8 @@ nnoremap # <Cmd>lua vim.diagnostic.open_float()<CR>
 " simpler copy and paste
 vnoremap <C-S-C> "+y
 inoremap <C-S-V> <C-R><C-O>+
+
+nnoremap ! :tab terminal<Space>
 
 "-- AUTOCOMMANDS -------------------------------------------------------------
 
