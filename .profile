@@ -19,6 +19,8 @@ export XDG_CACHE_HOME="$HOME/.cache"
 # This only affects mandb, mandoc already does this.
 export MANWIDTH=80
 
+export PYTHONSTARTUP="$HOME/.config/python/init.py"
+
 # create fallback $XDG_RUNTIME_DIR if necessary
 if [ -z "$XDG_RUNTIME_DIR" ] && {
     [ -d /tmp/daniel ] && [ -O /tmp/daniel ] ||
