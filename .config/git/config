@@ -10,8 +10,8 @@
   dir = rev-parse --git-dir
   ls = ls-files
   lt = ls-files --full-name :/
-  s = status
-  su = status -u
+  s = status -sb
+  su = status -sbu
 
 [init]
   defaultBranch = main

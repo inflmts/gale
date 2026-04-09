@@ -150,6 +150,11 @@ argc() {
   echo "$# argument(s)"
 }
 
+cd() {
+  builtin cd "$@" || return
+  [[ ! -e .git ]] || git --no-optional-locks status -sb || true
+}
+
 colors() {
   local i
   for i in {0..255}; do
