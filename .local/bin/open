@@ -132,6 +132,9 @@ case $ext in
   mmp | mmpz)
     $exec lmms "$file"
     ;;
+  xcf)
+    $exec gimp "$file"
+    ;;
   *)
     $exec neovide "$file"
     ;;
