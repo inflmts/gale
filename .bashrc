@@ -113,6 +113,7 @@ alias treeda='tree -da'
 
 alias py='python3'
 alias ip4='ip -4 -br addr show scope global'
+alias R='R --no-save'
 
 alias lsfs='lsblk -o NAME,FSTYPE,LABEL,FSUSED,FSUSE%,FSSIZE,MOUNTPOINTS'
 alias lsgpt='lsblk -o NAME,TYPE,RM,SIZE,PARTUUID,PARTLABEL'
