@@ -1,0 +1,23 @@
+{{with .Message}}
+{{.}}
+{{else with .Stat}}
+{{.Permissions | printf "\033[1m%s\033[0m"}}
+ {{.LinkCount | printf "%2s"}}
+ {{.User}}
+ {{.Group}}
+ {{.Size | humanize | printf "%5s"}}
+ {{.ModTime}}
+{{with .Target}}{{printf "\033[36m -> %s\033[0m" .}}{{end}}
+{{end}}
+{{.SPACER}}
+{{with .Keys}}{{.}} {{end}}
+{{with .Progress}}{{join . " "}} {{end}}
+{{with .Copy}}{{len . | printf "%s %d \033[0m" $.Options.copyfmt}} {{end}}
+{{with .Cut}}{{len . | printf "%s %d \033[0m" $.Options.cutfmt}} {{end}}
+{{with .Select}}{{len . | printf "%s %d \033[0m" $.Options.selectfmt}} {{end}}
+{{with .Visual}}{{len . | printf "%s %d \033[0m" $.Options.visualfmt}} {{end}}
+{{with .Filter}}{{join . " " | printf "\033[7;34m %s \033[0m"}} {{end}}
+{{if ne $.Options.sortby "natural"}}{{printf "\033[7m %s \033[0m" $.Options.sortby}} {{end}}
+{{if eq $.Options.reverse "true"}}{{printf "\033[7m I \033[0m"}} {{end}}
+{{if eq $.Options.hidden "false"}}{{printf "\033[7m H \033[0m"}} {{end}}
+{{.Index}}/{{.Total}}

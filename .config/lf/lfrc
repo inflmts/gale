@@ -32,7 +32,7 @@ set period 3
 # time formats
 set infotimefmtnew "Jan 02 15:04"
 set infotimefmtold "Jan 02, 2006"
-set timefmt "Mon 2006/01/02 03:04 PM"
+set timefmt "Mon 01/02/2006 03:04 PM"
 
 # draw box around directory listing
 set drawbox
@@ -40,6 +40,10 @@ set borderfmt "\033[38;5;240m"
 
 # enable mouse
 set mouse
+
+set rulerfile ~/.config/lf/ruler
+
+setlocal ~/electric/core reverse
 
 # -----------
 # KEYBINDINGS
@@ -70,14 +74,14 @@ map <space> page-down
 # use <tab> to select files
 map <tab> :toggle; down
 
-set statfmt "\033[1m%p\033[0m| %c| %u:%g| %s| %t| \033[36m-> %l\033[0m"
+#set statfmt "\033[1m%p\033[0m| %c| %u:%g| %s| %t| \033[36m-> %l\033[0m"
 
 # sort commands
-map O :set sortby natural; statfmt
-map S :set sortby size; statfmt
-map T :set sortby time; statfmt
-map E :set sortby ext; statfmt
-map I :set reverse!; statfmt
+map O set sortby natural
+map S set sortby size
+map T set sortby time
+map E set sortby ext
+map I set reverse!
 
 # other commands
 map g/ cd /
@@ -85,7 +89,7 @@ map gs !git status
 map g<c-a> !git add -Av && git status
 map gc !git commit
 map ~ cd
-map . :set hidden!; statfmt
+map . :set hidden!
 map o push &<space>"$f"<c-a>
 
 # make <enter> an alias for l
@@ -110,12 +114,12 @@ cmap <c-x> cmd-interrupt
 # --------
 
 # command to generate the status line
-cmd statfmt &{{
-  fmt="\\033[1m%p\\033[0m| %c| %u:%g| %s| %t| \\033[36m-> %l\\033[0m"
-  mode=
-  [ "$lf_sortby" != natural ] && mode="$mode $lf_sortby"
-  [ "$lf_reverse" = true ] && mode="$mode rev"
-  [ "$lf_hidden" = false ] && mode="$mode hid"
-  [ -n "$mode" ] && fmt="\\033[7m$mode \\033[0m |$fmt"
-  "$lf" -remote "send $id set statfmt \"$fmt\""
-}}
+#cmd statfmt &{{
+#  fmt="\\033[1m%p\\033[0m| %c| %u:%g| %s| %t| \\033[36m-> %l\\033[0m"
+#  mode=
+#  [ "$lf_sortby" != natural ] && mode="$mode $lf_sortby"
+#  [ "$lf_reverse" = true ] && mode="$mode rev"
+#  [ "$lf_hidden" = false ] && mode="$mode hid"
+#  [ -n "$mode" ] && fmt="\\033[7m$mode \\033[0m |$fmt"
+#  "$lf" -remote "send $id set statfmt \"$fmt\""
+#}}
