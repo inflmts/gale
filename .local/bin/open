@@ -135,6 +135,12 @@ case $ext in
   xcf)
     $exec gimp "$file"
     ;;
+  osp)
+    $exec openshot-qt "$file"
+    ;;
+  sif | sifz | sfg)
+    $exec synfigstudio "$file"
+    ;;
   *)
     $exec neovide "$file"
     ;;
