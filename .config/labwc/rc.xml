@@ -318,17 +318,17 @@ Documentation:
         <action name="Focus" />
         <action name="Raise" />
       </mousebind>
-      <mousebind button="W-Left" action="DoubleClick">
-        <action name="ToggleMaximize" />
-      </mousebind>
       <mousebind button="W-Left" action="Drag">
         <action name="Move" />
       </mousebind>
       <mousebind button="W-S-Left" action="Drag">
         <action name="Resize" />
       </mousebind>
-      <mousebind button="W-Right" action="Press">
-        <action name="Iconify" />
+      <mousebind button="W-Right" action="Drag">
+        <action name="Resize" />
+      </mousebind>
+      <mousebind button="W-S-Right" action="Drag">
+        <action name="Resize" />
       </mousebind>
     </context>
 
@@ -343,9 +343,6 @@ Documentation:
       </mousebind>
       <mousebind button="Left" action="DoubleClick">
         <action name="ToggleMaximize" />
-      </mousebind>
-      <mousebind button="Right" action="Click">
-        <action name="ShowMenu" menu="client-menu" />
       </mousebind>
     </context>
 
