@@ -283,9 +283,14 @@ Documentation:
       <action name="Execute" command="foot -T bluetoothctl bluetoothctl" />
     </keybind>
 
+    <!-- python -->
+    <keybind key="W-p">
+      <action name="Execute" command="foot -T python python3" />
+    </keybind>
+
     <!-- R -->
     <keybind key="W-s">
-      <action name="Execute" command="foot -T R R --no-save" />
+      <action name="Execute" command="foot -T R R --no-save --no-restore" />
     </keybind>
 
     <!-- syslog -->

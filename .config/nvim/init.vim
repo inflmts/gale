@@ -13,9 +13,9 @@ if !v:vim_did_enter
     call plug#begin()
     Plug 'preservim/nerdtree'
     Plug 'neovim/nvim-lspconfig'
-    Plug 'pangloss/vim-javascript'
+    "Plug 'pangloss/vim-javascript'
     Plug 'alvan/vim-closetag'
-    Plug 'HerringtonDarkholme/yats.vim'
+    "Plug 'HerringtonDarkholme/yats.vim'
     Plug 'brianhuster/live-preview.nvim'
     call plug#end()
   endif
@@ -62,6 +62,8 @@ set noshowcmd
 set so=3 siso=6
 " vsplit appears on right
 set splitright
+" always use cterm attributes on terminals
+set notermguicolors
 " set terminal/gui title
 set title
 " command line completion
