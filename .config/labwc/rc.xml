@@ -304,7 +304,7 @@ Documentation:
     </keybind>
 
     <!-- geometry dash -->
-    <keybind key="W-A-g">
+    <keybind key="W-S-G">
       <action name="Execute" command="steam steam://rungameid/322170" />
     </keybind>
   </keyboard>
