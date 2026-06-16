@@ -10,7 +10,7 @@
 {{with .Target}}{{printf "\033[36m -> %s\033[0m" .}}{{end}}
 {{end}}
 {{.SPACER}}
-{{with .Keys}}{{.}} {{end}}
+ {{with .Keys}}{{.}} {{end}}
 {{with .Progress}}{{join . " "}} {{end}}
 {{with .Copy}}{{len . | printf "%s %d \033[0m" $.Options.copyfmt}} {{end}}
 {{with .Cut}}{{len . | printf "%s %d \033[0m" $.Options.cutfmt}} {{end}}
