@@ -31,3 +31,5 @@ set revert-all-at-newline on
 "\el": forward-char
 
 "\e[": skip-csi-sequence
+
+"\e-": " <- "
