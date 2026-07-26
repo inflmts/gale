@@ -6,19 +6,17 @@
 #   - https://github.com/gokcehan/lf
 #
 
-# -------
-# OPTIONS
-# -------
+#---- OPTIONS
 
 # set $IFS to newline in subshells
 set ifs "\n"
 
-# show one column without preview
 set nopreview
-set ratios 1
+set ratios 1:4
+set cursorparentfmt "\033[4m"
 
 # leave a few lines around cursor
-set scrolloff 5
+set scrolloff 3
 
 # show hidden files
 set hidden
@@ -27,6 +25,8 @@ set hidden
 set incsearch
 
 # automatically refresh files every 3 seconds
+# lf also now has a 'watch' option that uses fsnotify.
+# May want to look into that.
 set period 3
 
 # time formats
@@ -41,15 +41,18 @@ set borderfmt "\033[38;5;240m"
 # enable mouse
 set mouse
 
+# New versions of lf use a Go template to configure the ruler.
+# See the RULER section in lf(1).
+#
+# Syntax: https://pkg.go.dev/text/template
+# Example: https://github.com/gokcehan/lf/blob/master/etc/ruler.default
+
 set rulerfile ~/.config/lf/ruler
 
 setlocal ~/electric/core reverse
+setlocal ~/electric/queue sortby time
 
-# -----------
-# KEYBINDINGS
-# -----------
-
-map <c-o> quit
+#---- KEYBINDINGS
 
 # remove some default commands
 map zh
@@ -66,15 +69,15 @@ map sa
 map sc
 map se
 
-# use <backspace> and <space> to scroll the window
+# scroll commands
 map <backspace> page-up
 map <backspace2> page-up
 map <space> page-down
+map <c-j> scroll-down
+map <c-k> scroll-up
 
 # use <tab> to select files
 map <tab> :toggle; down
-
-#set statfmt "\033[1m%p\033[0m| %c| %u:%g| %s| %t| \033[36m-> %l\033[0m"
 
 # sort commands
 map O set sortby natural
@@ -89,37 +92,13 @@ map gs !git status
 map g<c-a> !git add -Av && git status
 map gc !git commit
 map ~ cd
-map . :set hidden!
+map . set hidden!
 map o push &<space>"$f"<c-a>
-
-# make <enter> an alias for l
+map f filter
+map F setfilter
 map <enter> open
-
-# terminal
 map <c-t> &exec foot
-
-# open in browser
-map <a-b> &exec gale-open --browser "$f"
-
-# dragon-drop
-map <a-d> &exec dragon-drop -x $fx
-
-# open in audacity
-#map <c-x>au &audacity "$f"
+map <a-b> &exec open --browser "$f"
+map D &exec dragon-drop -x $fx
 
 cmap <c-x> cmd-interrupt
-
-# --------
-# COMMANDS
-# --------
-
-# command to generate the status line
-#cmd statfmt &{{
-#  fmt="\\033[1m%p\\033[0m| %c| %u:%g| %s| %t| \\033[36m-> %l\\033[0m"
-#  mode=
-#  [ "$lf_sortby" != natural ] && mode="$mode $lf_sortby"
-#  [ "$lf_reverse" = true ] && mode="$mode rev"
-#  [ "$lf_hidden" = false ] && mode="$mode hid"
-#  [ -n "$mode" ] && fmt="\\033[7m$mode \\033[0m |$fmt"
-#  "$lf" -remote "send $id set statfmt \"$fmt\""
-#}}

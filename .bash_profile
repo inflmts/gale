@@ -1,5 +1,5 @@
 #
-# ~/.profile
+# ~/.bash_profile
 #
 
 # autodetect $EDITOR
@@ -21,12 +21,10 @@ export MANWIDTH=80
 
 export PYTHONSTARTUP="$HOME/.config/python/init.py"
 
-# create fallback $XDG_RUNTIME_DIR if necessary
-if [ -z "$XDG_RUNTIME_DIR" ] && {
-    [ -d /tmp/daniel ] && [ -O /tmp/daniel ] ||
-    mkdir -m 700 /tmp/daniel > /dev/null 2>&1; }
-then
-  export XDG_RUNTIME_DIR="/tmp/daniel"
+# use alternate $XDG_RUNTIME_DIR if necessary
+if [ -z "$XDG_RUNTIME_DIR" ] &&
+    [ -d /run/daniel ] && [ -O /run/daniel ]; then
+  export XDG_RUNTIME_DIR="/run/daniel"
 fi
 
 export PATH
@@ -64,4 +62,9 @@ systemctl --user import-environment >/dev/null 2>&1 \
   XDG_CACHE_HOME
 
 # bash doesn't source ~/.bashrc for login shells, do that here
-[ -n "$BASH_VERSION" ] && . ~/.bashrc
+. ~/.bashrc
+
+# automatically start desktop on tty1
+if [ "$HOSTNAME" = seele ] && [ "$(tty)" = /dev/tty1 ]; then
+  gale-labwc
+fi

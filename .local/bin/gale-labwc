@@ -1,11 +1,21 @@
 #!/bin/sh
 # labwc wrapper
 
-dbus=
-if [ -z "$DBUS_SESSION_BUS_ADDRESS" ] && command -v dbus-run-session > /dev/null 2>&1; then
-  dbus=dbus-run-session
+if [ -z "$XDG_RUNTIME_DIR" ]; then
+  echo >&2 "$0: \$XDG_RUNTIME_DIR is not set"
+  exit 1
 fi
+
 cd
-# detach from the terminal and silence all output
-# this is intended to be run from a tty, use plain `labwc` for debugging
-setsid $dbus labwc <&- > /dev/null 2>&1 &
+
+if [ -z "$DBUS_SESSION_BUS_ADDRESS" ]; then
+  dbus_dir="$XDG_RUNTIME_DIR/gale-dbus/"
+  dbus_sock="$dbus_dir/sock"
+  dbus_address="unix:path=$dbus_sock"
+  if mkdir "$dbus_dir" > /dev/null 2>&1; then
+    dbus-daemon --session --fork --nopidfile --address="$dbus_address"
+  fi
+  export DBUS_SESSION_BUS_ADDRESS="$dbus_address"
+fi
+
+exec labwc <&- > /dev/null 2>&1

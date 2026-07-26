@@ -12,367 +12,370 @@ Documentation:
 -->
 <labwc_config>
 
-  <core>
-    <decoration>server</decoration>
-  </core>
+<core>
+  <decoration>server</decoration>
+</core>
 
-  <windowSwitcher>
-    <fields>
-      <field content="type_short" width="5%" />
-      <field content="trimmed_identifier" width="35%" />
-      <field content="title" width="60%" />
-    </fields>
-  </windowSwitcher>
+<windowSwitcher>
+  <fields>
+    <field content="type_short" width="5%" />
+    <field content="trimmed_identifier" width="35%" />
+    <field content="title" width="60%" />
+  </fields>
+</windowSwitcher>
 
-  <theme>
-    <titlebar layout=":" />
-    <cornerRadius>0</cornerRadius>
-    <dropShadows>yes</dropShadows>
-    <font weight="semibold" />
-  </theme>
+<theme>
+  <titlebar layout=":iconify,max,close" />
+  <cornerRadius>0</cornerRadius>
+  <dropShadows>yes</dropShadows>
+</theme>
 
-  <margin bottom="25" />
+<margin bottom="25" />
 
-  <!--
-  Modifier keys:
-    - W (super)
-    - C (control)
-    - A (alt)
-    - S (shift)
+<!--
+Modifier keys:
+  - W (super)
+  - C (control)
+  - A (alt)
+  - S (shift)
 
-  So many possible combinations! What shall we bind next?
-  -->
-  <keyboard>
-    <repeatRate>25</repeatRate>
-    <repeatDelay>300</repeatDelay>
+So many possible combinations! What shall we bind next?
+-->
+<keyboard>
+  <repeatRate>25</repeatRate>
+  <repeatDelay>300</repeatDelay>
 
-    <!-- exit labwc -->
-    <keybind key="W-S-Backspace">
-      <action name="Exit" />
-    </keybind>
+<!-- menus -->
+<keybind key="W-a">
+  <action name="ShowMenu" menu="root" />
+</keybind>
+<keybind key="W-g">
+  <action name="ShowMenu" menu="game" />
+</keybind>
 
-    <!-- reload config -->
-    <keybind key="W-r">
-      <action name="Reconfigure" />
-    </keybind>
+<!-- exit labwc -->
+<keybind key="W-S-Backspace">
+  <action name="Exit" />
+</keybind>
 
-    <!-- reload config & restart waybar -->
-    <keybind key="W-S-r">
-      <action name="Reconfigure" />
-      <action name="Execute" command="sh -c 'pkill waybar; exec waybar'" />
-    </keybind>
+<!-- reload config -->
+<keybind key="W-r">
+  <action name="Reconfigure" />
+</keybind>
 
-    <!-- open the osd without actually switching windows -->
-    <keybind key="W-Escape">
-      <action name="NextWindow" />
-      <action name="PreviousWindow" />
-    </keybind>
+<!-- reload config & restart waybar -->
+<keybind key="W-S-r">
+  <action name="Reconfigure" />
+  <action name="Execute" command="sh -c 'pkill waybar; exec waybar'" />
+</keybind>
 
-    <!-- window switcher -->
-    <keybind key="W-Tab">
-      <action name="NextWindow" />
-    </keybind>
-    <keybind key="W-S-Tab">
-      <action name="PreviousWindow" />
-    </keybind>
-    <keybind key="W-grave">
-      <action name="PreviousWindow" />
-    </keybind>
+<!-- open the osd without actually switching windows -->
+<keybind key="W-Escape">
+  <action name="NextWindow" />
+  <action name="PreviousWindow" />
+</keybind>
 
-    <!-- close window -->
-    <keybind key="W-q">
-      <action name="Close" />
-    </keybind>
+<!-- window switcher -->
+<keybind key="W-Tab">
+  <action name="NextWindow" />
+</keybind>
+<keybind key="W-S-Tab">
+  <action name="PreviousWindow" />
+</keybind>
+<keybind key="W-grave">
+  <action name="PreviousWindow" />
+</keybind>
 
-    <!-- toggle server-side decorations -->
-    <keybind key="W-S-d">
-      <action name="ToggleDecorations" />
-    </keybind>
+<!-- close window -->
+<keybind key="W-q">
+  <action name="Close" />
+</keybind>
 
-    <!-- move window -->
-    <keybind key="W-h">
-      <action name="MoveRelative" x="-50" />
-    </keybind>
-    <keybind key="W-j">
-      <action name="MoveRelative" y="50" />
-    </keybind>
-    <keybind key="W-k">
-      <action name="MoveRelative" y="-50" />
-    </keybind>
-    <keybind key="W-l">
-      <action name="MoveRelative" x="50" />
-    </keybind>
+<!-- toggle server-side decorations -->
+<keybind key="W-S-d">
+  <action name="ToggleDecorations" />
+</keybind>
 
-    <!-- resize window to half of screen -->
-    <keybind key="W-S-h">
-      <action name="SnapToEdge" direction="left" />
-    </keybind>
-    <keybind key="W-S-j">
-      <action name="SnapToEdge" direction="down" />
-    </keybind>
-    <keybind key="W-S-k">
-      <action name="SnapToEdge" direction="up" />
-    </keybind>
-    <keybind key="W-S-l">
-      <action name="SnapToEdge" direction="right" />
-    </keybind>
+<!-- move window -->
+<keybind key="W-h">
+  <action name="MoveRelative" x="-50" />
+</keybind>
+<keybind key="W-j">
+  <action name="MoveRelative" y="50" />
+</keybind>
+<keybind key="W-k">
+  <action name="MoveRelative" y="-50" />
+</keybind>
+<keybind key="W-l">
+  <action name="MoveRelative" x="50" />
+</keybind>
 
-    <!-- grow window in direction -->
-    <keybind key="W-A-h">
-      <action name="ResizeRelative" left="50" />
-    </keybind>
-    <keybind key="W-A-j">
-      <action name="ResizeRelative" bottom="50" />
-    </keybind>
-    <keybind key="W-A-k">
-      <action name="ResizeRelative" top="50" />
-    </keybind>
-    <keybind key="W-A-l">
-      <action name="ResizeRelative" right="50" />
-    </keybind>
+<!-- resize window to half of screen -->
+<keybind key="W-S-h">
+  <action name="SnapToEdge" direction="left" />
+</keybind>
+<keybind key="W-S-j">
+  <action name="SnapToEdge" direction="down" />
+</keybind>
+<keybind key="W-S-k">
+  <action name="SnapToEdge" direction="up" />
+</keybind>
+<keybind key="W-S-l">
+  <action name="SnapToEdge" direction="right" />
+</keybind>
 
-    <!-- shrink window in direction -->
-    <keybind key="W-A-S-h">
-      <action name="ResizeRelative" right="-50" />
-    </keybind>
-    <keybind key="W-A-S-j">
-      <action name="ResizeRelative" top="-50" />
-    </keybind>
-    <keybind key="W-A-S-k">
-      <action name="ResizeRelative" bottom="-50" />
-    </keybind>
-    <keybind key="W-A-S-l">
-      <action name="ResizeRelative" left="-50" />
-    </keybind>
+<!-- grow window in direction -->
+<keybind key="W-A-h">
+  <action name="ResizeRelative" left="50" />
+</keybind>
+<keybind key="W-A-j">
+  <action name="ResizeRelative" bottom="50" />
+</keybind>
+<keybind key="W-A-k">
+  <action name="ResizeRelative" top="50" />
+</keybind>
+<keybind key="W-A-l">
+  <action name="ResizeRelative" right="50" />
+</keybind>
 
-    <!-- change window state -->
-    <keybind key="W-z">
-      <action name="Iconify" />
-    </keybind>
-    <keybind key="W-space">
-      <action name="ToggleMaximize" />
-    </keybind>
-    <keybind key="W-f">
-      <action name="ToggleFullscreen" />
-    </keybind>
-    <keybind key="W-S-space">
-      <action name="UnSnap" />
-    </keybind>
+<!-- shrink window in direction -->
+<keybind key="W-A-S-h">
+  <action name="ResizeRelative" right="-50" />
+</keybind>
+<keybind key="W-A-S-j">
+  <action name="ResizeRelative" top="-50" />
+</keybind>
+<keybind key="W-A-S-k">
+  <action name="ResizeRelative" bottom="-50" />
+</keybind>
+<keybind key="W-A-S-l">
+  <action name="ResizeRelative" left="-50" />
+</keybind>
 
-    <!-- focus left/right output -->
-    <keybind key="W-bracketleft">
-      <action name="FocusOutput" direction="left" />
-    </keybind>
-    <keybind key="W-bracketright">
-      <action name="FocusOutput" direction="right" />
-    </keybind>
+<!-- change window state -->
+<keybind key="W-z">
+  <action name="Iconify" />
+</keybind>
+<keybind key="W-space">
+  <action name="ToggleMaximize" />
+</keybind>
+<keybind key="W-f">
+  <action name="ToggleFullscreen" />
+</keybind>
+<keybind key="W-S-space">
+  <action name="UnSnap" />
+</keybind>
 
-    <!-- move window to left/right output -->
-    <keybind key="W-S-bracketleft">
-      <action name="MoveToOutput" direction="left" />
-    </keybind>
-    <keybind key="W-S-bracketright">
-      <action name="MoveToOutput" direction="right" />
-    </keybind>
+<!-- focus left/right output -->
+<keybind key="W-bracketleft">
+  <action name="FocusOutput" direction="left" />
+</keybind>
+<keybind key="W-bracketright">
+  <action name="FocusOutput" direction="right" />
+</keybind>
 
-    <!-- summon cursor -->
-    <keybind key="W-c">
-      <action name="WarpCursor" to="window" />
-    </keybind>
+<!-- move window to left/right output -->
+<keybind key="W-S-bracketleft">
+  <action name="MoveToOutput" direction="left" />
+</keybind>
+<keybind key="W-S-bracketright">
+  <action name="MoveToOutput" direction="right" />
+</keybind>
 
-    <!-- power management -->
-    <keybind key="W-S-z">
-      <action name="Execute" command="gale-sleep" />
-    </keybind>
-    <keybind key="W-C-o">
-      <action name="Execute" command="gale-shutdown" />
-    </keybind>
-    <keybind key="W-C-r">
-      <action name="Execute" command="gale-reboot" />
-    </keybind>
+<!-- summon cursor -->
+<keybind key="W-c">
+  <action name="WarpCursor" to="window" />
+</keybind>
 
-    <!-- volume control -->
-    <keybind key="XF86AudioLowerVolume">
-      <action name="Execute" command="pamixer -d 5" />
-    </keybind>
-    <keybind key="XF86AudioRaiseVolume">
-      <action name="Execute" command="pamixer -i 5" />
-    </keybind>
-    <keybind key="XF86AudioMute">
-      <action name="Execute" command="pamixer -t" />
-    </keybind>
-    <keybind key="W-minus">
-      <action name="Execute" command="pamixer -d 5" />
-    </keybind>
-    <keybind key="W-equal">
-      <action name="Execute" command="pamixer -i 5" />
-    </keybind>
-    <keybind key="W-0">
-      <action name="Execute" command="pamixer -t" />
-    </keybind>
+<!-- show desktop (hide all windows) -->
+<keybind key="W-d">
+  <action name="ToggleShowDesktop" />
+</keybind>
 
-    <!-- brightness control -->
-    <keybind key="W-comma">
-      <action name="Execute" command="brightnessctl --min-value=1 set 5%-" />
-    </keybind>
-    <keybind key="W-period">
-      <action name="Execute" command="brightnessctl set +5%" />
-    </keybind>
-    <keybind key="W-S-comma">
-      <action name="Execute" command="brightnessctl set 1" />
-    </keybind>
-    <keybind key="W-S-period">
-      <action name="Execute" command="brightnessctl set 100%" />
-    </keybind>
+<!-- volume control -->
+<keybind key="XF86AudioLowerVolume">
+  <action name="Execute" command="pamixer -d 5" />
+</keybind>
+<keybind key="XF86AudioRaiseVolume">
+  <action name="Execute" command="pamixer -i 5" />
+</keybind>
+<keybind key="XF86AudioMute">
+  <action name="Execute" command="pamixer -t" />
+</keybind>
+<keybind key="W-minus">
+  <action name="Execute" command="pamixer -d 5" />
+</keybind>
+<keybind key="W-equal">
+  <action name="Execute" command="pamixer -i 5" />
+</keybind>
+<keybind key="W-0">
+  <action name="Execute" command="pamixer -t" />
+</keybind>
 
-    <!-- kanshi profiles -->
-    <keybind key="W-1">
-      <action name="Execute" command="kanshictl switch 1" />
-    </keybind>
-    <keybind key="W-2">
-      <action name="Execute" command="kanshictl switch 2" />
-    </keybind>
-    <keybind key="W-3">
-      <action name="Execute" command="kanshictl switch 3" />
-    </keybind>
-    <keybind key="W-4">
-      <action name="Execute" command="kanshictl switch 4" />
-    </keybind>
+<!-- brightness control -->
+<keybind key="W-comma">
+  <action name="Execute" command="brightnessctl --min-value=1 set 5%-" />
+</keybind>
+<keybind key="W-period">
+  <action name="Execute" command="brightnessctl set +5%" />
+</keybind>
+<keybind key="W-S-comma">
+  <action name="Execute" command="brightnessctl set 1" />
+</keybind>
+<keybind key="W-S-period">
+  <action name="Execute" command="brightnessctl set 100%" />
+</keybind>
 
-    <!-- terminal -->
-    <keybind key="W-Return">
-      <action name="Execute" command="foot" />
-    </keybind>
+<!-- kanshi profiles -->
+<keybind key="W-1">
+  <action name="Execute" command="kanshictl switch 1" />
+</keybind>
+<keybind key="W-2">
+  <action name="Execute" command="kanshictl switch 2" />
+</keybind>
+<keybind key="W-3">
+  <action name="Execute" command="kanshictl switch 3" />
+</keybind>
+<keybind key="W-4">
+  <action name="Execute" command="kanshictl switch 4" />
+</keybind>
 
-    <!-- lf -->
-    <keybind key="W-e">
-      <action name="Execute" command="foot -a lf -T lf lf" />
-    </keybind>
+<!-- terminal -->
+<keybind key="W-Return">
+  <action name="Execute" command="foot" />
+</keybind>
 
-    <!-- neovide -->
-    <keybind key="W-n">
-      <action name="Execute" command="neovide" />
-    </keybind>
+<!-- lf -->
+<keybind key="W-e">
+  <action name="Execute" command="foot -a lf -T lf lf" />
+</keybind>
 
-    <!-- firefox -->
-    <keybind key="W-S-f">
-      <action name="Execute" command="firefox" />
-    </keybind>
+<!-- neovide -->
+<keybind key="W-n">
+  <action name="Execute" command="neovide" />
+</keybind>
 
-    <!-- chromium -->
-    <keybind key="W-S-c">
-      <action name="ForEach">
-        <query identifier="chromium" />
-        <then>
-          <action name="Focus" />
-          <action name="Raise" />
-        </then>
-        <none>
-          <action name="Execute" command="chromium" />
-        </none>
-      </action>
-    </keybind>
+<!-- firefox -->
+<keybind key="W-S-f">
+  <action name="Execute" command="firefox" />
+</keybind>
 
-    <!-- top -->
-    <keybind key="W-t">
-      <action name="Execute" command="foot -T top top" />
-    </keybind>
+<!-- chromium -->
+<keybind key="W-S-c">
+  <action name="Execute" command="chromium" />
+</keybind>
 
-    <!-- bluetoothctl -->
-    <keybind key="W-S-b">
-      <action name="Execute" command="foot -T bluetoothctl bluetoothctl" />
-    </keybind>
+<!-- top -->
+<keybind key="W-t">
+  <action name="Execute" command="foot -T top top" />
+</keybind>
 
-    <!-- python -->
-    <keybind key="W-p">
-      <action name="Execute" command="foot -T python python3" />
-    </keybind>
+<!-- bluetoothctl -->
+<keybind key="W-S-b">
+  <action name="Execute" command="foot -T bluetoothctl bluetoothctl" />
+</keybind>
 
-    <!-- R -->
-    <keybind key="W-s">
-      <action name="Execute" command="foot -T R R --no-save --no-restore" />
-    </keybind>
+<!-- python -->
+<keybind key="W-p">
+  <action name="Execute" command="foot -T python python3" />
+</keybind>
 
-    <!-- syslog -->
-    <keybind key="W-S-s">
-      <action name="Execute" command="neovide --chdir ~/journal +% syslog.txt" />
-    </keybind>
+<!-- R -->
+<keybind key="W-s">
+  <action name="Execute" command="foot -T R R --no-save --no-restore" />
+</keybind>
 
-    <!-- steam -->
-    <keybind key="W-A-s">
-      <action name="Execute" command="steam" />
-    </keybind>
+<!-- syslog -->
+<keybind key="W-S-s">
+  <action name="Execute" command="neovide --chdir ~/journal +% syslog.txt" />
+</keybind>
 
-    <!-- geometry dash -->
-    <keybind key="W-S-G">
-      <action name="Execute" command="steam steam://rungameid/322170" />
-    </keybind>
-  </keyboard>
+</keyboard>
 
-  <mouse>
-    <!-- desktop, not over any window -->
-    <context name="Desktop">
-      <mousebind button="Right" action="Press">
-        <action name="ShowMenu" menu="root-menu" />
-      </mousebind>
-    </context>
+<mouse>
 
-    <!-- anywhere in the window, not sent to the client -->
-    <context name="Frame">
-      <mousebind button="W-Left" action="Press">
-        <action name="Focus" />
-        <action name="Raise" />
-      </mousebind>
-      <mousebind button="W-Left" action="Drag">
-        <action name="Move" />
-      </mousebind>
-      <mousebind button="W-S-Left" action="Drag">
-        <action name="Resize" />
-      </mousebind>
-      <mousebind button="W-Right" action="Drag">
-        <action name="Resize" />
-      </mousebind>
-      <mousebind button="W-S-Right" action="Drag">
-        <action name="Resize" />
-      </mousebind>
-    </context>
+<!-- desktop, not over any window -->
+<context name="Desktop">
+  <mousebind button="Right" action="Press">
+    <action name="ShowMenu" menu="root-menu" />
+  </mousebind>
+</context>
 
-    <!-- space between the buttons on the titlebar -->
-    <context name="Title">
-      <mousebind button="Left" action="Press">
-        <action name="Focus" />
-        <action name="Raise" />
-      </mousebind>
-      <mousebind button="Left" action="Drag">
-        <action name="Move" />
-      </mousebind>
-      <mousebind button="Left" action="DoubleClick">
-        <action name="ToggleMaximize" />
-      </mousebind>
-    </context>
+<!-- anywhere in the window, not sent to the client -->
+<context name="Frame">
+  <mousebind button="W-Left" action="Press">
+    <action name="Focus" />
+    <action name="Raise" />
+  </mousebind>
+  <mousebind button="W-Left" action="Drag">
+    <action name="Move" />
+  </mousebind>
+  <mousebind button="W-S-Left" action="Drag">
+    <action name="Resize" />
+  </mousebind>
+  <mousebind button="W-Right" action="Drag">
+    <action name="Resize" />
+  </mousebind>
+  <mousebind button="W-S-Right" action="Drag">
+    <action name="Resize" />
+  </mousebind>
+</context>
 
-    <!-- area of the window inside decorations, also sent to the client -->
-    <context name="Client">
-      <mousebind button="Left" action="Press">
-        <action name="Focus" />
-        <action name="Raise" />
-      </mousebind>
-      <mousebind button="Middle" action="Press">
-        <action name="Focus" />
-        <action name="Raise" />
-      </mousebind>
-      <mousebind button="Right" action="Press">
-        <action name="Focus" />
-        <action name="Raise" />
-      </mousebind>
-    </context>
-  </mouse>
+<!-- space between the buttons on the titlebar -->
+<context name="Title">
+  <mousebind button="Left" action="Press">
+    <action name="Focus" />
+    <action name="Raise" />
+  </mousebind>
+  <mousebind button="Left" action="Drag">
+    <action name="Move" />
+  </mousebind>
+  <mousebind button="Left" action="DoubleClick">
+    <action name="ToggleMaximize" />
+  </mousebind>
+</context>
 
-  <libinput>
-    <device category="touchpad">
-      <naturalScroll>yes</naturalScroll>
-      <scrollFactor>0.4</scrollFactor>
-    </device>
-  </libinput>
+<!-- area of the window inside decorations, also sent to the client -->
+<context name="Client">
+  <mousebind button="Left" action="Press">
+    <action name="Focus" />
+    <action name="Raise" />
+  </mousebind>
+  <mousebind button="Middle" action="Press">
+    <action name="Focus" />
+    <action name="Raise" />
+  </mousebind>
+  <mousebind button="Right" action="Press">
+    <action name="Focus" />
+    <action name="Raise" />
+  </mousebind>
+</context>
+
+<context name="Iconify">
+  <mousebind button="Left" action="Click">
+    <action name="Iconify" />
+  </mousebind>
+</context>
+
+<context name="Maximize">
+  <mousebind button="Left" action="Click">
+    <action name="ToggleMaximize" />
+  </mousebind>
+</context>
+
+<context name="Close">
+  <mousebind button="Left" action="Click">
+    <action name="Close" />
+  </mousebind>
+</context>
+
+</mouse>
+
+<libinput>
+  <device category="touchpad">
+    <naturalScroll>yes</naturalScroll>
+    <scrollFactor>0.4</scrollFactor>
+  </device>
+</libinput>
 
 </labwc_config>
