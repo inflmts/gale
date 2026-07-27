@@ -15,7 +15,11 @@
   "exclusive": false,
 
   // Left
-  "modules-left": ["network", "bluetooth"],
+  "modules-left": ["wlr/taskbar", "network", "bluetooth"],
+  "wlr/taskbar": {
+    "on-click": "minimize-raise",
+    "tooltip-format": "{title}"
+  },
   "network": {
     "format": "<span alpha='55%'>net</span> {ifname}",
     "format-wifi": "<span alpha='55%'>wifi</span> {ipaddr}",

@@ -112,6 +112,7 @@ alias treed='tree -d'
 alias treeda='tree -da'
 
 alias py='python3'
+alias ip='ip -color=auto'
 alias ip4='ip -4 -br addr show scope global'
 alias R='R --no-save'
 

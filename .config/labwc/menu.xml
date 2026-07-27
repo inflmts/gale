@@ -1,4 +1,5 @@
 <openbox_menu>
+
 <menu id="client-menu">
   <item label="Minimize">
     <action name="Iconify" />
@@ -9,7 +10,7 @@
   <item label="Fullscreen">
     <action name="ToggleFullscreen" />
   </item>
-  <item label="Roll Up/Down">
+  <item label="Shade">
     <action name="ToggleShade" />
   </item>
   <item label="Decorations">
@@ -50,13 +51,13 @@
     <action name="Exit" />
   </item>
   <separator />
-  <item label="_Sleep">
+  <item label="Sleep">
     <action name="Execute" command="gale-sleep" />
   </item>
-  <item label="Shutd_own">
+  <item label="Shutdown">
     <action name="Execute" command="gale-shutdown" />
   </item>
-  <item label="_Reboot">
+  <item label="Reboot">
     <action name="Execute" command="gale-reboot" />
   </item>
 </menu>
@@ -67,6 +68,13 @@
   </item>
   <item label="Geometry Dash">
     <action name="Execute" command="steam steam://rungameid/322170" />
+  </item>
+  <item label="Prism Launcher">
+    <action name="Execute" command="prismlauncher" />
+  </item>
+  <separator />
+  <item label="Exit Steam">
+    <action name="Execute" command="steam -shutdown" />
   </item>
 </menu>
 

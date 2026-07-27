@@ -247,7 +247,7 @@ So many possible combinations! What shall we bind next?
 
 <!-- lf -->
 <keybind key="W-e">
-  <action name="Execute" command="foot -a lf -T lf lf" />
+  <action name="Execute" command="foot -T lf lf" />
 </keybind>
 
 <!-- neovide -->

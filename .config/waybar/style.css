@@ -41,11 +41,23 @@ button {
 }
 
 .modules-left > :first-child > .module {
-  margin-left: 10px;
+  margin-left: 0px;
 }
 
 .modules-right > :last-child > .module {
   margin-right: 10px;
+}
+
+#taskbar button {
+  padding: 0 5px;
+}
+
+#taskbar button:hover {
+  background-color: #202024;
+}
+
+#taskbar button.active {
+  background-color: #303036;
 }
 
 #network {
