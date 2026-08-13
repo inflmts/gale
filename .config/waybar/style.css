@@ -8,6 +8,8 @@
  */
 
 * {
+  font-family: sans-serif;
+  font-size: 10pt;
   font-weight: 600;
   transition: none;
   border: none;
@@ -49,7 +51,7 @@ button {
 }
 
 #taskbar button {
-  padding: 0 5px;
+  padding: 0 8px;
 }
 
 #taskbar button:hover {

@@ -42,15 +42,19 @@ Modifier keys:
 So many possible combinations! What shall we bind next?
 -->
 <keyboard>
+  <numlock>on</numlock>
   <repeatRate>25</repeatRate>
   <repeatDelay>300</repeatDelay>
 
 <!-- menus -->
+<keybind key="W-x">
+  <action name="ShowMenu" menu="root-menu" />
+</keybind>
 <keybind key="W-a">
-  <action name="ShowMenu" menu="root" />
+  <action name="ShowMenu" menu="app-menu" />
 </keybind>
 <keybind key="W-g">
-  <action name="ShowMenu" menu="game" />
+  <action name="ShowMenu" menu="game-menu" />
 </keybind>
 
 <!-- exit labwc -->

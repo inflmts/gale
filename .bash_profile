@@ -65,6 +65,6 @@ systemctl --user import-environment >/dev/null 2>&1 \
 . ~/.bashrc
 
 # automatically start desktop on tty1
-if [ "$HOSTNAME" = seele ] && [ "$(tty)" = /dev/tty1 ]; then
+if command -v labwc &> /dev/null && [ "$(tty)" = /dev/tty1 ]; then
   gale-labwc
 fi

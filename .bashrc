@@ -224,26 +224,8 @@ rot13() {
 
 #-- KEYBINDINGS ----------------------------------------------------------------
 
-__lf() {
-  local old dir
-  old=$PWD
-  dir=$(command lf -print-last-dir "$@") && cd "$dir"
-  [[ $PWD = $old ]] || __status
-}
-
-__status() {
-  echo -n "${__status@P}"
-}
-
-__time() {
-  printf '\e[7m %(%a %m/%d/%Y)T -- %(%I:%M %p)T \e[0m\n'
-}
-
 bind -x '"\e[15~": gale_menu'
 bind -x '"\e[[E": gale_menu'
-bind -x '"\C-o": __lf'
-bind -x '"\C-r": __status'
-bind -x '"\C-t": __time'
 bind -x '"\C-x?": echo "Last process exited $?"'
 
 if [[ -n ${WAYLAND_DISPLAY-} ]]; then
@@ -265,9 +247,9 @@ PROMPT_COMMAND=__before_prompt
 
 # these colors work nicely on linux virtual consoles
 if [[ -n ${SSH_CONNECTION-} ]]; then
-  __status='\[\e]2;\u@\h \w\a\e[0;1;38;5;15;48;5;165m\] \u@\h \[\e[48;5;91m\] \w \[\e[0m\]\n'
-  PS1=$__status'\[\e[1;38;5;171;48;5;54m\]$prompt_token\[\e[0m\] '
+  PS1='\[\e]2;\u@\h \w\a\e[0;1;38;5;15;48;5;165m\] \u@\h \[\e[48;5;91m\] \w \[\e[0m\]\n'
+  PS1+='\[\e[1;38;5;171;48;5;54m\]$prompt_token\[\e[0m\] '
 else
-  __status='\[\e]2;\u@\h \w\a\e[0;1;38;5;15;48;5;196m\] \u@\h \[\e[48;5;124m\] \w \[\e[0m\]\n'
-  PS1=$__status'\[\e[1;38;5;203;48;5;88m\]$prompt_token\[\e[0m\] '
+  PS1='\[\e]2;\u@\h \w\a\e[0;1;38;5;15;48;5;196m\] \u@\h \[\e[48;5;124m\] \w \[\e[0m\]\n'
+  PS1+='\[\e[1;38;5;203;48;5;88m\]$prompt_token\[\e[0m\] '
 fi

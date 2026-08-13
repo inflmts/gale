@@ -178,6 +178,13 @@ augroup init
   au FileType python,sh setlocal fo-=t
   au LspAttach * inoremap <buffer> <C-N> <C-X><C-O>
   au TermOpen * startinsert
+
+  if $LABWC_PID !=# ''
+    au BufWritePost ~/.config/labwc/* silent !labwc --reconfigure
+  endif
+  if $WAYLAND_DISPLAY !=# ''
+    au BufWritePost ~/.config/waybar/* silent !pkill -USR2 -x waybar
+  endif
 augroup END
 
 "-- OTHER SETTINGS -----------------------------------------------------------

@@ -1,12 +1,13 @@
-/*
- * Waybar configuration file
- * vim:ft=jsonc
- *
- * Documentation:
- *   - waybar(5)
- *   - waybar-<module>(5)
- *   - https://github.com/Alexays/Waybar
- */
+//
+// Waybar configuration file
+// vim:ft=jsonc
+//
+// Documentation:
+//   - waybar(5)
+//   - waybar-<module>(5)
+//   - https://github.com/Alexays/Waybar
+//
+
 {
   "layer": "top",
   "position": "bottom",
@@ -15,54 +16,62 @@
   "exclusive": false,
 
   // Left
-  "modules-left": ["wlr/taskbar", "network", "bluetooth"],
+  "modules-left": [
+    "wlr/taskbar"
+  ],
   "wlr/taskbar": {
     "on-click": "minimize-raise",
     "tooltip-format": "{title}"
   },
+
+  // Right
+  "modules-right": [
+    "network",
+    "bluetooth",
+    "cpu",
+    "memory",
+    "pulseaudio",
+    "backlight",
+    "battery",
+    "clock"
+  ],
   "network": {
-    "format": "<span alpha='55%'>net</span> {ifname}",
-    "format-wifi": "<span alpha='55%'>wifi</span> {ipaddr}",
-    "format-ethernet": "<span alpha='55%'>eth</span> {ipaddr}",
+    "format": "<span size='smaller' alpha='55%'>NET</span> {ifname}",
+    "format-wifi": "<span size='smaller' alpha='55%'>WIFI</span> {ipaddr}",
+    "format-ethernet": "<span size='smaller' alpha='55%'>ETH</span> {ipaddr}",
     "format-disconnected": "no internet",
-    "format-disabled": "<span alpha='55%'>wifi</span> disabled",
+    "format-disabled": "<span size='smaller' alpha='55%'>WIFI</span> disabled",
     "tooltip-format-wifi": "{ifname} / {essid} [{signalStrength}%]"
   },
   "bluetooth": {
-    "format": "<span alpha='55%'>bt</span> {status}",
-    "format-connected": "<span alpha='55%'>bt</span> {device_alias}",
+    "format": "<span size='smaller' alpha='55%'>BT</span> {status}",
+    "format-connected": "<span size='smaller' alpha='55%'>BT</span> {device_alias}",
     "format-no-controller": "",
     "tooltip-format-connected": "{device_alias}",
     "tooltip-format-connected-battery": "{device_alias} [{device_battery_percentage}%]",
     "max-width": 24
   },
-
-  // Center
-  "modules-center": ["clock"],
-  "clock": {
-    "format": "{:%a %m/%d/%Y %I:%M %p}",
-    "tooltip-format": "Zero to infinity"
-  },
-
-  // Right
-  "modules-right": ["cpu", "memory", "pulseaudio", "backlight", "battery"],
   "cpu": {
     "interval": 5,
-    "format": "<span alpha='55%'>cpu</span> {usage}%"
+    "format": "<span size='smaller' alpha='55%'>CPU</span> {usage}%"
   },
   "memory": {
     "interval": 5,
-    "format": "<span alpha='55%'>mem</span> {used}G"
+    "format": "<span size='smaller' alpha='55%'>MEM</span> {used}G"
   },
   "pulseaudio": {
-    "format": "<span alpha='55%'>vol</span> {volume}%",
-    "format-muted": "<span alpha='55%'>vol</span> <s>{volume}%</s>"
+    "format": "<span size='smaller' alpha='55%'>VOL</span> {volume}%",
+    "format-muted": "<span size='smaller' alpha='55%'>VOL</span> <s>{volume}%</s>"
   },
   "backlight": {
     "interval": 5,
-    "format": "<span alpha='55%'>br</span> {percent}%"
+    "format": "<span size='smaller' alpha='55%'>BR</span> {percent}%"
   },
   "battery": {
-    "format": "<span alpha='55%'>ch</span> {capacity}%"
+    "format": "<span size='smaller' alpha='55%'>CH</span> {capacity}%"
+  },
+  "clock": {
+    "format": "<span size='smaller' alpha='55%'>DATE</span> {:%a %b %d %Y %I:%M %p}",
+    "tooltip-format": "Zero to infinity"
   }
 }

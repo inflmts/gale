@@ -2,10 +2,12 @@
 # Labwc initialization script
 # See labwc-config(5)
 
+hostname=$(uname -n)
+if command -v swaybg &> /dev/null && [ -e ~/.gale/wallpaper ]; then
+  swaybg -i ~/.gale/wallpaper &
+fi
 kanshi &
-pipewire &
-gale-autosleep &
-
-# hack to ensure waybar starts after pipewire
-sleep 1
+if [ "$hostname" != arcane ]; then
+  gale-autosleep &
+fi
 waybar &

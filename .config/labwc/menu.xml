@@ -36,16 +36,24 @@
   </item>
 </menu>
 
-<menu id="root">
+<menu id="app-menu" label="Applications">
   <item label="Terminal">
     <action name="Execute" command="foot" />
   </item>
-  <item label="Browser">
+  <item label="Chromium">
     <action name="Execute" command="chromium" />
   </item>
-  <separator />
+  <item label="Inkscape">
+    <action name="Execute" command="inkscape" />
+  </item>
+  <item label="LMMS">
+    <action name="Execute" command="lmms" />
+  </item>
+</menu>
+
+<menu id="root-menu">
   <item label="Reconfigure">
-    <action name="Reconfigure" />
+    <action name="Re_configure" />
   </item>
   <item label="Exit">
     <action name="Exit" />
@@ -54,7 +62,7 @@
   <item label="Sleep">
     <action name="Execute" command="gale-sleep" />
   </item>
-  <item label="Shutdown">
+  <item label="Shutd_own">
     <action name="Execute" command="gale-shutdown" />
   </item>
   <item label="Reboot">
@@ -62,7 +70,7 @@
   </item>
 </menu>
 
-<menu id="game">
+<menu id="game-menu">
   <item label="Steam">
     <action name="Execute" command="steam" />
   </item>

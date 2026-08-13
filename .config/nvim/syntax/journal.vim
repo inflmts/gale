@@ -1,0 +1,1 @@
+../../../journal/vim/journal.vim
