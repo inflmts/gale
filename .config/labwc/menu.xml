@@ -43,6 +43,9 @@
   <item label="Chromium">
     <action name="Execute" command="chromium" />
   </item>
+  <item label="Gimp">
+    <action name="Execute" command="gimp" />
+  </item>
   <item label="Inkscape">
     <action name="Execute" command="inkscape" />
   </item>
