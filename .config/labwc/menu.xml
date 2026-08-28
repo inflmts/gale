@@ -1,41 +1,5 @@
 <openbox_menu>
 
-<menu id="client-menu">
-  <item label="Minimize">
-    <action name="Iconify" />
-  </item>
-  <item label="Maximize">
-    <action name="ToggleMaximize" />
-  </item>
-  <item label="Fullscreen">
-    <action name="ToggleFullscreen" />
-  </item>
-  <item label="Shade">
-    <action name="ToggleShade" />
-  </item>
-  <item label="Decorations">
-    <action name="ToggleDecorations" />
-  </item>
-  <item label="Always on Top">
-    <action name="ToggleAlwaysOnTop" />
-  </item>
-  <!--
-    Any menu with the id "workspaces" will be hidden
-    if there is only a single workspace available.
-  -->
-  <menu id="client-send-to-menu" />
-  <!--
-    openbox default workspace selector
-    to use replace above workspace menu with the example below
-    the label is required, but you can change the text.
-
-    <menu id="client-send-to-menu" label="Send to..." />
-  -->
-  <item label="Close">
-    <action name="Close" />
-  </item>
-</menu>
-
 <menu id="app-menu" label="Applications">
   <item label="Terminal">
     <action name="Execute" command="foot" />
@@ -55,13 +19,9 @@
 </menu>
 
 <menu id="root-menu">
-  <item label="Reconfigure">
-    <action name="Re_configure" />
-  </item>
   <item label="Exit">
     <action name="Exit" />
   </item>
-  <separator />
   <item label="Sleep">
     <action name="Execute" command="gale-sleep" />
   </item>
@@ -86,6 +46,27 @@
   <separator />
   <item label="Exit Steam">
     <action name="Execute" command="steam -shutdown" />
+  </item>
+</menu>
+
+<menu id="open-menu">
+  <item label="Canvas">
+    <action name="Execute" command="open https://ufl.instructure.com" />
+  </item>
+  <item label="C_alendar">
+    <action name="Execute" command="open https://ufl.instructure.com/calendar" />
+  </item>
+  <item label="Discord">
+    <action name="Execute" command="open https://discord.com/channels/@me" />
+  </item>
+  <item label="Gmail">
+    <action name="Execute" command="open https://gmail.com" />
+  </item>
+  <item label="Google _Keep">
+    <action name="Execute" command="open https://keep.google.com" />
+  </item>
+  <item label="Google _Maps">
+    <action name="Execute" command="open https://www.google.com/maps" />
   </item>
 </menu>
 

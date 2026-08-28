@@ -7,33 +7,29 @@
 --
 
 swayimg.set_window_size(800, 600)
-swayimg.viewer.set_default_scale("optimal")
+swayimg.viewer.default_scale = "optimal"
 
-swayimg.imagelist.enable_adjacent(true)
+swayimg.imagelist.adjacent = true
 
-swayimg.text.set_foreground(0xffffffff)
-swayimg.text.set_background(0x80000000)
-swayimg.text.set_shadow(0)
-swayimg.text.set_font("sans-serif")
-swayimg.text.set_size(16)
-swayimg.text.set_timeout(0)
+swayimg.text.color = 0xffffffff
+swayimg.text.background = 0x80000000
+swayimg.text.shadow = 0
+swayimg.text.font = "sans-serif"
+swayimg.text.size = 16
+swayimg.text.timeout = 0
 
 function toggle_text()
-  if swayimg.text.visible() then
-    swayimg.text.hide()
-  else
-    swayimg.text.show()
-  end
+  swayimg.text.visible = !swayimg.text.visible
 end
 
 function zoom(factor)
-  local scale = swayimg.viewer.get_scale()
+  local scale = swayimg.viewer.scale
   swayimg.viewer.set_abs_scale(scale * factor);
 end
 
 function zoom_cursor(factor)
   local pos = swayimg.get_mouse_pos()
-  local scale = swayimg.viewer.get_scale()
+  local scale = swayimg.viewer.scale
   swayimg.viewer.set_abs_scale(scale * factor, pos.x, pos.y);
 end
 

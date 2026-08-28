@@ -17,24 +17,33 @@
 
   // Left
   "modules-left": [
-    "wlr/taskbar"
+    "wlr/taskbar",
+    "network",
+    "bluetooth",
+    "mpd"
   ],
   "wlr/taskbar": {
     "on-click": "minimize-raise",
     "tooltip-format": "{title}"
   },
+  "mpd": {
+    "format": "<span size='smaller' alpha='55%'>MPD</span> {artist} \u2013 {title}",
+    "format-stopped": ""
+  },
 
   // Right
   "modules-right": [
-    "network",
-    "bluetooth",
     "cpu",
     "memory",
     "pulseaudio",
     "backlight",
     "battery",
+    "custom/separator",
     "clock"
   ],
+  "custom/separator": {
+    "format": "//"
+  },
   "network": {
     "format": "<span size='smaller' alpha='55%'>NET</span> {ifname}",
     "format-wifi": "<span size='smaller' alpha='55%'>WIFI</span> {ipaddr}",
@@ -71,7 +80,7 @@
     "format": "<span size='smaller' alpha='55%'>CH</span> {capacity}%"
   },
   "clock": {
-    "format": "<span size='smaller' alpha='55%'>DATE</span> {:%a %b %d %Y %I:%M %p}",
+    "format": "{:%a %m/%d/%Y %I:%M %p}",
     "tooltip-format": "Zero to infinity"
   }
 }

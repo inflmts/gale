@@ -48,18 +48,24 @@ So many possible combinations! What shall we bind next?
 
 <!-- menus -->
 <keybind key="W-x">
-  <action name="ShowMenu" menu="root-menu" />
+  <action name="ShowMenu" menu="root-menu">
+    <position x="10" y="-10" />
+  </action>
 </keybind>
 <keybind key="W-a">
-  <action name="ShowMenu" menu="app-menu" />
+  <action name="ShowMenu" menu="app-menu">
+    <position x="10" y="-10" />
+  </action>
 </keybind>
 <keybind key="W-g">
-  <action name="ShowMenu" menu="game-menu" />
+  <action name="ShowMenu" menu="game-menu">
+    <position x="10" y="-10" />
+  </action>
 </keybind>
-
-<!-- exit labwc -->
-<keybind key="W-S-Backspace">
-  <action name="Exit" />
+<keybind key="W-o">
+  <action name="ShowMenu" menu="open-menu">
+    <position x="10" y="-10" />
+  </action>
 </keybind>
 
 <!-- reload config -->
@@ -214,6 +220,32 @@ So many possible combinations! What shall we bind next?
 </keybind>
 <keybind key="W-0">
   <action name="Execute" command="pamixer -t" />
+</keybind>
+
+<!-- mpd -->
+<keybind key="XF86AudioPrev">
+  <action name="Execute" command="mpc prev" />
+</keybind>
+<keybind key="XF86AudioNext">
+  <action name="Execute" command="mpc next" />
+</keybind>
+<keybind key="XF86AudioPlay">
+  <action name="Execute" command="mpc toggle" />
+</keybind>
+<keybind key="W-S-minus">
+  <action name="Execute" command="mpc prev" />
+</keybind>
+<keybind key="W-S-equal">
+  <action name="Execute" command="mpc next" />
+</keybind>
+<keybind key="W-S-0">
+  <action name="Execute" command="mpc toggle" />
+</keybind>
+<keybind key="W-S-p">
+  <action name="Execute" command="gale-mpd-play-menu" />
+</keybind>
+<keybind key="W-S-o">
+  <action name="Execute" command="gale-mpd-load-menu" />
 </keybind>
 
 <!-- brightness control -->

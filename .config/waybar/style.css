@@ -51,6 +51,7 @@ button {
 }
 
 #taskbar button {
+  border-top: 1px solid #303036;
   padding: 0 8px;
 }
 
@@ -59,7 +60,13 @@ button {
 }
 
 #taskbar button.active {
+  border-top: 1px solid #ffffff;
   background-color: #303036;
+}
+
+#custom-separator {
+  opacity: 0.25;
+  margin: 0 2px;
 }
 
 #network {
@@ -72,6 +79,10 @@ button {
 }
 
 #bluetooth.connected {
+  color: #00ffff;
+}
+
+#mpd.playing {
   color: #00ffff;
 }
 
