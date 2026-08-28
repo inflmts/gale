@@ -76,7 +76,7 @@ So many possible combinations! What shall we bind next?
 <!-- reload config & restart waybar -->
 <keybind key="W-S-r">
   <action name="Reconfigure" />
-  <action name="Execute" command="sh -c 'pkill waybar; exec waybar'" />
+  <action name="Execute" command="pkill -USR2 -x waybar" />
 </keybind>
 
 <!-- open the osd without actually switching windows -->
