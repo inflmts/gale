@@ -6,8 +6,8 @@ Daniel Li &mdash; [inflmts.com](https://inflmts.com)
 
 **Gale** is my personal configuration system. The purpose of Gale is to collect
 my configuration files and scripts (my "dotfiles") in a single repository to be
-shared between computers using Git. Gale is designed to be used on Linux,
-although some configuration files will also work on Windows (without Gale
+shared between computers using Git. Gale is primarily used on Linux.
+However, some configuration files will also work on Windows (without Gale
 integration, of course), for example the Neovim configuration file.
 
 ## Getting Started
@@ -15,19 +15,11 @@ integration, of course), for example the Neovim configuration file.
 The only required software is Git.
 
 ```
-mkdir ~/.gale
+git clone -n https://github.com/inflmts/gale.git ~/.gale
 cd ~/.gale
-git init -b main
 git config core.worktree ../..
 git config status.showUntrackedFiles no
-git remote add origin https://github.com/inflmts/gale.git
-git pull
-```
-
-For host-specific configuration:
-
-```
-ln -s <host> ~/.gale/current
+git checkout
 ```
 
 ## Usage
@@ -57,29 +49,21 @@ To list tracked files under the current working directory:
 gale ls-files
 ```
 
-To create a dynamic configuration file (call it `example.conf`), write the
-configuration file at `~/.gale/<host>/example.conf`, then create a symbolic link
-at `example.conf` pointing to `~/.gale/current/example.conf`. `~/.gale/current`
-will be a symbolic link pointing to the `~/.gale/<host>` directory for the
-current host.
+## Directories
 
-## XDG Base Directories
-
-Gale uses the following values for the
-[XDG Base Directory Specification](https://specifications.freedesktop.org/basedir-spec/basedir-spec-latest.html):
-
-```
-$XDG_CONFIG_HOME    ~/.config
-$XDG_DATA_HOME      ~/.data
-$XDG_STATE_HOME     ~/.state
-$XDG_CACHE_HOME     ~/.cache
-```
+* `~/.gale/.git` - Gale's own Git repository
+* `~/.local/bin` - scripts
+* `~/.config` - `$XDG_CONFIG_HOME`
+* `~/.data` - `$XDG_DATA_HOME`
+* `~/.state` - `$XDG_STATE_HOME`
+* `~/.cache` - `$XDG_CACHE_HOME`
 
 Note that the values of `$XDG_DATA_HOME` and `$XDG_STATE_HOME` differ from the
-standard.
+[XDG Base Directory Specification](https://specifications.freedesktop.org/basedir-spec/basedir-spec-latest.html).
+I did this mostly for fun.
 
-In addition, if `$XDG_RUNTIME_DIR` is not set at login, a fallback directory
-will be created at `/tmp/daniel`.
+In addition, if `$XDG_RUNTIME_DIR` is not set at login, Gale will try to use
+`/run/daniel` if it is a directory and is owned by the current user.
 
 ## History
 
@@ -103,6 +87,10 @@ declarative configuration (`install.conf` for `galinst`, inline config blocks
 for `gallade`). There was the possibility of a template system, but that was
 never implemented.
 
+I eventually realized I was doing a lot of work for no reason,
+because I was already using Git, which is great at tracking files.
 The current scheme (informally "Gale 2") resembles [yadm](https://yadm.io),
-with the alternates mechanism replaced by the less-powerful `~/.gale/current`
-symlink.
+with Git managing the home directory itself.
+There was still some support for dynamic configuration files via a
+`~/.gale/current` symlink that would point to a different tracked directory
+on different hosts, however I never used it and it was eventually dropped.
