@@ -28,6 +28,7 @@ Documentation:
   <titlebar layout=":iconify,max,close" />
   <cornerRadius>0</cornerRadius>
   <dropShadows>yes</dropShadows>
+  <font name="Oxanium" weight="medium" />
 </theme>
 
 <margin bottom="25" />
