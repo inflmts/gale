@@ -10,4 +10,8 @@ kanshi &
 if [ "$hostname" != arcane ]; then
   gale-autosleep &
 fi
+if [ ! -e "$XDG_RUNTIME_DIR/pipewire-0" ]; then
+  pipewire &
+  sleep 0.1
+fi
 waybar &
