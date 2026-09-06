@@ -27,6 +27,10 @@ if [ -z "$XDG_RUNTIME_DIR" ] &&
   export XDG_RUNTIME_DIR="/run/daniel"
 fi
 
+if [ -n "$XDG_RUNTIME_DIR" ]; then
+  export MPD_HOST="$XDG_RUNTIME_DIR/mpd/socket"
+fi
+
 export PATH
 
 # prepend an entry to $PATH if it isn't already there
