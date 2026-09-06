@@ -29,6 +29,12 @@ correct gitdir and working tree, so that it works from anywhere in the home
 directory. It passes all its arguments to Git, so you can do `gale status`,
 `gale commit`, `gale push`, etc.
 
+To show a short status:
+
+```
+gale s
+```
+
 To add a file or the entire contents of a directory:
 
 ```
@@ -46,7 +52,20 @@ Don't use `gale add -A`, as that will add everything in the home directory.
 To list tracked files under the current working directory:
 
 ```
-gale ls-files
+gale ls
+```
+
+To list all tracked files:
+
+```
+gale lt
+```
+
+To commit all changes to all tracked files (`-a`),
+while showing a helpful diff in the editor (`-v`):
+
+```
+gale commit -av
 ```
 
 ## Directories
