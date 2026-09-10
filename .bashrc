@@ -243,7 +243,9 @@ __before_prompt() {
   fi
 }
 
-PROMPT_COMMAND=__before_prompt
+PROMPT_COMMAND=(__before_prompt)
+
+unset PS0
 
 # these colors work nicely on linux virtual consoles
 if [[ -n ${SSH_CONNECTION-} ]]; then
