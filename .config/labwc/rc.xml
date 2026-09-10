@@ -282,6 +282,11 @@ So many possible combinations! What shall we bind next?
   <action name="Execute" command="foot" />
 </keybind>
 
+<!-- fuzzel -->
+<keybind key="W-w">
+  <action name="Execute" command="fuzzel" />
+</keybind>
+
 <!-- lf -->
 <keybind key="W-e">
   <action name="Execute" command="foot -T lf lf" />
