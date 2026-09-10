@@ -9,6 +9,11 @@ elif command -v vim >/dev/null; then
   export EDITOR=vim
 fi
 
+# autodetect $PAGER
+if command -v less >/dev/null; then
+  export PAGER=less
+fi
+
 # XDG base directories
 export XDG_CONFIG_HOME="$HOME/.config"
 export XDG_DATA_HOME="$HOME/.data"
