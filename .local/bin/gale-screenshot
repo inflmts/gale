@@ -1,0 +1,4 @@
+#!/bin/sh
+
+region=$(slurp </dev/null) &&
+  grim -g "$region" - | wl-copy -t image/png

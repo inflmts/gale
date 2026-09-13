@@ -332,6 +332,11 @@ So many possible combinations! What shall we bind next?
   <action name="Execute" command="neovide --chdir ~/journal +% syslog.txt" />
 </keybind>
 
+<!-- screenshot -->
+<keybind key="W-y">
+  <action name="Execute" command="gale-screenshot" />
+</keybind>
+
 </keyboard>
 
 <mouse>
