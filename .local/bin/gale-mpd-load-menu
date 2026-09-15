@@ -1,7 +1,0 @@
-#!/bin/sh
-
-if file=$(mpc lsplaylists | wmenu -i -p load); then
-  mpc -q clear &&
-  mpc -q load "$file" &&
-  mpc -q play
-fi

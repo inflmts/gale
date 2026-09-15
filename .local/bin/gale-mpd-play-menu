@@ -1,6 +1,0 @@
-#!/bin/sh
-
-if file=$(mpc listall | wmenu -i -l20 -p play); then
-  mpc -q insert "$file" &&
-  mpc -q next
-fi

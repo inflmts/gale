@@ -243,10 +243,10 @@ So many possible combinations! What shall we bind next?
   <action name="Execute" command="mpc toggle" />
 </keybind>
 <keybind key="W-S-p">
-  <action name="Execute" command="gale-mpd-play-menu" />
+  <action name="Execute" command="gale-mpd-menu play" />
 </keybind>
 <keybind key="W-S-o">
-  <action name="Execute" command="gale-mpd-load-menu" />
+  <action name="Execute" command="gale-mpd-menu load" />
 </keybind>
 
 <!-- brightness control -->
