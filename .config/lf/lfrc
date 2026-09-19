@@ -11,6 +11,8 @@
 # set $IFS to newline in subshells
 set ifs "\n"
 
+set promptfmt "\033[1;36m%u@%h\033[0m:\033[34;1m%d\033[0m\033[1m%f\033[0m"
+
 set nopreview
 set ratios 1:4
 set cursorparentfmt "\033[4m"
@@ -36,7 +38,8 @@ set timefmt "Mon 01/02/2006 03:04 PM"
 
 # draw box around directory listing
 set drawbox
-set borderfmt "\033[38;5;240m"
+set borderstyle separators
+set borderfmt "\033[2;34m"
 
 # enable mouse
 set mouse
