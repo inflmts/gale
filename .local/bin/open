@@ -108,10 +108,10 @@ fi
 ext=$(echo "${file##*.}" | tr '[:upper:]' '[:lower:]')
 
 case $ext in
-  avif | bmp | gif | jpeg | jpg | png | webp)
+  avif | bmp | gif | jpeg | jpg | png | ppm | webp)
     $exec swayimg -- "$file"
     ;;
-  flac | mp3 | ogg | opus | wav | avi | mov | mp4 | webm | wmv)
+  avi | flac | mkv | mov | mp3 | mp4 | ogg | opus | wav | webm | wmv)
     $exec mpv --player-operation-mode=pseudo-gui -- "$file"
     ;;
   html | md | pdf | svg)
