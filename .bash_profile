@@ -49,7 +49,7 @@ gale_add_path() {
 # autodetect pnpm
 if [ -d ~/.data/pnpm ]; then
   export PNPM_HOME="$HOME/.data/pnpm"
-  gale_add_path ~/.data/pnpm
+  gale_add_path ~/.data/pnpm/bin
 fi
 
 # autodetect bun
