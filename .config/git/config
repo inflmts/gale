@@ -13,6 +13,9 @@
   s = status -sb
   su = status -sbu
 
+[diff "journal"]
+  xfuncname = ^~~~~~ (.*)$
+
 [init]
   defaultBranch = main
 
