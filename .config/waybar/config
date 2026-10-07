@@ -12,16 +12,37 @@
   "layer": "top",
   "position": "bottom",
   "height": 25,
+
+  // We have a bottom <margin> configured in labwc that always allocates space
+  // regardless of whether waybar is running. This prevents applications from
+  // moving around when waybar crashes or is restarted. The negative margin is
+  // required to move waybar into that space.
+
   "margin-bottom": -25,
   "exclusive": false,
 
-  // Left
+  // I really don't want to put the taskbar in the middle because I have a
+  // personal vendetta against Windows 11, but with the current layout
+  // it seems like the only way to keep both sides balanced.
+
   "modules-left": [
-    "wlr/taskbar",
     "network",
+    "battery",
+    "backlight",
     "bluetooth",
     "mpd"
   ],
+  "modules-center": [
+    "wlr/taskbar"
+  ],
+  "modules-right": [
+    "cpu",
+    "memory",
+    "pulseaudio",
+    "custom/separator",
+    "clock"
+  ],
+
   "wlr/taskbar": {
     "on-click": "minimize-raise",
     "tooltip-format": "{title}"
@@ -30,17 +51,6 @@
     "format": "<span size='smaller' alpha='55%'>MPD</span> {artist} \u2013 {title}",
     "format-stopped": ""
   },
-
-  // Right
-  "modules-right": [
-    "cpu",
-    "memory",
-    "pulseaudio",
-    "backlight",
-    "battery",
-    "custom/separator",
-    "clock"
-  ],
   "custom/separator": {
     "format": "//"
   },

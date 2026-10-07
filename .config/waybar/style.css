@@ -43,7 +43,7 @@ button {
 }
 
 .modules-left > :first-child > .module {
-  margin-left: 0px;
+  margin-left: 10px;
 }
 
 .modules-right > :last-child > .module {
