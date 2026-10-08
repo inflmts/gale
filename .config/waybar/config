@@ -26,9 +26,9 @@
   // it seems like the only way to keep both sides balanced.
 
   "modules-left": [
-    "network",
     "battery",
     "backlight",
+    "network",
     "bluetooth",
     "mpd"
   ],
