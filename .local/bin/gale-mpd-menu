@@ -1,10 +1,14 @@
 #!/bin/sh
 
-case $1 in
-play)
+pick_file() {
   # NOTE: this is an en dash -------v
   file=$(mpc -f '%file%\t[[%artist% – ]%title%|%file%]' listall |
-    fuzzel -d -p 'play: ' -w 60 --accept-nth=1 --with-nth=2 --only-match) &&
+    fuzzel -d -p "$1: " -w 60 --accept-nth=1 --with-nth=2 --only-match)
+}
+
+case $1 in
+play)
+  pick_file play &&
   if index=$(mpc -f '%file%' playlist | grep -Fxn "$file"); then
     mpc -q play "${index%%:*}"
   else
@@ -19,8 +23,15 @@ load)
   mpc -q load "$file" &&
   mpc -q play
   ;;
+insert)
+  pick_file insert &&
+  if index=$(mpc -f '%file%' playlist | grep -Fxn "$file"); then
+    mpc -q del "${index%%:*}"
+  fi &&
+  mpc -q insert "$file"
+  ;;
 *)
-  echo >&2 "usage: ${0##*/} play|load"
+  echo >&2 "usage: ${0##*/} play|load|insert"
   exit 2
   ;;
 esac
