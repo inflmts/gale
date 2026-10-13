@@ -171,7 +171,7 @@ augroup init
   au!
   au BufEnter,TermOpen * call s:highlight_whitespace()
   au FileType asciidoc setlocal nosi comments=fb:-,fb:*,fb://
-  au FileType cs,java setlocal et sw=4 sts=4
+  au FileType cs,groovy,java,kotlin setlocal et sw=4 sts=4
   au FileType html setlocal indentexpr=
   au FileType make setlocal noet sw=8 sts=8
   au FileType markdown setlocal et sw=2 sts=2 tw=80
@@ -190,6 +190,8 @@ augroup END
 "-- OTHER SETTINGS -----------------------------------------------------------
 
 let g:is_bash = 1
+
+let g:java_ignore_javadoc = 1
 
 " Highlight trailing whitespace. I really hate trailing whitespace.
 " Although we have to be careful not to mess up terminal buffers.
