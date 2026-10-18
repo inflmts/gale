@@ -105,11 +105,14 @@ xnoremap <C-J> 10gj
 nnoremap <C-K> 10gk
 xnoremap <C-K> 10gk
 
-" CTRL-S saves the file
+" Save the file. Note that in Insert and Command-line modes,
+" the mode is exited before saving the file. This makes a difference
+" eg. when using s in Visual-block mode: exiting Insert mode
+" causes the edits to propagate to the other rows in the selection.
 nnoremap <C-S> <Cmd>up<CR>
 xnoremap <C-S> <Cmd>up<CR>
-inoremap <C-S> <Cmd>up<CR><Esc>
-cnoremap <C-S> <Cmd>up<CR><C-C>
+inoremap <C-S> <Esc><Cmd>up<CR>
+cnoremap <C-S> <C-C><Cmd>up<CR>
 
 " H, M, and L scroll the window so that the cursor is at the top, middle, or
 " bottom of the window, respectively
