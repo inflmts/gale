@@ -224,15 +224,6 @@ So many possible combinations! What shall we bind next?
 </keybind>
 
 <!-- mpd -->
-<keybind key="XF86AudioPrev">
-  <action name="Execute" command="mpc prev" />
-</keybind>
-<keybind key="XF86AudioNext">
-  <action name="Execute" command="mpc next" />
-</keybind>
-<keybind key="XF86AudioPlay">
-  <action name="Execute" command="mpc toggle" />
-</keybind>
 <keybind key="W-S-minus">
   <action name="Execute" command="mpc prev" />
 </keybind>
@@ -241,6 +232,9 @@ So many possible combinations! What shall we bind next?
 </keybind>
 <keybind key="W-S-0">
   <action name="Execute" command="mpc toggle" />
+</keybind>
+<keybind key="W-S-BackSpace">
+  <action name="Execute" command="mpc seek 0" />
 </keybind>
 <keybind key="W-S-p">
   <action name="Execute" command="gale-mpd-menu play" />
