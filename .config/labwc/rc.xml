@@ -324,11 +324,6 @@ So many possible combinations! What shall we bind next?
   <action name="Execute" command="foot -T R R --no-save --no-restore" />
 </keybind>
 
-<!-- syslog -->
-<keybind key="W-S-s">
-  <action name="Execute" command="neovide --chdir ~/journal +% syslog.txt" />
-</keybind>
-
 <!-- screenshot -->
 <keybind key="W-y">
   <action name="Execute" command="gale-screenshot" />

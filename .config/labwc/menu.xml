@@ -68,6 +68,9 @@
   <item label="Google _Maps">
     <action name="Execute" command="open https://www.google.com/maps" />
   </item>
+  <item label="Syslog">
+    <action name="Execute" command="neovide --chdir ~/journal +% syslog.txt" />
+  </item>
 </menu>
 
 </openbox_menu>
