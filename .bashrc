@@ -152,11 +152,6 @@ argc() {
   echo "$# argument(s)"
 }
 
-cd() {
-  builtin cd "$@" || return
-  [[ ! -e .git ]] || git --no-optional-locks status -sb || true
-}
-
 colors() {
   local i
   for i in {0..255}; do
@@ -224,6 +219,7 @@ rot13() {
 
 #-- KEYBINDINGS ----------------------------------------------------------------
 
+bind '"\es": "\C-a\C-kgit status -sb\r"'
 bind -x '"\e[15~": gale_menu'
 bind -x '"\e[[E": gale_menu'
 bind -x '"\C-x?": echo "Last process exited $?"'
