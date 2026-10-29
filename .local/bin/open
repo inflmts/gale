@@ -114,8 +114,11 @@ case $ext in
   avi | flac | mkv | mov | mp3 | mp4 | ogg | opus | wav | webm | wmv)
     $exec mpv --player-operation-mode=pseudo-gui -- "$file"
     ;;
-  html | md | pdf | svg)
+  html | md | pdf)
     $exec chromium "$file"
+    ;;
+  svg)
+    $exec inkscape "$file"
     ;;
   odt | doc | docx)
     $exec lowriter "$file"
