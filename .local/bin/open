@@ -105,7 +105,11 @@ if [ -d "$file" ]; then
   $exec foot lf "$file"
 fi
 
-ext=$(echo "${file##*.}" | tr '[:upper:]' '[:lower:]')
+ext=${file##*.}
+
+case $ext in
+  *[A-Z]*) ext=$(echo "$ext" | tr A-Z a-z) ;;
+esac
 
 case $ext in
   avif | bmp | gif | jpeg | jpg | png | ppm | tif | tiff | webp)
