@@ -74,6 +74,11 @@ So many possible combinations! What shall we bind next?
   <action name="Reconfigure" />
 </keybind>
 
+<!-- put the computer to sleep -->
+<keybind key="W-s">
+  <action name="Execute" command="gale-sleep" />
+</keybind>
+
 <!-- reload config & restart waybar -->
 <keybind key="W-S-r">
   <action name="Reconfigure" />
@@ -317,11 +322,6 @@ So many possible combinations! What shall we bind next?
 <!-- python -->
 <keybind key="W-p">
   <action name="Execute" command="foot -T python python3" />
-</keybind>
-
-<!-- R -->
-<keybind key="W-s">
-  <action name="Execute" command="foot -T R R --no-save --no-restore" />
 </keybind>
 
 <!-- screenshot -->
